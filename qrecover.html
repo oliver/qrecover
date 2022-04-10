@@ -97,7 +97,7 @@
 
                 for (var x = 0; x < Math.min(img_obj.width, code_size); x++) {
                     for (var y = 0; y < Math.min(img_obj.height, code_size); y++) {
-                        const red_value = image_pixel_data[(x*img_obj.width + y) * 4];
+                        const red_value = image_pixel_data[(y*img_obj.width + x) * 4];
                         pixel_data[x][y] = (red_value < 128) ? true : false;
                     }
                 }
