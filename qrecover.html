@@ -265,9 +265,15 @@
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, code_size*pixel_size, code_size*pixel_size);
 
+        var displayed_pixel_data = pixel_data;
+        if (document.getElementById("cb_show_unmasked").checked) {
+            // TODO: apply unmasking only to data areas
+            displayed_pixel_data = get_masked_pixels();
+        }
+
         for (var x = 0; x < code_size; x++) {
             for (var y = 0; y < code_size; y++) {
-                draw_pixel(x, y, pixel_data[x][y]);
+                draw_pixel(x, y, displayed_pixel_data[x][y]);
             }
         }
 
@@ -333,9 +339,7 @@
             <input accept="image/*" type="file" id="imgInp" />
             <input type="button" value="Load Selected File" onclick="load_from_file(this.form.imgInp)">
         </form>
-        <form>
-            <input type="button" value="Export Pixels">
-        </form>
+        <input type="checkbox" id="cb_show_unmasked" onchange="draw_code()"><label for="cb_show_unmasked">Show Unmasked</label><br>
         <br>
         <canvas id="can" style="border:2px solid;"></canvas>
 
