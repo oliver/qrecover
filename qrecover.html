@@ -56,6 +56,10 @@
         draw_code();
     }
 
+    function draw_rect (px, py, w, h) {
+        ctx.fillRect(px*pixel_size, py*pixel_size, w*pixel_size, h*pixel_size);
+    }
+
     function draw_code () {
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, code_size*pixel_size, code_size*pixel_size);
@@ -69,11 +73,23 @@
 
         // draw code areas
         ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
-        ctx.fillRect(0, 0, 7*pixel_size, 7*pixel_size);
-        ctx.fillRect((code_size-7)*pixel_size, 0, 7*pixel_size, 7*pixel_size);
-        ctx.fillRect(0, (code_size-7)*pixel_size, 7*pixel_size, 7*pixel_size);
+        draw_rect(0, 0, 7, 7);
+        draw_rect(code_size-7, 0, 7, 7);
+        draw_rect(0, code_size-7, 7, 7);
 
-        ctx.fillRect(16*pixel_size, 16*pixel_size, 5*pixel_size, 5*pixel_size);
+        draw_rect(16, 16, 5, 5);
+
+        ctx.fillStyle = "rgba(192, 255, 128, 0.5)";
+        draw_rect(0, 7, 8, 1);
+        draw_rect(7, 0, 1, 7);
+        draw_rect(code_size-8, 7, 8, 1);
+        draw_rect(code_size-8, 0, 1, 7);
+        draw_rect(0, code_size-8, 8, 1);
+        draw_rect(7, code_size-7, 1, 7);
+
+        ctx.fillStyle = "rgba(0, 0, 255, 0.5)";
+        draw_rect(8, 6, 9, 1);
+        draw_rect(6, 8, 1, 9);
     }
 
     function draw_pixel (px, py, set_pixel) {
