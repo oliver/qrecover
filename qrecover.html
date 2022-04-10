@@ -54,34 +54,8 @@
         }
     }
 
-    function check_position_area (area) {
-        expect_pixels([area.x+0, area.y+0, 7, 7],
-            "xxxxxxx" +
-            "x.....x" +
-            "x.xxx.x" +
-            "x.xxx.x" +
-            "x.xxx.x" +
-            "x.....x" +
-            "xxxxxxx"
-        );
-        return "valid";
-    }
-
     function init() {
-        add_area("pos_ul", 0, 0, 7, 7, [0, 255, 0], check_position_area);
-        add_area("pos_ur", code_size-7, 0, 7, 7, [0, 255, 0], check_position_area);
-        add_area("pos_bl", 0, code_size-7, 7, 7, [0, 255, 0], check_position_area);
-
-        add_area("orient", 16, 16, 5, 5, [0, 255, 0], function (area) {
-            expect_pixels([area.x+0, area.y+0, 5, 5],
-                "xxxxx" +
-                "x...x" +
-                "x.x.x" +
-                "x...x" +
-                "xxxxx"
-            );
-            return "valid";
-        });
+        add_all_areas();
 
         var top_div = document.getElementById("area_details");
         for (var id in areas) {
@@ -100,6 +74,57 @@
             var [pix_x, pix_y] = event_to_pixel(e);
             toggle_pixel(pix_x, pix_y);
         }, false);
+    }
+
+    function add_all_areas () {
+        // three position markers:
+        add_area("pos_ul", 0, 0, 7, 7, [0, 255, 0], function (area) {
+            expect_pixels([area.x+0, area.y+0, 7, 7],
+                "xxxxxxx" +
+                "x.....x" +
+                "x.xxx.x" +
+                "x.xxx.x" +
+                "x.xxx.x" +
+                "x.....x" +
+                "xxxxxxx"
+            );
+            return "valid";
+        });
+        add_area("pos_ur", code_size-7, 0, 7, 7, [0, 255, 0], areas["pos_ul"].check_function);
+        add_area("pos_bl", 0, code_size-7, 7, 7, [0, 255, 0], areas["pos_ul"].check_function);
+
+        // one orientation marker (bottom right):
+        add_area("orient", 16, 16, 5, 5, [0, 255, 0], function (area) {
+            expect_pixels([area.x+0, area.y+0, 5, 5],
+                "xxxxx" +
+                "x...x" +
+                "x.x.x" +
+                "x...x" +
+                "xxxxx"
+            );
+            return "valid";
+        });
+
+        // spacers around all position markers:
+        add_area("spacing_ul_1", 0, 7, 8, 1, [192, 255, 128], function (area) {
+            expect_pixels([area.x, area.y, area.w, area.h], "........");
+            return "valid";
+        });
+        add_area("spacing_ul_2", 7, 0, 1, 7, [192, 255, 128], function (area) {
+            expect_pixels([area.x, area.y, area.w, area.h], ".......");
+            return "valid";
+        });
+        add_area("spacing_ur_1", code_size-8, 7, 8, 1, [192, 255, 128], areas["spacing_ul_1"].check_function);
+        add_area("spacing_ur_2", code_size-8, 0, 1, 7, [192, 255, 128], areas["spacing_ul_2"].check_function);
+        add_area("spacing_bl_1", 0, code_size-8, 8, 1, [192, 255, 128], areas["spacing_ul_1"].check_function);
+        add_area("spacing_bl_2", 7, code_size-7, 1, 7, [192, 255, 128], areas["spacing_ul_2"].check_function);
+
+        // two timing strips:
+        add_area("timing_top", 8, 6, 9, 1, [0, 0, 255], function (area) {
+            expect_pixels([area.x, area.y, area.w, area.h], "x.x.x.x.x");
+            return "valid";
+        });
+        add_area("timing_left", 6, 8, 1, 9, [0, 0, 255], areas["timing_top"].check_function);
     }
 
     function draw_grid () {
@@ -167,19 +192,6 @@
                 }
             }
         }
-
-        // draw code areas
-        ctx.fillStyle = "rgba(192, 255, 128, 0.5)";
-        draw_rect(0, 7, 8, 1);
-        draw_rect(7, 0, 1, 7);
-        draw_rect(code_size-8, 7, 8, 1);
-        draw_rect(code_size-8, 0, 1, 7);
-        draw_rect(0, code_size-8, 8, 1);
-        draw_rect(7, code_size-7, 1, 7);
-
-        ctx.fillStyle = "rgba(0, 0, 255, 0.5)";
-        draw_rect(8, 6, 9, 1);
-        draw_rect(6, 8, 1, 9);
     }
 
     function draw_pixel (px, py, set_pixel) {
