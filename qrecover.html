@@ -28,12 +28,20 @@
         };
     }
 
-    function get_pixels_as_string (px, py, w, h) {
-        var result_string = "";
+    function get_pixels_as_bools (px, py, w, h) {
+        var result_array = new Array();
         for (var y = py; y < py+h; y++) {
             for (var x = px; x < px+w; x++) {
-                result_string += (pixel_data[x][y] ? "x" : ".");
+                result_array.push(pixel_data[x][y] ? true : false);
             }
+        }
+        return result_array;
+    }
+
+    function get_pixels_as_string (px, py, w, h) {
+        var result_string = "";
+        for (var bool_value of get_pixels_as_bools(px, py, w, h)) {
+            result_string += (bool_value ? "x" : ".");
         }
         return result_string;
     }
@@ -132,6 +140,24 @@
             return "valid";
         });
         add_area("timing_left", 6, 8, 1, 9, [0, 0, 255], areas["timing_top"].check_function);
+
+        // error correction level (redundantly):
+        const error_correction_levels = {
+            0: "H / High",
+            1: "Q / Quartile",
+            2: "M / Medium",
+            3: "L / Low"
+        };
+        add_area("format_ec_1", 0, 8, 2, 1, [255, 128, 0], function (area) {
+            const [bit0, bit1] = get_pixels_as_bools(area.x, area.y, area.w, area.h);
+            const ec_level = ((bit0 << 1) | bit1) ^ 0b10;
+            return "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")";
+        });
+        add_area("format_ec_2", 8, code_size-2, 1, 2, [255, 128, 0], function (area) {
+            const [bit1, bit0] = get_pixels_as_bools(area.x, area.y, area.w, area.h);
+            const ec_level = ((bit0 << 1) | bit1) ^ 0b10;
+            return "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")";
+        });
     }
 
     function draw_grid () {
