@@ -74,6 +74,13 @@
             var [pix_x, pix_y] = event_to_pixel(e);
             toggle_pixel(pix_x, pix_y);
         }, false);
+
+        canvas.addEventListener("mousemove", function (e) {
+            var [pix_x, pix_y] = event_to_pixel(e);
+            if (pix_x < code_size && pix_y < code_size) {
+                document.getElementById("mouse_pos").innerHTML = "(" + (pix_x+0) + " / " + (pix_y+0) + ")";
+            }
+        }, false);
     }
 
     function add_all_areas () {
@@ -239,5 +246,7 @@
         <div id="area_details" style="float:right">
             Areas:
         </div>
+        <br>
+        <span id="mouse_pos"></span>
     </body>
     </html>
