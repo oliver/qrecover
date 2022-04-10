@@ -19,7 +19,7 @@
         canvas.height = code_size*pixel_size;
         ctx = canvas.getContext("2d");
 
-        draw_grid();
+        draw_code();
         canvas.addEventListener("mousedown", function (e) {
             var [pix_x, pix_y] = event_to_pixel(e);
             toggle_pixel(pix_x, pix_y);
@@ -53,7 +53,27 @@
     function toggle_pixel (px, py) {
         var set_pixel = !(pixel_data[px][py]);
         pixel_data[px][py] = set_pixel;
-        draw_pixel(px, py, set_pixel);
+        draw_code();
+    }
+
+    function draw_code () {
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, code_size*pixel_size, code_size*pixel_size);
+
+        for (var x = 0; x < code_size; x++) {
+            for (var y = 0; y < code_size; y++) {
+                draw_pixel(x, y, pixel_data[x][y]);
+            }
+        }
+        draw_grid();
+
+        // draw code areas
+        ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
+        ctx.fillRect(0, 0, 7*pixel_size, 7*pixel_size);
+        ctx.fillRect((code_size-7)*pixel_size, 0, 7*pixel_size, 7*pixel_size);
+        ctx.fillRect(0, (code_size-7)*pixel_size, 7*pixel_size, 7*pixel_size);
+
+        ctx.fillRect(16*pixel_size, 16*pixel_size, 5*pixel_size, 5*pixel_size);
     }
 
     function draw_pixel (px, py, set_pixel) {
@@ -61,7 +81,6 @@
         ctx.fillStyle = set_pixel ? "black" : "white";
         ctx.fillRect(px*pixel_size, py*pixel_size, pixel_size, pixel_size);
         ctx.closePath();
-        draw_grid();
     }
 
     function load_from_file (img_input_field) {
@@ -80,9 +99,9 @@
                     for (var y = 0; y < Math.min(img_obj.height, code_size); y++) {
                         const red_value = image_pixel_data[(x*img_obj.width + y) * 4];
                         pixel_data[x][y] = (red_value < 128) ? true : false;
-                        draw_pixel(x, y, pixel_data[x][y]);
                     }
                 }
+                draw_code();
             }
         }
     }
