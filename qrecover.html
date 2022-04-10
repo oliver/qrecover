@@ -150,19 +150,19 @@
         };
         add_area("format_ec_1", 0, 8, 2, 1, [255, 128, 0], function (area) {
             const [bit0, bit1] = get_pixels_as_bools(area.x, area.y, area.w, area.h);
-            const ec_level = ((bit0 << 1) | bit1) ^ 0b10;
+            const ec_level = bits_to_int([bit0, bit1]) ^ 0b10;
             return "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")";
         });
         add_area("format_ec_2", 8, code_size-2, 1, 2, [255, 128, 0], function (area) {
             const [bit1, bit0] = get_pixels_as_bools(area.x, area.y, area.w, area.h);
-            const ec_level = ((bit0 << 1) | bit1) ^ 0b10;
+            const ec_level = bits_to_int([bit0, bit1]) ^ 0b10;
             return "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")";
         });
 
         // mask pattern (redundantly):
         add_area("format_mask_1", 2, 8, 3, 1, [128, 255, 0], function (area) {
             const [bit0, bit1, bit2] = get_pixels_as_bools(area.x, area.y, area.w, area.h);
-            const mask_value = ((bit0 << 2) | (bit1 << 1) | bit2) ^ 0b101;
+            const mask_value = bits_to_int([bit0, bit1, bit2]) ^ 0b101;
             return {
                 "desc": "Mask: " + mask_value + " (0b" + mask_value.toString(2) + ")",
                 "mask_value": mask_value
@@ -170,7 +170,7 @@
         });
         add_area("format_mask_2", 8, code_size-5, 1, 3, [128, 255, 0], function (area) {
             const [bit2, bit1, bit0] = get_pixels_as_bools(area.x, area.y, area.w, area.h);
-            const mask_value = ((bit0 << 2) | (bit1 << 1) | bit2) ^ 0b101;
+            const mask_value = bits_to_int([bit0, bit1, bit2]) ^ 0b101;
             return {
                 "desc": "Mask: " + mask_value + " (0b" + mask_value.toString(2) + ")",
                 "mask_value": mask_value
@@ -180,9 +180,25 @@
         // encoding:
         add_area("encoding", code_size-2, code_size-2, 2, 2, [255, 0, 0], function (area) {
             const [bit3, bit2, bit1, bit0] = get_pixels_as_bools(area.x, area.y, area.w, area.h, get_masked_pixels());
-            const encoding_value = (bit0 << 3) | (bit1 << 2) | (bit2 << 1) | bit3;
+            const encoding_value = bits_to_int([bit0, bit1, bit2, bit3]);
             return "Encoding: " + encoding_value + " (0b" + encoding_value.toString(2) + ")";
         });
+
+        // length:
+        add_area("data_length", code_size-2, code_size-6, 2, 4, [255, 0, 255], function (area) {
+            const [bit7, bit6, bit5, bit4, bit3, bit2, bit1, bit0] = get_pixels_as_bools(area.x, area.y, area.w, area.h, get_masked_pixels());
+            const length_value = bits_to_int([bit0, bit1, bit2, bit3, bit4, bit5, bit6, bit7]);
+            return "Length: " + length_value + " (0b" + length_value.toString(2) + ")";
+        });
+    }
+
+    function bits_to_int (bool_array) {
+        var int_result = 0;
+        for (bool_value of bool_array) {
+            int_result <<= 1;
+            int_result |= (bool_value ? 1 : 0);
+        }
+        return int_result;
     }
 
     function get_masked_pixels () {
