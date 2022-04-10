@@ -161,7 +161,7 @@
     }
 
     function draw_grid () {
-        ctx.strokeStyle = "black";
+        ctx.strokeStyle = "rgba(0,0,0, 0.5)";
         ctx.lineWidth = 1;
         for (i = 0; i < code_size; i++) {
             ctx.beginPath();
@@ -203,7 +203,6 @@
                 draw_pixel(x, y, pixel_data[x][y]);
             }
         }
-        draw_grid();
 
         for (id in areas) {
             area = areas[id];
@@ -225,6 +224,7 @@
                 }
             }
         }
+        draw_grid();
     }
 
     function draw_pixel (px, py, set_pixel) {
