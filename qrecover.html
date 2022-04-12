@@ -307,30 +307,19 @@
             [curr_x, curr_y] = next_data_pixel_pos(curr_x, curr_y);
         }
 
-        console.log("reading data words now:");
+        // read data bits (into an array of bools):
         var curr_x = code_size-1;
         var curr_y = code_size-1;
         var bit_array = new Array();
         for (var j = 0; j < 40; j++) {
-            var result_int = 0;
             for (var i = 0; i < 8; i++) {
                 var bit_set = get_pixels_as_bools(curr_x, curr_y, 1, 1, get_masked_pixels())[0];
                 bit_array.push(bit_set);
-                result_int <<= 1;
-                if (bit_set) {
-                    result_int |= 1;
-                }
                 [curr_x, curr_y] = next_data_pixel_pos(curr_x, curr_y);
             }
-            console.log("result_int: " + (""+result_int).padStart(3)
-                + " (hex=0x" + result_int.toString(16).padStart(2,"0")
-                + "; bin=0b" + result_int.toString(2).padStart(8,"0")
-                + "; ASCII='" + String.fromCharCode(result_int)
-                + "'); end pos: " + curr_x + "/" + curr_y);
         }
-        console.log("ending reading data words.");
 
-
+        // decode data bits:
         function read_int (bits, offset, len) {
             var result_int = 0;
             for (var i = 0; i < len; i++) {
