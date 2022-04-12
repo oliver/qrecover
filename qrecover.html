@@ -185,20 +185,6 @@
         add_area("format_ec_ul_3", 7, 8, 2, 1, [192, 128, 128], function() { return ""; });
         add_area("format_ec_ul_4", 5, 8, 1, 1, [192, 128, 128], function() { return ""; });
         add_area("format_ec_bl", 8, code_size-8, 1, 3, [192, 128, 128], function() { return ""; });
-
-        // encoding:
-        add_area("encoding", code_size-2, code_size-2, 2, 2, [255, 0, 0], function (area) {
-            const [bit3, bit2, bit1, bit0] = get_pixels_as_bools(area.x, area.y, area.w, area.h, get_masked_pixels());
-            const encoding_value = bits_to_int([bit0, bit1, bit2, bit3]);
-            return "Encoding: " + encoding_value + " (0b" + encoding_value.toString(2) + ")";
-        });
-
-        // length:
-        add_area("data_length", code_size-2, code_size-6, 2, 4, [255, 0, 255], function (area) {
-            const [bit7, bit6, bit5, bit4, bit3, bit2, bit1, bit0] = get_pixels_as_bools(area.x, area.y, area.w, area.h, get_masked_pixels());
-            const length_value = bits_to_int([bit0, bit1, bit2, bit3, bit4, bit5, bit6, bit7]);
-            return "Length: " + length_value + " (0b" + length_value.toString(2) + ")";
-        });
     }
 
     function bits_to_int (bool_array) {
@@ -313,7 +299,7 @@
 
         // draw data pixel numbers:
         var curr_x = code_size-1;
-        var curr_y = code_size-7;
+        var curr_y = code_size-1;
         ctx.font = "11px monospace";
         for (var i = 0; i < 347; i++) {
             ctx.fillStyle = displayed_pixel_data[curr_x][curr_y] ? "white" : "black";
@@ -323,11 +309,13 @@
 
         console.log("reading data words now:");
         var curr_x = code_size-1;
-        var curr_y = code_size-7;
+        var curr_y = code_size-1;
+        var bit_array = new Array();
         for (var j = 0; j < 30; j++) {
             var result_int = 0;
             for (var i = 0; i < 8; i++) {
                 var bit_set = get_pixels_as_bools(curr_x, curr_y, 1, 1, get_masked_pixels())[0];
+                bit_array.push(bit_set);
                 result_int <<= 1;
                 if (bit_set) {
                     result_int |= 1;
@@ -341,6 +329,53 @@
                 + "'); end pos: " + curr_x + "/" + curr_y);
         }
         console.log("ending reading data words.");
+
+        console.log("decoding data bits:");
+        function read_int (bits, offset, len) {
+            var result_int = 0;
+            for (var i = 0; i < len; i++) {
+                result_int <<= 1;
+                if (bits[offset+i]) {
+                    result_int |= 1;
+                }
+            }
+            return [result_int, offset+len];
+        }
+
+        var read_offset = 0;
+        while (read_offset < bit_array.length) {
+            console.log("i=" + i + "; read_offset=" + read_offset);
+            var [mode, read_offset] = read_int(bit_array, read_offset, 4);
+            console.log("mode=" + mode);
+
+            if (mode == 0b0100) {
+                // Byte encoding
+                var [payload_length, read_offset] = read_int(bit_array, read_offset, 8);
+                console.log("payload_length=" + payload_length);
+
+                for (var j = 0; j < payload_length; j++) {
+                    var [byte, read_offset] = read_int(bit_array, read_offset, 8);
+                    console.log("byte: " + (""+byte).padStart(3)
+                        + " (hex=0x" + byte.toString(16).padStart(2,"0")
+                        + "; bin=0b" + byte.toString(2).padStart(8,"0")
+                        + "; ASCII='" + String.fromCharCode(byte)
+                        + "'); read_offset=" + (read_offset-8));
+                }
+            } else if (mode == 0b0111) {
+                // ECI marker
+                var [eci_marker, read_offset] = read_int(bit_array, read_offset, 8);
+                console.log("eci_marker=" + eci_marker);
+                if (eci_marker == 26) {
+                    console.log("ECI: UTF-8 character set selected");
+                } else {
+                    console.log("unsupported ECI marker '" + eci_marker + "'");
+                }
+            } else {
+                console.log("unsupported mode '" + mode + "'");
+                break;
+            }
+        }
+        console.log("finished decoding data bits.");
     }
 
     function draw_pixel (px, py, set_pixel) {
