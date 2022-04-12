@@ -301,7 +301,7 @@
         var curr_x = code_size-1;
         var curr_y = code_size-1;
         ctx.font = "11px monospace";
-        for (var i = 0; i < 347; i++) {
+        for (var i = 0; i < 340; i++) {
             ctx.fillStyle = displayed_pixel_data[curr_x][curr_y] ? "white" : "black";
             ctx.fillText(("" + i).padStart(3, " "), curr_x*pixel_size, (curr_y+1)*pixel_size - 5);
             [curr_x, curr_y] = next_data_pixel_pos(curr_x, curr_y);
@@ -311,7 +311,7 @@
         var curr_x = code_size-1;
         var curr_y = code_size-1;
         var bit_array = new Array();
-        for (var j = 0; j < 30; j++) {
+        for (var j = 0; j < 40; j++) {
             var result_int = 0;
             for (var i = 0; i < 8; i++) {
                 var bit_set = get_pixels_as_bools(curr_x, curr_y, 1, 1, get_masked_pixels())[0];
@@ -330,7 +330,7 @@
         }
         console.log("ending reading data words.");
 
-        console.log("decoding data bits:");
+
         function read_int (bits, offset, len) {
             var result_int = 0;
             for (var i = 0; i < len; i++) {
@@ -342,40 +342,52 @@
             return [result_int, offset+len];
         }
 
+        function read_int_with_desc (bits, offset, len, entry_name) {
+            var orig_offset = offset;
+            var [int_value, read_offset] = read_int(bits, offset, len);
+            return [int_value, read_offset, "" + orig_offset.toString().padStart(3, " ") + ": " + entry_name + " = " + int_value.toString().padStart(3, " ")];
+        }
+
+        var detail_text = "Decoded Data (from " +  bit_array.length + " bits):<br><pre>";
+        var text_payload = "";
         var read_offset = 0;
         while (read_offset < bit_array.length) {
-            console.log("i=" + i + "; read_offset=" + read_offset);
-            var [mode, read_offset] = read_int(bit_array, read_offset, 4);
-            console.log("mode=" + mode);
+            var [mode, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 4, "mode");
+            detail_text += log_text + "\n";
 
             if (mode == 0b0100) {
                 // Byte encoding
-                var [payload_length, read_offset] = read_int(bit_array, read_offset, 8);
-                console.log("payload_length=" + payload_length);
+                var [payload_length, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 8, "payload length");
+                detail_text += log_text + "\n";
 
                 for (var j = 0; j < payload_length; j++) {
-                    var [byte, read_offset] = read_int(bit_array, read_offset, 8);
-                    console.log("byte: " + (""+byte).padStart(3)
+                    var [byte, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 8, "byte");
+                    detail_text += log_text
                         + " (hex=0x" + byte.toString(16).padStart(2,"0")
                         + "; bin=0b" + byte.toString(2).padStart(8,"0")
                         + "; ASCII='" + String.fromCharCode(byte)
-                        + "'); read_offset=" + (read_offset-8));
+                        + "')\n";
+                    text_payload += String.fromCharCode(byte);
                 }
             } else if (mode == 0b0111) {
                 // ECI marker
-                var [eci_marker, read_offset] = read_int(bit_array, read_offset, 8);
-                console.log("eci_marker=" + eci_marker);
+                var [eci_marker, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 8, "ECI marker");
                 if (eci_marker == 26) {
-                    console.log("ECI: UTF-8 character set selected");
+                    log_text += " (UTF-8 charset)";
                 } else {
-                    console.log("unsupported ECI marker '" + eci_marker + "'");
+                    log_text += " (unsupported ECI marker)";
                 }
+                detail_text += log_text + "\n";
+            } else if (mode == 0b0) {
+                detail_text += "end-of-message marker reached.\n";
+                break;
             } else {
-                console.log("unsupported mode '" + mode + "'");
+                detail_text += "unsupported mode '" + mode + "'; decoding aborted.\n";
                 break;
             }
         }
-        console.log("finished decoding data bits.");
+        detail_text += "</pre><br>\nFound " + text_payload.length + " characters:<br><pre>" + text_payload + "</pre>";
+        document.getElementById("data_details").innerHTML = detail_text;
     }
 
     function draw_pixel (px, py, set_pixel) {
@@ -486,7 +498,10 @@
         <br>
         <canvas id="can" style="border:2px solid;"></canvas>
 
-        <div id="area_details" style="float:right">
+        <div id="data_details" style="float:right; padding: 20px">
+            Data:
+        </div>
+        <div id="area_details" style="float:right; padding: 20px">
             Areas:
         </div>
         <br>
