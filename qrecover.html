@@ -16,6 +16,26 @@
     var canvas, ctx;
 
 
+    // character table for Alphanumeric encoding
+    var alphanumeric_table = new Map([
+        [36, " "],
+        [37, "$"],
+        [38, "%"],
+        [39, "*"],
+        [40, "+"],
+        [41, "-"],
+        [42, "."],
+        [43, "/"],
+        [44, ":"],
+        [45, "\uFFFD"],
+    ]);
+    for (var i = 0; i <= 9; i++) {
+        alphanumeric_table.set(i, "" + i); // numbers
+    }
+    for (var i = 10; i <= 35; i++) {
+        alphanumeric_table.set(i, String.fromCharCode(i - 10 + 65)); // uppercase letters
+    }
+
     function add_area (id, x, y, w, h, color_values, check_function) {
         areas[id] = {
             "id":id,
@@ -372,7 +392,28 @@
                 var [mode, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 4, "mode");
                 detail_text += log_text + "\n";
 
-                if (mode == 0b0100) {
+                if (mode == 0b0010) {
+                    // Alphanumeric encoding
+                    var [payload_length, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 9, "payload length");
+                    detail_text += log_text + "\n";
+
+                    for (var j = 0; j < Math.floor(payload_length / 2); j++) {
+                        var [two_chars, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 11, "two chars");
+
+                        var char2_code = two_chars % 45;
+                        var char1_code = (two_chars - char2_code) / 45;
+
+                        detail_text += log_text + " (" + char1_code + "=" + alphanumeric_table.get(char1_code) + "; " + char2_code + "=" + alphanumeric_table.get(char2_code) + ")\n";
+                        text_payload += alphanumeric_table.get(char1_code) + alphanumeric_table.get(char2_code);
+                    }
+                    if (payload_length % 2 != 0) {
+                        // read additional character
+                        var [final_char, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 6, "final char");
+
+                        detail_text += log_text + " (" + final_char + "=" + alphanumeric_table.get(final_char) + ")\n";
+                        text_payload += alphanumeric_table.get(final_char);
+                    }
+                } else if (mode == 0b0100) {
                     // Byte encoding
                     var [payload_length, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 8, "payload length");
                     detail_text += log_text + "\n";
