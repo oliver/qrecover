@@ -170,7 +170,7 @@
                 "x.....x" +
                 "xxxxxxx"
             );
-            return "valid";
+            return {"valid": true};
         });
         add_area("pos_ur", [[code_size-7, 0, 7, 7]], [0, 255, 0], static_areas.get("pos_ul").check_function);
         add_area("pos_bl", [[0, code_size-7, 7, 7]], [0, 255, 0], static_areas.get("pos_ul").check_function);
@@ -184,17 +184,17 @@
                 "x...x" +
                 "xxxxx"
             );
-            return "valid";
+            return {"valid": true};
         });
 
         // spacers around all position markers:
         add_area("spacing_ul_1", [[0, 7, 8, 1]], [192, 255, 128], function (area) {
             expect_pixels(area.regions, "........");
-            return "valid";
+            return {"valid": true};
         });
         add_area("spacing_ul_2", [[7, 0, 1, 7]], [192, 255, 128], function (area) {
             expect_pixels(area.regions, ".......");
-            return "valid";
+            return {"valid": true};
         });
         add_area("spacing_ur_1", [[code_size-8, 7, 8, 1]], [192, 255, 128], static_areas.get("spacing_ul_1").check_function);
         add_area("spacing_ur_2", [[code_size-8, 0, 1, 7]], [192, 255, 128], static_areas.get("spacing_ul_2").check_function);
@@ -204,7 +204,7 @@
         // two timing strips:
         add_area("timing_top", [[8, 6, 9, 1]], [0, 0, 255], function (area) {
             expect_pixels(area.regions, "x.x.x.x.x");
-            return "valid";
+            return {"valid": true};
         });
         add_area("timing_left", [[6, 8, 1, 9]], [0, 0, 255], static_areas.get("timing_top").check_function);
 
@@ -218,12 +218,12 @@
         add_area("format_ec_1", [[0, 8, 2, 1]], [255, 128, 0], function (area) {
             const [bit0, bit1] = get_pixels_as_bools(area.regions[0]);
             const ec_level = bits_to_int([bit0, bit1]) ^ 0b10;
-            return "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")";
+            return {"value": ec_level, "desc": "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")"};
         });
         add_area("format_ec_2", [[8, code_size-2, 1, 2]], [255, 128, 0], function (area) {
             const [bit1, bit0] = get_pixels_as_bools(area.regions[0]);
             const ec_level = bits_to_int([bit0, bit1]) ^ 0b10;
-            return "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")";
+            return {"value": ec_level,"desc": "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")"};
         });
 
         // mask pattern (redundantly):
@@ -232,7 +232,7 @@
             const mask_value = bits_to_int([bit0, bit1, bit2]) ^ 0b101;
             return {
                 "desc": "Mask: " + mask_value + " (0b" + mask_value.toString(2) + ")",
-                "mask_value": mask_value
+                "value": mask_value
             };
         });
         add_area("format_mask_2", [[8, code_size-5, 1, 3]], [128, 255, 0], function (area) {
@@ -240,15 +240,15 @@
             const mask_value = bits_to_int([bit0, bit1, bit2]) ^ 0b101;
             return {
                 "desc": "Mask: " + mask_value + " (0b" + mask_value.toString(2) + ")",
-                "mask_value": mask_value
+                "value": mask_value
             };
         });
 
         // error correction values for format and mask (currently only added so that the data bits are read correctly):
         // TODO: decode these bits
-        add_area("format_ec_ul", [[8, 0, 1, 6], [8, 7, 1, 1], [7, 8, 2, 1], [5, 8, 1, 1]], [192, 128, 128], function() { return ""; });
-        add_area("format_ec_ur", [[code_size-8, 8, 8, 1]], [192, 128, 128], function() { return ""; });
-        add_area("format_ec_bl", [[8, code_size-8, 1, 3]], [192, 128, 128], function() { return ""; });
+        add_area("format_ec_ul", [[8, 0, 1, 6], [8, 7, 1, 1], [7, 8, 2, 1], [5, 8, 1, 1]], [192, 128, 128], function() { return {}; });
+        add_area("format_ec_ur", [[code_size-8, 8, 8, 1]], [192, 128, 128], function() { return {}; });
+        add_area("format_ec_bl", [[8, code_size-8, 1, 3]], [192, 128, 128], function() { return {}; });
 
     }
 
@@ -273,7 +273,7 @@
             7: function (i,j) { return ((i*j) % 3 +i+j) % 2 == 0; }
         };
 
-        var mask_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1"))["mask_value"];
+        var mask_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1"))["value"];
         const mask_bit_function = mask_types[mask_value];
 
         var masked_pixel_data = new Array(code_size);
@@ -392,10 +392,21 @@
             area.div.innerHTML = "<b>" + id + ":</b><br>";
             try {
                 var result_obj = area.check_function(area);
-                if (typeof(result_obj) == "object") {
+                if (result_obj["offset"] !== undefined) {
+                    area.div.innerHTML += "offset: " + result_obj["offset"] + "; ";
+                }
+                if (result_obj["value"] !== undefined) {
+                    area.div.innerHTML += "value: " + result_obj["value"]
+                        + " (hex=0x" + result_obj["value"].toString(16).padStart(2,"0")
+                        + "; bin=0b" + result_obj["value"].toString(2).padStart(8,"0")
+                        + "; ASCII='" + String.fromCharCode(result_obj["value"]) + "'); ";
+                }
+                if (result_obj["valid"] !== undefined) {
+                    var color = result_obj["valid"] ? "" : "red";
+                    area.div.innerHTML += "<span style='color: " + color + ";'>valid: " + result_obj["valid"] + "</span>; ";
+                }
+                if (result_obj["desc"] !== undefined) {
                     area.div.innerHTML += result_obj["desc"];
-                } else {
-                    area.div.innerHTML += result_obj;
                 }
             } catch (ex) {
                 if (ex.hasOwnProperty("x")) {
@@ -460,7 +471,25 @@
             while (read_offset < bit_array.length) {
                 var [mode, read_offset, log_text, regions] = read_int_with_desc(bit_array, read_offset, 4, "mode");
                 detail_text += log_text + "\n";
-                add_area("mode_" + read_offset, regions, [255, 0, 0], function() { return ""; }, dynamic_areas);
+
+                const mode_names = new Map([
+                    [0b0000, "End of Message"],
+                    [0b0010, "Alphanumeric"],
+                    [0b0100, "Byte"],
+                    [0b0111, "ECI"]
+                ]);
+
+                {
+                    let area_values = {"offset":read_offset-4, "value":mode};
+                    if (mode_names.get(mode)) {
+                        area_values["desc"] = mode_names.get(mode);
+                        area_values["valid"] = true;
+                    } else {
+                        area_values["desc"] = "Unsupported mode \"" + mode + "\"; decoding aborted";
+                        area_values["valid"] = false;
+                    }
+                    add_area("mode_" + read_offset, regions, [255, 0, 0], function() { return area_values; }, dynamic_areas);
+                }
 
                 if (mode == 0b0010) {
                     // Alphanumeric encoding
@@ -500,13 +529,18 @@
                 } else if (mode == 0b0111) {
                     // ECI marker
                     var [eci_marker, read_offset, log_text, regions] = read_int_with_desc(bit_array, read_offset, 8, "ECI marker");
+                    let area_values = {"offset":read_offset-8, "value":eci_marker};
                     if (eci_marker == 26) {
                         log_text += " (UTF-8 charset)";
+                        area_values["desc"] = "UTF-8 charset";
+                        area_values["valid"] = true;
                     } else {
                         log_text += " (unsupported ECI marker)";
+                        area_values["desc"] = "Unsupported ECI marker \"" + eci_marker + "\"";
+                        area_values["valid"] = false;
                     }
                     detail_text += log_text + "\n";
-                    add_area("eci_marker_" + read_offset, regions, [0, 255, 255], function() { return ""; }, dynamic_areas);
+                    add_area("eci_marker_" + read_offset, regions, [0, 255, 255], function() { return area_values; }, dynamic_areas);
                 } else if (mode == 0b0) {
                     detail_text += "end-of-message marker reached.\n";
                     break;
