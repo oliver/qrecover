@@ -616,16 +616,21 @@
         </form>
         <input type="checkbox" id="cb_show_unmasked" onchange="draw_code()"><label for="cb_show_unmasked">Show Unmasked</label><br>
         <br>
-        <canvas id="can" style="border:2px solid;"></canvas>
 
-        <div id="data_details" style="float:right; padding: 20px">
-            Data:
+        <div style="display: flex; align-items: flex-start;">
+            <div>
+                <canvas id="can" style="border:2px solid;"></canvas>
+                <br>
+                <span id="mouse_pos"></span>
+            </div>
+
+            <div id="area_details" style="padding-left: 20px">
+                Areas:
+            </div>
+            <div id="data_details" style="padding-left: 20px">
+                Data:
+            </div>
         </div>
-        <div id="area_details" style="float:right; padding: 20px">
-            Areas:
-        </div>
-        <br>
-        <span id="mouse_pos"></span>
 
         <img id="img_example_code" style="display: none" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAABQUlEQVRIS61W0RKDIAwD/f9Pxmk9y8WYQrmbT7Mgbdoko9Zaf9dT1OPxa09Reyxuj635bz7H4rZLJvGD1UFRwijek2AlXhki8QoZHRbDiPx9moSRcLV/SeIIuH0jZLiWnolqH5KB13H4PYmkFrAGD1HtGbHLzo75G2SezUh9dg+eF6LKGBFqZIjWRIL9VcLLijGi/t0u1sjdR1IzohuJUemtJ5kxJCNGbl+nv89kRd1M0a7syOPcu9jguD0ZMToSqRNlFaxaPMAL2ratHMfRnRhn+dqPLozDVpYdoVPWg+3/WH3UNuW+iASLYs1MFT9Dx3NgTS17l6KxUv2n1TgTRc0oxkbJc3l9pyg88yhOjO/7vpfW2utOkPpnRIozMXz4TAyk83KSjK+x76VvKzjgSNnKhZ/Y+N4V3WI+1T6+pVp7AmL1+/532aUIAAAAAElFTkSuQmCC">
     </body>
