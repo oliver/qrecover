@@ -63,6 +63,8 @@
     }
 
     function init() {
+        update_load_button();
+
         add_all_areas();
 
         var top_div = document.getElementById("area_details");
@@ -494,12 +496,16 @@
             }
         }
     }
+
+    function update_load_button () {
+        document.getElementById("btn_load_image").disabled = (document.getElementById("imgInp").files.length != 1);
+    }
     </script>
 
     <body onload="init()">
         <form>
-            <input accept="image/*" type="file" id="imgInp" />
-            <input type="button" value="Load Selected File" onclick="load_from_file(this.form.imgInp)">
+            <input accept="image/*" type="file" id="imgInp" onchange="update_load_button();" />
+            <input type="button" id="btn_load_image" value="Load Selected File" onclick="load_from_file(this.form.imgInp)">
         </form>
         <input type="checkbox" id="cb_show_unmasked" onchange="draw_code()"><label for="cb_show_unmasked">Show Unmasked</label><br>
         <br>
