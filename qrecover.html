@@ -324,6 +324,10 @@
         function read_int (bits, offset, len) {
             var result_int = 0;
             for (var i = 0; i < len; i++) {
+                if (offset + i >= bits.length) {
+                    throw "offset " + (offset + i) + " is out of bounds";
+                }
+
                 result_int <<= 1;
                 if (bits[offset+i]) {
                     result_int |= 1;
@@ -339,42 +343,46 @@
         }
 
         var detail_text = "Decoded Data (from " +  bit_array.length + " bits):<br><pre>";
-        var text_payload = "";
-        var read_offset = 0;
-        while (read_offset < bit_array.length) {
-            var [mode, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 4, "mode");
-            detail_text += log_text + "\n";
-
-            if (mode == 0b0100) {
-                // Byte encoding
-                var [payload_length, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 8, "payload length");
+        try {
+            var text_payload = "";
+            var read_offset = 0;
+            while (read_offset < bit_array.length) {
+                var [mode, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 4, "mode");
                 detail_text += log_text + "\n";
 
-                for (var j = 0; j < payload_length; j++) {
-                    var [byte, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 8, "byte");
-                    detail_text += log_text
-                        + " (hex=0x" + byte.toString(16).padStart(2,"0")
-                        + "; bin=0b" + byte.toString(2).padStart(8,"0")
-                        + "; ASCII='" + String.fromCharCode(byte)
-                        + "')\n";
-                    text_payload += String.fromCharCode(byte);
-                }
-            } else if (mode == 0b0111) {
-                // ECI marker
-                var [eci_marker, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 8, "ECI marker");
-                if (eci_marker == 26) {
-                    log_text += " (UTF-8 charset)";
+                if (mode == 0b0100) {
+                    // Byte encoding
+                    var [payload_length, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 8, "payload length");
+                    detail_text += log_text + "\n";
+
+                    for (var j = 0; j < payload_length; j++) {
+                        var [byte, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 8, "byte");
+                        detail_text += log_text
+                            + " (hex=0x" + byte.toString(16).padStart(2,"0")
+                            + "; bin=0b" + byte.toString(2).padStart(8,"0")
+                            + "; ASCII='" + String.fromCharCode(byte)
+                            + "')\n";
+                        text_payload += String.fromCharCode(byte);
+                    }
+                } else if (mode == 0b0111) {
+                    // ECI marker
+                    var [eci_marker, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 8, "ECI marker");
+                    if (eci_marker == 26) {
+                        log_text += " (UTF-8 charset)";
+                    } else {
+                        log_text += " (unsupported ECI marker)";
+                    }
+                    detail_text += log_text + "\n";
+                } else if (mode == 0b0) {
+                    detail_text += "end-of-message marker reached.\n";
+                    break;
                 } else {
-                    log_text += " (unsupported ECI marker)";
+                    detail_text += "unsupported mode '" + mode + "'; decoding aborted.\n";
+                    break;
                 }
-                detail_text += log_text + "\n";
-            } else if (mode == 0b0) {
-                detail_text += "end-of-message marker reached.\n";
-                break;
-            } else {
-                detail_text += "unsupported mode '" + mode + "'; decoding aborted.\n";
-                break;
             }
+        } catch (ex) {
+            detail_text += "decoding error: " + ex + "'; decoding aborted.\n";
         }
         detail_text += "</pre><br>\nFound " + text_payload.length + " characters:<br><pre>" + text_payload + "</pre>";
         document.getElementById("data_details").innerHTML = detail_text;
