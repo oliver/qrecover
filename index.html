@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html>
+    <meta charset="utf-8"/>
+
+    <script type="text/javascript">
+    var code_size = 25;
+    var pixel_size = 20;
+    var pixel_data = new Array(code_size);
+    for (var i = 0; i < pixel_data.length; i++) {
+        pixel_data[i] = new Array(code_size);
+        pixel_data[i].fill(false);
+    }
+
+    var areas = new Array();
+
+    var canvas, ctx;
+
+
+    function add_area (id, x, y, w, h, color_values, check_function) {
+        areas[id] = {
+            "id":id,
+            "x":x,
+            "y":y,
+            "w":w,
+            "h":h,
+            "color":color_values,
+            "check_function":check_function
+        };
+    }
+
+    function get_pixels_as_bools (px, py, w, h, pixel_data_to_read = pixel_data) {
+        var result_array = new Array();
+        for (var y = py; y < py+h; y++) {
+            for (var x = px; x < px+w; x++) {
+                result_array.push(pixel_data_to_read[x][y] ? true : false);
+            }
+        }
+        return result_array;
+    }
+
+    function get_pixels_as_string (px, py, w, h) {
+        var result_string = "";
+        for (var bool_value of get_pixels_as_bools(px, py, w, h)) {
+            result_string += (bool_value ? "x" : ".");
+        }
+        return result_string;
+    }
+
+    function expect_pixels (pos_and_size, expected_values) {
+        var pixel_string = get_pixels_as_string(pos_and_size[0], pos_and_size[1], pos_and_size[2], pos_and_size[3]);
+
+        if (expected_values.length != pos_and_size[2] * pos_and_size[3]) {
+            throw {"desc":"internal error: bad expected size"};
+        }
+        for (var i = 0; i < pixel_string.length; i++) {
+            if (pixel_string[i] != expected_values[i]) {
+                throw {
+                    "x": (i % pos_and_size[2] ) + 1,
+                    "y": (Math.floor(i / pos_and_size[2])) + 1
+                };
+            }
+        }
+    }
+
+    function init() {
+        add_all_areas();
+
+        var top_div = document.getElementById("area_details");
+        for (var id in areas) {
+            var area = areas[id];
+            area.div = document.createElement("div");
+            top_div.appendChild(area.div);
+        }
+
+        canvas = document.getElementById('can');
+        canvas.width = code_size*pixel_size;
+        canvas.height = code_size*pixel_size;
+        ctx = canvas.getContext("2d");
+
+        draw_code();
+        canvas.addEventListener("mousedown", function (e) {
+            var [pix_x, pix_y] = event_to_pixel(e);
+            toggle_pixel(pix_x, pix_y);
+        }, false);
+
+        canvas.addEventListener("mousemove", function (e) {
+            var [pix_x, pix_y] = event_to_pixel(e);
+            if (pix_x < code_size && pix_y < code_size) {
+                document.getElementById("mouse_pos").innerHTML = "(" + (pix_x+0) + " / " + (pix_y+0) + ")";
+            }
+        }, false);
+    }
+
+    function add_all_areas () {
+        // three position markers:
+        add_area("pos_ul", 0, 0, 7, 7, [0, 255, 0], function (area) {
+            expect_pixels([area.x+0, area.y+0, 7, 7],
+                "xxxxxxx" +
+                "x.....x" +
+                "x.xxx.x" +
+                "x.xxx.x" +
+                "x.xxx.x" +
+                "x.....x" +
+                "xxxxxxx"
+            );
+            return "valid";
+        });
+        add_area("pos_ur", code_size-7, 0, 7, 7, [0, 255, 0], areas["pos_ul"].check_function);
+        add_area("pos_bl", 0, code_size-7, 7, 7, [0, 255, 0], areas["pos_ul"].check_function);
+
+        // one orientation marker (bottom right):
+        add_area("orient", 16, 16, 5, 5, [0, 255, 0], function (area) {
+            expect_pixels([area.x+0, area.y+0, 5, 5],
+                "xxxxx" +
+                "x...x" +
+                "x.x.x" +
+                "x...x" +
+                "xxxxx"
+            );
+            return "valid";
+        });
+
+        // spacers around all position markers:
+        add_area("spacing_ul_1", 0, 7, 8, 1, [192, 255, 128], function (area) {
+            expect_pixels([area.x, area.y, area.w, area.h], "........");
+            return "valid";
+        });
+        add_area("spacing_ul_2", 7, 0, 1, 7, [192, 255, 128], function (area) {
+            expect_pixels([area.x, area.y, area.w, area.h], ".......");
+            return "valid";
+        });
+        add_area("spacing_ur_1", code_size-8, 7, 8, 1, [192, 255, 128], areas["spacing_ul_1"].check_function);
+        add_area("spacing_ur_2", code_size-8, 0, 1, 7, [192, 255, 128], areas["spacing_ul_2"].check_function);
+        add_area("spacing_bl_1", 0, code_size-8, 8, 1, [192, 255, 128], areas["spacing_ul_1"].check_function);
+        add_area("spacing_bl_2", 7, code_size-7, 1, 7, [192, 255, 128], areas["spacing_ul_2"].check_function);
+
+        // two timing strips:
+        add_area("timing_top", 8, 6, 9, 1, [0, 0, 255], function (area) {
+            expect_pixels([area.x, area.y, area.w, area.h], "x.x.x.x.x");
+            return "valid";
+        });
+        add_area("timing_left", 6, 8, 1, 9, [0, 0, 255], areas["timing_top"].check_function);
+
+        // error correction level (redundantly):
+        const error_correction_levels = {
+            0: "H / High",
+            1: "Q / Quartile",
+            2: "M / Medium",
+            3: "L / Low"
+        };
+        add_area("format_ec_1", 0, 8, 2, 1, [255, 128, 0], function (area) {
+            const [bit0, bit1] = get_pixels_as_bools(area.x, area.y, area.w, area.h);
+            const ec_level = bits_to_int([bit0, bit1]) ^ 0b10;
+            return "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")";
+        });
+        add_area("format_ec_2", 8, code_size-2, 1, 2, [255, 128, 0], function (area) {
+            const [bit1, bit0] = get_pixels_as_bools(area.x, area.y, area.w, area.h);
+            const ec_level = bits_to_int([bit0, bit1]) ^ 0b10;
+            return "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")";
+        });
+
+        // mask pattern (redundantly):
+        add_area("format_mask_1", 2, 8, 3, 1, [128, 255, 0], function (area) {
+            const [bit0, bit1, bit2] = get_pixels_as_bools(area.x, area.y, area.w, area.h);
+            const mask_value = bits_to_int([bit0, bit1, bit2]) ^ 0b101;
+            return {
+                "desc": "Mask: " + mask_value + " (0b" + mask_value.toString(2) + ")",
+                "mask_value": mask_value
+            };
+        });
+        add_area("format_mask_2", 8, code_size-5, 1, 3, [128, 255, 0], function (area) {
+            const [bit2, bit1, bit0] = get_pixels_as_bools(area.x, area.y, area.w, area.h);
+            const mask_value = bits_to_int([bit0, bit1, bit2]) ^ 0b101;
+            return {
+                "desc": "Mask: " + mask_value + " (0b" + mask_value.toString(2) + ")",
+                "mask_value": mask_value
+            };
+        });
+
+        // error correction values for format and mask (currently only added so that the data bits are read correctly):
+        // TODO: decode these bits
+        add_area("format_ec_ur", code_size-8, 8, 8, 1, [192, 128, 128], function() { return ""; });
+        add_area("format_ec_ul_1", 8, 0, 1, 6, [192, 128, 128], function() { return ""; });
+        add_area("format_ec_ul_2", 8, 7, 1, 1, [192, 128, 128], function() { return ""; });
+        add_area("format_ec_ul_3", 7, 8, 2, 1, [192, 128, 128], function() { return ""; });
+        add_area("format_ec_ul_4", 5, 8, 1, 1, [192, 128, 128], function() { return ""; });
+        add_area("format_ec_bl", 8, code_size-8, 1, 3, [192, 128, 128], function() { return ""; });
+    }
+
+    function bits_to_int (bool_array) {
+        var int_result = 0;
+        for (bool_value of bool_array) {
+            int_result <<= 1;
+            int_result |= (bool_value ? 1 : 0);
+        }
+        return int_result;
+    }
+
+    function get_masked_pixels () {
+        const mask_types = {
+            0: function (i,j) { return (i+j) % 2 == 0; },
+            1: function (i,j) { return i % 2 == 0; },
+            2: function (i,j) { return j % 3 == 0; },
+            3: function (i,j) { return (i + j) % 3 == 0; },
+            4: function (i,j) { return (Math.floor(i/2) + Math.floor(j/3)) % 2 == 0; },
+            5: function (i,j) { return (i*j)%2 + (i*j)%3 == 0; },
+            6: function (i,j) { return ((i*j)%3 + i*j) % 2 == 0; },
+            7: function (i,j) { return ((i*j) % 3 +i+j) % 2 == 0; }
+        };
+
+        var mask_value = areas["format_mask_1"].check_function(areas["format_mask_1"])["mask_value"];
+        const mask_bit_function = mask_types[mask_value];
+
+        var masked_pixel_data = new Array(code_size);
+        for (var x = 0; x < code_size; x++) {
+            masked_pixel_data[x] = new Array(code_size);
+            for (var y = 0; y < code_size; y++) {
+                var mask_bit_set = mask_bit_function(y, x);
+                masked_pixel_data[x][y] = pixel_data[x][y] ^ mask_bit_set;
+            }
+        }
+        return masked_pixel_data;
+    }
+
+    function draw_grid () {
+        ctx.strokeStyle = "rgba(0,0,0, 0.5)";
+        ctx.lineWidth = 1;
+        for (i = 0; i < code_size; i++) {
+            ctx.beginPath();
+            ctx.moveTo(i * pixel_size, 0);
+            ctx.lineTo(i * pixel_size, code_size*pixel_size);
+            ctx.stroke();
+            ctx.closePath();
+
+            ctx.beginPath();
+            ctx.moveTo(0, i * pixel_size);
+            ctx.lineTo(code_size * pixel_size, i*pixel_size);
+            ctx.stroke();
+            ctx.closePath();
+        }
+    }
+
+    function event_to_pixel (e) {
+        var pix_x = Math.floor((e.clientX - canvas.offsetLeft) / pixel_size);
+        var pix_y = Math.floor((e.clientY - canvas.offsetTop) / pixel_size);
+        return [pix_x, pix_y];
+    }
+
+    function toggle_pixel (px, py) {
+        var set_pixel = !(pixel_data[px][py]);
+        pixel_data[px][py] = set_pixel;
+        draw_code();
+    }
+
+    function draw_rect (px, py, w, h) {
+        ctx.fillRect(px*pixel_size, py*pixel_size, w*pixel_size, h*pixel_size);
+    }
+
+    function draw_code () {
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, code_size*pixel_size, code_size*pixel_size);
+
+        var displayed_pixel_data = pixel_data;
+        if (document.getElementById("cb_show_unmasked").checked) {
+            // TODO: apply unmasking only to data areas
+            displayed_pixel_data = get_masked_pixels();
+        }
+
+        for (var x = 0; x < code_size; x++) {
+            for (var y = 0; y < code_size; y++) {
+                draw_pixel(x, y, displayed_pixel_data[x][y]);
+            }
+        }
+
+        for (id in areas) {
+            area = areas[id];
+            ctx.fillStyle = "rgba(" + area.color[0] + ", " + area.color[1] + ", " + area.color[2] + ", 0.5)";
+            draw_rect(area.x, area.y, area.w, area.h);
+
+            area.div.innerHTML = "<b>" + id + ":</b><br>";
+            try {
+                var result_obj = area.check_function(area);
+                if (typeof(result_obj) == "object") {
+                    area.div.innerHTML += result_obj["desc"];
+                } else {
+                    area.div.innerHTML += result_obj;
+                }
+            } catch (ex) {
+                if (ex.hasOwnProperty("x")) {
+                    area.div.innerHTML += "<span style='color: red;'>Invalid Pixel at (" + ex.x + "/" + ex.y + ")</span>";
+                } else if (ex.desc) {
+                    area.div.innerHTML += "<span style='color: red;'>Error</span> (" + ex.desc + ")";
+                } else {
+                    area.div.innerHTML += "<span style='color: red;'>Invalid Pixels</span><br>(" + ex + ")";
+                }
+            }
+        }
+        draw_grid();
+
+        // draw data pixel numbers:
+        var curr_x = code_size-1;
+        var curr_y = code_size-1;
+        ctx.font = "11px monospace";
+        var i = 0;
+        do {
+            ctx.fillStyle = displayed_pixel_data[curr_x][curr_y] ? "white" : "black";
+            ctx.fillText(("" + i).padStart(3, " "), curr_x*pixel_size, (curr_y+1)*pixel_size - 5);
+            [curr_x, curr_y, end_reached] = next_data_pixel_pos(curr_x, curr_y);
+            i++;
+        } while (!end_reached);
+
+        // read data bits (into an array of bools):
+        var curr_x = code_size-1;
+        var curr_y = code_size-1;
+        var end_reached = false;
+        var bit_array = new Array();
+        do {
+            var bit_set = get_pixels_as_bools(curr_x, curr_y, 1, 1, get_masked_pixels())[0];
+            bit_array.push(bit_set);
+            [curr_x, curr_y, end_reached] = next_data_pixel_pos(curr_x, curr_y);
+        } while (!end_reached);
+
+        // decode data bits:
+        function read_int (bits, offset, len) {
+            var result_int = 0;
+            for (var i = 0; i < len; i++) {
+                if (offset + i >= bits.length) {
+                    throw "offset " + (offset + i) + " is out of bounds";
+                }
+
+                result_int <<= 1;
+                if (bits[offset+i]) {
+                    result_int |= 1;
+                }
+            }
+            return [result_int, offset+len];
+        }
+
+        function read_int_with_desc (bits, offset, len, entry_name) {
+            var orig_offset = offset;
+            var [int_value, read_offset] = read_int(bits, offset, len);
+            return [int_value, read_offset, "" + orig_offset.toString().padStart(3, " ") + ": " + entry_name + " = " + int_value.toString().padStart(3, " ")];
+        }
+
+        var detail_text = "Decoded Data (from " +  bit_array.length + " bits):<br><pre>";
+        try {
+            var text_payload = "";
+            var read_offset = 0;
+            while (read_offset < bit_array.length) {
+                var [mode, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 4, "mode");
+                detail_text += log_text + "\n";
+
+                if (mode == 0b0100) {
+                    // Byte encoding
+                    var [payload_length, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 8, "payload length");
+                    detail_text += log_text + "\n";
+
+                    for (var j = 0; j < payload_length; j++) {
+                        var [byte, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 8, "byte");
+                        detail_text += log_text
+                            + " (hex=0x" + byte.toString(16).padStart(2,"0")
+                            + "; bin=0b" + byte.toString(2).padStart(8,"0")
+                            + "; ASCII='" + String.fromCharCode(byte)
+                            + "')\n";
+                        text_payload += String.fromCharCode(byte);
+                    }
+                } else if (mode == 0b0111) {
+                    // ECI marker
+                    var [eci_marker, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 8, "ECI marker");
+                    if (eci_marker == 26) {
+                        log_text += " (UTF-8 charset)";
+                    } else {
+                        log_text += " (unsupported ECI marker)";
+                    }
+                    detail_text += log_text + "\n";
+                } else if (mode == 0b0) {
+                    detail_text += "end-of-message marker reached.\n";
+                    break;
+                } else {
+                    detail_text += "unsupported mode '" + mode + "'; decoding aborted.\n";
+                    break;
+                }
+            }
+        } catch (ex) {
+            detail_text += "decoding error: " + ex + "'; decoding aborted.\n";
+        }
+        detail_text += "</pre><br>\nFound " + text_payload.length + " characters:<br><pre>" + text_payload + "</pre>";
+        document.getElementById("data_details").innerHTML = detail_text;
+    }
+
+    function draw_pixel (px, py, set_pixel) {
+        ctx.beginPath();
+        ctx.fillStyle = set_pixel ? "black" : "white";
+        ctx.fillRect(px*pixel_size, py*pixel_size, pixel_size, pixel_size);
+        ctx.closePath();
+    }
+
+
+    // Returns the actual next data pixel position (taking static areas into account)
+    function next_data_pixel_pos (x, y) {
+        // simply skip over positions that are inside an area:
+        do {
+            [x, y, end_reached] = next_position_in_grid(x, y);
+            if (end_reached) {
+                return [undefined, undefined, true];
+            }
+        } while (inside_areas(x, y, areas));
+        return [x, y, false];
+    }
+
+    function inside_area (x, y, area) {
+        return (x >= area.x && x < area.x+area.w &&
+                y >= area.y && y < area.y+area.h);
+    }
+
+    function inside_areas (x, y, area_map) {
+        for (area_id in area_map) {
+            if (inside_area(x, y, area_map[area_id])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Returns the next data pixel position on the grid (regardless of static areas).
+    function next_position_in_grid (x, y) {
+        // skip over vertical timing strip
+        if (x == 6) {
+            return [x-1, y, false];
+        }
+
+        // calculate current direction in zig-zag pattern:
+        var going_up, going_left;
+        if (x >= 7) {
+            // right of vertical timing strip
+            going_up =   ((x-7) % 4 < 2);
+            going_left = ((x-7) % 2 == 1);
+        } else {
+            // left of vertical timing strip
+            going_up =   (x % 4 >= 2);
+            going_left = (x % 2 == 1);
+        }
+
+        // follow zig-zag pattern:
+        var rx = x, ry = y;
+        if (going_left) {
+            rx--;
+        } else {
+            rx++;
+            if (going_up) {
+                ry--;
+            } else {
+                ry++;
+            }
+        }
+
+        if (ry < 0) {
+            // turn around at top edge
+            rx-=2;
+            ry++;
+        } else if (ry > code_size-1) {
+            // turn around at bottom edge
+            rx-=2;
+            ry--;
+        }
+
+        if (rx < 0) {
+            // left edge: end of data bits reached
+            return [undefined, undefined, true];
+        } else {
+            return [rx, ry, false];
+        }
+    }
+
+    function load_from_file (img_input_field) {
+        const [file] = img_input_field.files;
+        if (file) {
+            var img_obj = new Image();
+            img_obj.src = URL.createObjectURL(file);
+            img_obj.onload = function () {
+                var img_canvas = document.createElement("canvas");
+                img_canvas.width = img_obj.width;
+                img_canvas.height = img_obj.height;
+                img_canvas.getContext("2d").drawImage(img_obj, 0, 0, img_obj.width, img_obj.height);
+                var image_pixel_data = img_canvas.getContext("2d").getImageData(0, 0, img_obj.width, img_obj.height).data;
+
+                for (var x = 0; x < Math.min(img_obj.width, code_size); x++) {
+                    for (var y = 0; y < Math.min(img_obj.height, code_size); y++) {
+                        const red_value = image_pixel_data[(y*img_obj.width + x) * 4];
+                        pixel_data[x][y] = (red_value < 128) ? true : false;
+                    }
+                }
+                draw_code();
+            }
+        }
+    }
+    </script>
+
+    <body onload="init()">
+        <form>
+            <input accept="image/*" type="file" id="imgInp" />
+            <input type="button" value="Load Selected File" onclick="load_from_file(this.form.imgInp)">
+        </form>
+        <input type="checkbox" id="cb_show_unmasked" onchange="draw_code()"><label for="cb_show_unmasked">Show Unmasked</label><br>
+        <br>
+        <canvas id="can" style="border:2px solid;"></canvas>
+
+        <div id="data_details" style="float:right; padding: 20px">
+            Data:
+        </div>
+        <div id="area_details" style="float:right; padding: 20px">
+            Areas:
+        </div>
+        <br>
+        <span id="mouse_pos"></span>
+    </body>
+    </html>
