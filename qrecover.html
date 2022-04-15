@@ -442,7 +442,14 @@
         function read_int_with_desc (bits, offset, len, entry_name) {
             var orig_offset = offset;
             var [int_value, read_offset] = read_int(bits, offset, len);
-            return [int_value, read_offset, "" + orig_offset.toString().padStart(3, " ") + ": " + entry_name + " = " + int_value.toString().padStart(3, " ")];
+
+            var regions = [];
+            for (var i = 0; i < len; i++) {
+                const pos = bit_offset_to_pixel_position[orig_offset+i];
+                regions.push([pos.x, pos.y, 1, 1]);
+            }
+
+            return [int_value, read_offset, "" + orig_offset.toString().padStart(3, " ") + ": " + entry_name + " = " + int_value.toString().padStart(3, " "), regions];
         }
 
         dynamic_areas = new Map();
@@ -451,15 +458,9 @@
             var text_payload = "";
             var read_offset = 0;
             while (read_offset < bit_array.length) {
-                var regions = [];
-                for (var i = 0; i < 4; i++) {
-                    const pos = bit_offset_to_pixel_position[read_offset+i];
-                    regions.push([pos.x, pos.y, 1, 1]);
-                }
-                add_area("mode_" + read_offset, regions, [255, 0, 0], function() { return ""; }, dynamic_areas);
-
-                var [mode, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 4, "mode");
+                var [mode, read_offset, log_text, regions] = read_int_with_desc(bit_array, read_offset, 4, "mode");
                 detail_text += log_text + "\n";
+                add_area("mode_" + read_offset, regions, [255, 0, 0], function() { return ""; }, dynamic_areas);
 
                 if (mode == 0b0010) {
                     // Alphanumeric encoding
@@ -498,13 +499,14 @@
                     }
                 } else if (mode == 0b0111) {
                     // ECI marker
-                    var [eci_marker, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 8, "ECI marker");
+                    var [eci_marker, read_offset, log_text, regions] = read_int_with_desc(bit_array, read_offset, 8, "ECI marker");
                     if (eci_marker == 26) {
                         log_text += " (UTF-8 charset)";
                     } else {
                         log_text += " (unsupported ECI marker)";
                     }
                     detail_text += log_text + "\n";
+                    add_area("eci_marker_" + read_offset, regions, [0, 255, 255], function() { return ""; }, dynamic_areas);
                 } else if (mode == 0b0) {
                     detail_text += "end-of-message marker reached.\n";
                     break;
