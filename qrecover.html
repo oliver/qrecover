@@ -99,6 +99,19 @@
         }
     }
 
+    function highlight_area (area) {
+        if (highlighted_area) {
+            highlighted_area.div.style.border = "3px solid white";
+        }
+
+        highlighted_area = area;
+
+        if (highlighted_area) {
+            highlighted_area.div.style.border = "3px solid red";
+        }
+        draw_code();
+    }
+
     function init() {
         update_load_button();
 
@@ -108,13 +121,12 @@
         for (var id in areas) {
             let area = areas[id];
             area.div = document.createElement("div");
+            area.div.style.border = "3px solid white";
             area.div.addEventListener("mouseover", function (e) {
-                highlighted_area = area;
-                draw_code();
+                highlight_area(area);
             });
             area.div.addEventListener("mouseout", function (e) {
-                highlighted_area = null;
-                draw_code();
+                highlight_area(null);
             });
             top_div.appendChild(area.div);
         }
@@ -134,6 +146,11 @@
             var [pix_x, pix_y] = event_to_pixel(e);
             if (pix_x < code_size && pix_y < code_size) {
                 document.getElementById("mouse_pos").innerHTML = "(" + (pix_x+0) + " / " + (pix_y+0) + ")";
+            }
+
+            const hovered_area = inside_areas(pix_x, pix_y, areas);
+            if (highlighted_area != hovered_area) {
+                highlight_area(hovered_area);
             }
         }, false);
 
@@ -502,10 +519,10 @@
     function inside_areas (x, y, area_map) {
         for (area_id in area_map) {
             if (inside_area(x, y, area_map[area_id])) {
-                return true;
+                return area_map[area_id];
             }
         }
-        return false;
+        return null;
     }
 
     // Returns the next data pixel position on the grid (regardless of static areas).
