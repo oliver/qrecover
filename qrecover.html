@@ -115,7 +115,7 @@
         canvas.height = code_size*pixel_size;
         ctx = canvas.getContext("2d");
 
-        canvas.addEventListener("mousedown", function (e) {
+        canvas.addEventListener("click", function (e) {
             var [pix_x, pix_y] = event_to_pixel(e);
             toggle_pixel(pix_x, pix_y);
             save_state();
