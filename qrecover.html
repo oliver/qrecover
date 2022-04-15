@@ -131,6 +131,7 @@
         if (!restore_state()) {
             load_from_img_object(document.getElementById('img_example_code'));
         }
+        decode();
         draw_code();
     }
 
@@ -292,6 +293,7 @@
     function toggle_pixel (px, py) {
         var set_pixel = !(pixel_data[px][py]);
         pixel_data[px][py] = set_pixel;
+        decode();
         draw_code();
     }
 
@@ -319,7 +321,33 @@
             area = areas[id];
             ctx.fillStyle = "rgba(" + area.color[0] + ", " + area.color[1] + ", " + area.color[2] + ", 0.5)";
             draw_rect(area.x, area.y, area.w, area.h);
+        }
+        draw_grid();
 
+        // draw data pixel numbers:
+        var curr_x = code_size-1;
+        var curr_y = code_size-1;
+        ctx.font = "11px monospace";
+        var i = 0;
+        do {
+            ctx.fillStyle = displayed_pixel_data[curr_x][curr_y] ? "white" : "black";
+            ctx.fillText(("" + i).padStart(3, " "), curr_x*pixel_size, (curr_y+1)*pixel_size - 5);
+            [curr_x, curr_y, end_reached] = next_data_pixel_pos(curr_x, curr_y);
+            i++;
+        } while (!end_reached);
+    }
+
+    function draw_pixel (px, py, set_pixel) {
+        ctx.beginPath();
+        ctx.fillStyle = set_pixel ? "black" : "white";
+        ctx.fillRect(px*pixel_size, py*pixel_size, pixel_size, pixel_size);
+        ctx.closePath();
+    }
+
+
+    function decode () {
+        for (id in areas) {
+            area = areas[id];
             area.div.innerHTML = "<b>" + id + ":</b><br>";
             try {
                 var result_obj = area.check_function(area);
@@ -338,19 +366,6 @@
                 }
             }
         }
-        draw_grid();
-
-        // draw data pixel numbers:
-        var curr_x = code_size-1;
-        var curr_y = code_size-1;
-        ctx.font = "11px monospace";
-        var i = 0;
-        do {
-            ctx.fillStyle = displayed_pixel_data[curr_x][curr_y] ? "white" : "black";
-            ctx.fillText(("" + i).padStart(3, " "), curr_x*pixel_size, (curr_y+1)*pixel_size - 5);
-            [curr_x, curr_y, end_reached] = next_data_pixel_pos(curr_x, curr_y);
-            i++;
-        } while (!end_reached);
 
         // read data bits (into an array of bools):
         var curr_x = code_size-1;
@@ -451,14 +466,6 @@
         detail_text += "</pre><br>\nFound " + text_payload.length + " characters:<br><pre>" + text_payload + "</pre>";
         document.getElementById("data_details").innerHTML = detail_text;
     }
-
-    function draw_pixel (px, py, set_pixel) {
-        ctx.beginPath();
-        ctx.fillStyle = set_pixel ? "black" : "white";
-        ctx.fillRect(px*pixel_size, py*pixel_size, pixel_size, pixel_size);
-        ctx.closePath();
-    }
-
 
     // Returns the actual next data pixel position (taking static areas into account)
     function next_data_pixel_pos (x, y) {
@@ -561,6 +568,7 @@
             }
         }
         save_state();
+        decode();
         draw_code();
     }
 
