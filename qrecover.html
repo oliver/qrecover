@@ -13,6 +13,7 @@
     }
 
     var static_areas = new Map();
+    var dynamic_areas  = new Map();
     var highlighted_area = null;
 
     var canvas, ctx;
@@ -38,8 +39,8 @@
         alphanumeric_table.set(i, String.fromCharCode(i - 10 + 65)); // uppercase letters
     }
 
-    function add_area (id, region_list, color_values, check_function) {
-        static_areas.set(id, {
+    function add_area (id, region_list, color_values, check_function, target_map = static_areas) {
+        target_map.set(id, {
             "id":id,
             "regions":[],
             "color":color_values,
@@ -47,7 +48,7 @@
         });
 
         for (region of region_list) {
-            static_areas.get(id).regions.push({
+            target_map.get(id).regions.push({
                 "x": region[0], "y": region[1], "w": region[2], "h": region[3]
             });
         }
@@ -122,19 +123,6 @@
         update_load_button();
 
         add_all_areas();
-
-        var top_div = document.getElementById("area_details");
-        for (const [id, area] of static_areas.entries()) {
-            area.div = document.createElement("div");
-            area.div.style.border = "3px solid white";
-            area.div.addEventListener("mouseover", function (e) {
-                highlight_area(area);
-            });
-            area.div.addEventListener("mouseout", function (e) {
-                highlight_area(null);
-            });
-            top_div.appendChild(area.div);
-        }
 
         canvas = document.getElementById('can');
         canvas.width = code_size*pixel_size;
@@ -384,7 +372,23 @@
 
 
     function decode () {
-        for (const [id, area] of static_areas.entries()) {
+        dynamic_areas = new Map();
+
+        var all_areas = new Map([...static_areas, ...dynamic_areas]);
+
+        var top_div = document.getElementById("area_details");
+        top_div.innerHTML = "Areas:";
+        for (const [id, area] of all_areas.entries()) {
+            area.div = document.createElement("div");
+            area.div.style.border = "3px solid white";
+            area.div.addEventListener("mouseover", function (e) {
+                highlight_area(area);
+            });
+            area.div.addEventListener("mouseout", function (e) {
+                highlight_area(null);
+            });
+            top_div.appendChild(area.div);
+
             area.div.innerHTML = "<b>" + id + ":</b><br>";
             try {
                 var result_obj = area.check_function(area);
