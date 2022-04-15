@@ -62,6 +62,21 @@
         }
     }
 
+    function save_state () {
+        sessionStorage.setItem("pixel_data", JSON.stringify(pixel_data));
+    }
+
+    function restore_state () {
+        try {
+            if (sessionStorage.getItem("pixel_data")) {
+                pixel_data = JSON.parse(sessionStorage.getItem("pixel_data"));
+                return true;
+            }
+        } catch (ex) {
+            console.log("error restoring saved pixel data (" + ex + ")");
+        }
+    }
+
     function init() {
         update_load_button();
 
@@ -79,10 +94,10 @@
         canvas.height = code_size*pixel_size;
         ctx = canvas.getContext("2d");
 
-        draw_code();
         canvas.addEventListener("mousedown", function (e) {
             var [pix_x, pix_y] = event_to_pixel(e);
             toggle_pixel(pix_x, pix_y);
+            save_state();
         }, false);
 
         canvas.addEventListener("mousemove", function (e) {
@@ -92,7 +107,10 @@
             }
         }, false);
 
-        load_from_img_object(document.getElementById('img_example_code'));
+        if (!restore_state()) {
+            load_from_img_object(document.getElementById('img_example_code'));
+        }
+        draw_code();
     }
 
     function add_all_areas () {
@@ -500,6 +518,7 @@
                 pixel_data[x][y] = (red_value < 128) ? true : false;
             }
         }
+        save_state();
         draw_code();
     }
 
