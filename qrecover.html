@@ -54,6 +54,10 @@
         }
     }
 
+    function get_all_areas () {
+        return new Map([...static_areas, ...dynamic_areas]);
+    }
+
     // @param region An object with x,y,w,h attributes
     function get_pixels_as_bools (region, pixel_data_to_read = pixel_data) {
         var result_array = new Array();
@@ -122,7 +126,7 @@
     function init() {
         update_load_button();
 
-        add_all_areas();
+        add_static_areas();
 
         canvas = document.getElementById('can');
         canvas.width = code_size*pixel_size;
@@ -141,7 +145,7 @@
                 document.getElementById("mouse_pos").innerHTML = "(" + (pix_x+0) + " / " + (pix_y+0) + ")";
             }
 
-            const hovered_area = inside_areas(pix_x, pix_y, static_areas);
+            const hovered_area = inside_areas(pix_x, pix_y, get_all_areas());
             if (highlighted_area != hovered_area) {
                 highlight_area(hovered_area);
             }
@@ -154,7 +158,7 @@
         draw_code();
     }
 
-    function add_all_areas () {
+    function add_static_areas () {
         // three position markers:
         add_area("pos_ul", [[0, 0, 7, 7]], [0, 255, 0], function (area) {
             expect_pixels(area.regions,
@@ -334,7 +338,7 @@
             }
         }
 
-        for (const [id, area] of static_areas.entries()) {
+        for (const [id, area] of get_all_areas().entries()) {
             ctx.fillStyle = "rgba(" + area.color[0] + ", " + area.color[1] + ", " + area.color[2] + ", 0.5)";
             for (region of area.regions) {
                 draw_rect(region.x, region.y, region.w, region.h);
@@ -371,14 +375,10 @@
     }
 
 
-    function decode () {
-        dynamic_areas = new Map();
-
-        var all_areas = new Map([...static_areas, ...dynamic_areas]);
-
+    function update_area_details_list () {
         var top_div = document.getElementById("area_details");
         top_div.innerHTML = "Areas:";
-        for (const [id, area] of all_areas.entries()) {
+        for (const [id, area] of get_all_areas().entries()) {
             area.div = document.createElement("div");
             area.div.style.border = "3px solid white";
             area.div.addEventListener("mouseover", function (e) {
@@ -407,15 +407,19 @@
                 }
             }
         }
+    }
 
+    function decode () {
         // read data bits (into an array of bools):
         var curr_x = code_size-1;
         var curr_y = code_size-1;
         var end_reached = false;
         var bit_array = new Array();
+        var bit_offset_to_pixel_position = new Array();
         do {
             var bit_set = get_pixels_as_bools({"x":curr_x, "y":curr_y, "w":1, "h":1}, get_masked_pixels())[0];
             bit_array.push(bit_set);
+            bit_offset_to_pixel_position.push({"x":curr_x, "y":curr_y});
             [curr_x, curr_y, end_reached] = next_data_pixel_pos(curr_x, curr_y);
         } while (!end_reached);
 
@@ -441,11 +445,19 @@
             return [int_value, read_offset, "" + orig_offset.toString().padStart(3, " ") + ": " + entry_name + " = " + int_value.toString().padStart(3, " ")];
         }
 
+        dynamic_areas = new Map();
         var detail_text = "Decoded Data (from " +  bit_array.length + " bits):<br><pre>";
         try {
             var text_payload = "";
             var read_offset = 0;
             while (read_offset < bit_array.length) {
+                var regions = [];
+                for (var i = 0; i < 4; i++) {
+                    const pos = bit_offset_to_pixel_position[read_offset+i];
+                    regions.push([pos.x, pos.y, 1, 1]);
+                }
+                add_area("mode_" + read_offset, regions, [255, 0, 0], function() { return ""; }, dynamic_areas);
+
                 var [mode, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 4, "mode");
                 detail_text += log_text + "\n";
 
@@ -506,6 +518,8 @@
         }
         detail_text += "</pre><br>\nFound " + text_payload.length + " characters:<br><pre>" + text_payload + "</pre>";
         document.getElementById("data_details").innerHTML = detail_text;
+
+        update_area_details_list();
     }
 
     // Returns the actual next data pixel position (taking static areas into account)
