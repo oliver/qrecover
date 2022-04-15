@@ -12,7 +12,7 @@
         pixel_data[i].fill(false);
     }
 
-    var areas = new Array();
+    var areas = new Map();
     var highlighted_area = null;
 
     var canvas, ctx;
@@ -39,15 +39,15 @@
     }
 
     function add_area (id, region_list, color_values, check_function) {
-        areas[id] = {
+        areas.set(id, {
             "id":id,
             "regions":[],
             "color":color_values,
             "check_function":check_function
-        };
+        });
 
         for (region of region_list) {
-            areas[id].regions.push({
+            areas.get(id).regions.push({
                 "x": region[0], "y": region[1], "w": region[2], "h": region[3]
             });
         }
@@ -124,8 +124,7 @@
         add_all_areas();
 
         var top_div = document.getElementById("area_details");
-        for (var id in areas) {
-            let area = areas[id];
+        for (const [id, area] of areas.entries()) {
             area.div = document.createElement("div");
             area.div.style.border = "3px solid white";
             area.div.addEventListener("mouseover", function (e) {
@@ -181,8 +180,8 @@
             );
             return "valid";
         });
-        add_area("pos_ur", [[code_size-7, 0, 7, 7]], [0, 255, 0], areas["pos_ul"].check_function);
-        add_area("pos_bl", [[0, code_size-7, 7, 7]], [0, 255, 0], areas["pos_ul"].check_function);
+        add_area("pos_ur", [[code_size-7, 0, 7, 7]], [0, 255, 0], areas.get("pos_ul").check_function);
+        add_area("pos_bl", [[0, code_size-7, 7, 7]], [0, 255, 0], areas.get("pos_ul").check_function);
 
         // one orientation marker (bottom right):
         add_area("orient", [[16, 16, 5, 5]], [0, 255, 0], function (area) {
@@ -205,17 +204,17 @@
             expect_pixels(area.regions, ".......");
             return "valid";
         });
-        add_area("spacing_ur_1", [[code_size-8, 7, 8, 1]], [192, 255, 128], areas["spacing_ul_1"].check_function);
-        add_area("spacing_ur_2", [[code_size-8, 0, 1, 7]], [192, 255, 128], areas["spacing_ul_2"].check_function);
-        add_area("spacing_bl_1", [[0, code_size-8, 8, 1]], [192, 255, 128], areas["spacing_ul_1"].check_function);
-        add_area("spacing_bl_2", [[7, code_size-7, 1, 7]], [192, 255, 128], areas["spacing_ul_2"].check_function);
+        add_area("spacing_ur_1", [[code_size-8, 7, 8, 1]], [192, 255, 128], areas.get("spacing_ul_1").check_function);
+        add_area("spacing_ur_2", [[code_size-8, 0, 1, 7]], [192, 255, 128], areas.get("spacing_ul_2").check_function);
+        add_area("spacing_bl_1", [[0, code_size-8, 8, 1]], [192, 255, 128], areas.get("spacing_ul_1").check_function);
+        add_area("spacing_bl_2", [[7, code_size-7, 1, 7]], [192, 255, 128], areas.get("spacing_ul_2").check_function);
 
         // two timing strips:
         add_area("timing_top", [[8, 6, 9, 1]], [0, 0, 255], function (area) {
             expect_pixels(area.regions, "x.x.x.x.x");
             return "valid";
         });
-        add_area("timing_left", [[6, 8, 1, 9]], [0, 0, 255], areas["timing_top"].check_function);
+        add_area("timing_left", [[6, 8, 1, 9]], [0, 0, 255], areas.get("timing_top").check_function);
 
         // error correction level (redundantly):
         const error_correction_levels = {
@@ -282,7 +281,7 @@
             7: function (i,j) { return ((i*j) % 3 +i+j) % 2 == 0; }
         };
 
-        var mask_value = areas["format_mask_1"].check_function(areas["format_mask_1"])["mask_value"];
+        var mask_value = areas.get("format_mask_1").check_function(areas.get("format_mask_1"))["mask_value"];
         const mask_bit_function = mask_types[mask_value];
 
         var masked_pixel_data = new Array(code_size);
@@ -347,8 +346,7 @@
             }
         }
 
-        for (id in areas) {
-            area = areas[id];
+        for (const [id, area] of areas.entries()) {
             ctx.fillStyle = "rgba(" + area.color[0] + ", " + area.color[1] + ", " + area.color[2] + ", 0.5)";
             for (region of area.regions) {
                 draw_rect(region.x, region.y, region.w, region.h);
@@ -386,8 +384,7 @@
 
 
     function decode () {
-        for (id in areas) {
-            area = areas[id];
+        for (const [id, area] of areas.entries()) {
             area.div.innerHTML = "<b>" + id + ":</b><br>";
             try {
                 var result_obj = area.check_function(area);
@@ -530,9 +527,9 @@
     }
 
     function inside_areas (x, y, area_map) {
-        for (area_id in area_map) {
-            if (inside_area(x, y, area_map[area_id])) {
-                return area_map[area_id];
+        for (const [id, area] of areas.entries()) {
+            if (inside_area(x, y, area)) {
+                return area;
             }
         }
         return null;
