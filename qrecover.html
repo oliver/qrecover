@@ -301,23 +301,24 @@
         var curr_x = code_size-1;
         var curr_y = code_size-1;
         ctx.font = "11px monospace";
-        for (var i = 0; i < 340; i++) {
+        var i = 0;
+        do {
             ctx.fillStyle = displayed_pixel_data[curr_x][curr_y] ? "white" : "black";
             ctx.fillText(("" + i).padStart(3, " "), curr_x*pixel_size, (curr_y+1)*pixel_size - 5);
-            [curr_x, curr_y] = next_data_pixel_pos(curr_x, curr_y);
-        }
+            [curr_x, curr_y, end_reached] = next_data_pixel_pos(curr_x, curr_y);
+            i++;
+        } while (!end_reached);
 
         // read data bits (into an array of bools):
         var curr_x = code_size-1;
         var curr_y = code_size-1;
+        var end_reached = false;
         var bit_array = new Array();
-        for (var j = 0; j < 40; j++) {
-            for (var i = 0; i < 8; i++) {
-                var bit_set = get_pixels_as_bools(curr_x, curr_y, 1, 1, get_masked_pixels())[0];
-                bit_array.push(bit_set);
-                [curr_x, curr_y] = next_data_pixel_pos(curr_x, curr_y);
-            }
-        }
+        do {
+            var bit_set = get_pixels_as_bools(curr_x, curr_y, 1, 1, get_masked_pixels())[0];
+            bit_array.push(bit_set);
+            [curr_x, curr_y, end_reached] = next_data_pixel_pos(curr_x, curr_y);
+        } while (!end_reached);
 
         // decode data bits:
         function read_int (bits, offset, len) {
@@ -391,9 +392,12 @@
     function next_data_pixel_pos (x, y) {
         // simply skip over positions that are inside an area:
         do {
-            [x, y] = next_position_in_grid(x, y);
+            [x, y, end_reached] = next_position_in_grid(x, y);
+            if (end_reached) {
+                return [undefined, undefined, true];
+            }
         } while (inside_areas(x, y, areas));
-        return [x, y];
+        return [x, y, false];
     }
 
     function inside_area (x, y, area) {
@@ -414,7 +418,7 @@
     function next_position_in_grid (x, y) {
         // skip over vertical timing strip
         if (x == 6) {
-            return [x-1, y];
+            return [x-1, y, false];
         }
 
         // calculate current direction in zig-zag pattern:
@@ -451,7 +455,13 @@
             rx-=2;
             ry--;
         }
-        return [rx, ry];
+
+        if (rx < 0) {
+            // left edge: end of data bits reached
+            return [undefined, undefined, true];
+        } else {
+            return [rx, ry, false];
+        }
     }
 
     function load_from_file (img_input_field) {
