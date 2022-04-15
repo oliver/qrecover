@@ -112,13 +112,13 @@
 
     function highlight_area (area) {
         if (highlighted_area) {
-            highlighted_area.div.style.border = "3px solid white";
+            highlighted_area.div.style.outline = "";
         }
 
         highlighted_area = area;
 
         if (highlighted_area) {
-            highlighted_area.div.style.border = "3px solid red";
+            highlighted_area.div.style.outline = "3px solid red";
         }
         draw_code();
     }
@@ -376,47 +376,57 @@
 
 
     function update_area_details_list () {
-        var top_div = document.getElementById("area_details");
-        top_div.innerHTML = "Areas:";
+        var table_body = document.getElementById("area_table_body");
+        table_body.innerHTML = "";
+
         for (const [id, area] of get_all_areas().entries()) {
-            area.div = document.createElement("div");
-            area.div.style.border = "3px solid white";
+            var new_row = table_body.insertRow();
+            area.div = new_row;
             area.div.addEventListener("mouseover", function (e) {
                 highlight_area(area);
             });
             area.div.addEventListener("mouseout", function (e) {
                 highlight_area(null);
             });
-            top_div.appendChild(area.div);
 
-            area.div.innerHTML = "<b>" + id + ":</b><br>";
+            var result_obj;
             try {
-                var result_obj = area.check_function(area);
-                if (result_obj["offset"] !== undefined) {
-                    area.div.innerHTML += "offset: " + result_obj["offset"] + "; ";
-                }
-                if (result_obj["value"] !== undefined) {
-                    area.div.innerHTML += "value: " + result_obj["value"]
-                        + " (hex=0x" + result_obj["value"].toString(16).padStart(2,"0")
-                        + "; bin=0b" + result_obj["value"].toString(2).padStart(8,"0")
-                        + "; ASCII='" + String.fromCharCode(result_obj["value"]) + "'); ";
-                }
-                if (result_obj["valid"] !== undefined) {
-                    var color = result_obj["valid"] ? "" : "red";
-                    area.div.innerHTML += "<span style='color: " + color + ";'>valid: " + result_obj["valid"] + "</span>; ";
-                }
-                if (result_obj["desc"] !== undefined) {
-                    area.div.innerHTML += result_obj["desc"];
-                }
+                result_obj = area.check_function(area);
             } catch (ex) {
+                result_obj = {"valid": false, "desc": "Error: " + ex};
                 if (ex.hasOwnProperty("x")) {
-                    area.div.innerHTML += "<span style='color: red;'>Invalid Pixel at (" + ex.x + "/" + ex.y + ")</span>";
+                    result_obj.desc = "Invalid Pixel at (" + ex.x + "/" + ex.y + ")";
                 } else if (ex.desc) {
-                    area.div.innerHTML += "<span style='color: red;'>Error</span> (" + ex.desc + ")";
+                    result_obj.desc = "Error</span> (" + ex.desc + ")";
                 } else {
-                    area.div.innerHTML += "<span style='color: red;'>Invalid Pixels</span><br>(" + ex + ")";
+                    result_obj.desc = "Invalid Pixels (" + ex + ")";
                 }
             }
+
+            function add_cell (obj, func) {
+                var cell = new_row.insertCell();
+                if (obj !== undefined) {
+                    func(cell);
+                } else {
+                    cell.innerHTML = "&nbsp;";
+                }
+                return cell;
+            }
+
+            add_cell(result_obj["offset"], (cell) => { cell.innerHTML = result_obj["offset"]; }).style.textAlign = "right";
+            add_cell(id, (cell) => { cell.innerHTML = id; });
+
+            add_cell(result_obj["value"], (cell) => { cell.innerHTML = result_obj["value"]; }).style.textAlign = "right";
+            add_cell(result_obj["value"], (cell) => { cell.innerHTML = "0x" + result_obj["value"].toString(16).padStart(2,"0"); }).style.textAlign = "right";
+            add_cell(result_obj["value"], (cell) => { cell.innerHTML = result_obj["value"].toString(2).padStart(8,"0"); }).style.textAlign = "right";
+
+            add_cell(result_obj["valid"], (cell) => {
+                cell.innerHTML = (result_obj["valid"] ? "\u2713" : "\u2718");
+                cell.style.textAlign = "center";
+                cell.style.color = (result_obj["valid"] ? "green" : "white");
+                cell.style.backgroundColor = (result_obj["valid"] ? "" : "red");
+            });
+            add_cell(result_obj["desc"], (cell) => { cell.innerHTML = result_obj["desc"] });
         }
     }
 
@@ -688,9 +698,20 @@
                 <span id="mouse_pos"></span>
             </div>
 
-            <div id="area_details" style="padding-left: 20px">
-                Areas:
-            </div>
+            <table id="area_table" style="margin-left: 20px">
+                <thead>
+                    <tr>
+                        <th>Offset</th>
+                        <th>Name</th>
+                        <th>Value (Dec)</th>
+                        <th>Value (Hex)</th>
+                        <th>Value (Bin)</th>
+                        <th>Valid</th>
+                        <th>Description</th></tr>
+                </thead>
+                <tbody id="area_table_body">
+                </tbody>
+            </table>
             <div id="data_details" style="padding-left: 20px">
                 Data:
             </div>
