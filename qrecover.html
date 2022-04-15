@@ -470,7 +470,16 @@
                 regions.push([pos.x, pos.y, 1, 1]);
             }
 
-            return [int_value, read_offset, "" + orig_offset.toString().padStart(3, " ") + ": " + entry_name + " = " + int_value.toString().padStart(3, " "), regions];
+            return [
+                int_value,
+                read_offset,
+                "" + orig_offset.toString().padStart(3, " ") + ": " + entry_name + " = " + int_value.toString().padStart(3, " "),
+                regions,
+                {
+                    "offset":orig_offset,
+                    "value":int_value
+                }
+            ];
         }
 
         dynamic_areas = new Map();
@@ -479,7 +488,7 @@
             var text_payload = "";
             var read_offset = 0;
             while (read_offset < bit_array.length) {
-                var [mode, read_offset, log_text, regions] = read_int_with_desc(bit_array, read_offset, 4, "mode");
+                var [mode, read_offset, log_text, regions, basic_area_values] = read_int_with_desc(bit_array, read_offset, 4, "mode");
                 detail_text += log_text + "\n";
 
                 const mode_names = new Map([
@@ -490,7 +499,7 @@
                 ]);
 
                 {
-                    let area_values = {"offset":read_offset-4, "value":mode};
+                    let area_values = Object.assign({}, basic_area_values);
                     if (mode_names.get(mode)) {
                         area_values["desc"] = mode_names.get(mode);
                         area_values["valid"] = true;
@@ -498,48 +507,68 @@
                         area_values["desc"] = "Unsupported mode \"" + mode + "\"; decoding aborted";
                         area_values["valid"] = false;
                     }
-                    add_area("mode_" + read_offset, regions, [255, 0, 0], function() { return area_values; }, dynamic_areas);
+                    add_area("mode_" + read_offset, regions, [255, 0, 0], () => { return area_values; }, dynamic_areas);
                 }
 
                 if (mode == 0b0010) {
                     // Alphanumeric encoding
-                    var [payload_length, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 9, "payload length");
+                    var [payload_length, read_offset, log_text, regions, basic_area_values] = read_int_with_desc(bit_array, read_offset, 9, "payload length");
                     detail_text += log_text + "\n";
+                    {
+                        let area_values = Object.assign({}, basic_area_values);
+                        add_area("payload_length_" + read_offset, regions, [255, 192, 255], () => { return area_values; }, dynamic_areas);
+                    }
 
                     for (var j = 0; j < Math.floor(payload_length / 2); j++) {
-                        var [two_chars, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 11, "two chars");
+                        var [two_chars, read_offset, log_text, regions, basic_area_values] = read_int_with_desc(bit_array, read_offset, 11, "two chars");
 
                         var char2_code = two_chars % 45;
                         var char1_code = (two_chars - char2_code) / 45;
 
                         detail_text += log_text + " (" + char1_code + "=" + alphanumeric_table.get(char1_code) + "; " + char2_code + "=" + alphanumeric_table.get(char2_code) + ")\n";
                         text_payload += alphanumeric_table.get(char1_code) + alphanumeric_table.get(char2_code);
+
+                        let area_values = Object.assign({}, basic_area_values);
+                        area_values["desc"] = char1_code + "=" + alphanumeric_table.get(char1_code) + "; " + char2_code + "=" + alphanumeric_table.get(char2_code);
+                        add_area("two_chars_" + read_offset, regions, [255, 255, 192], () => { return area_values; }, dynamic_areas);
                     }
                     if (payload_length % 2 != 0) {
                         // read additional character
-                        var [final_char, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 6, "final char");
+                        var [final_char, read_offset, log_text, regions, basic_area_values] = read_int_with_desc(bit_array, read_offset, 6, "final char");
 
                         detail_text += log_text + " (" + final_char + "=" + alphanumeric_table.get(final_char) + ")\n";
                         text_payload += alphanumeric_table.get(final_char);
+
+                        let area_values = Object.assign({}, basic_area_values);
+                        area_values["desc"] = final_char + "=" + alphanumeric_table.get(final_char);
+                        add_area("final_char_" + read_offset, regions, [255, 255, 192], () => { return area_values; }, dynamic_areas);
                     }
                 } else if (mode == 0b0100) {
                     // Byte encoding
-                    var [payload_length, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 8, "payload length");
+                    var [payload_length, read_offset, log_text, regions, basic_area_values] = read_int_with_desc(bit_array, read_offset, 8, "payload length");
                     detail_text += log_text + "\n";
+                    {
+                        let area_values = Object.assign({}, basic_area_values);
+                        add_area("payload_length_" + read_offset, regions, [255, 192, 255], () => { return area_values; }, dynamic_areas);
+                    }
 
                     for (var j = 0; j < payload_length; j++) {
-                        var [byte, read_offset, log_text] = read_int_with_desc(bit_array, read_offset, 8, "byte");
+                        var [byte, read_offset, log_text, regions, basic_area_values] = read_int_with_desc(bit_array, read_offset, 8, "byte");
                         detail_text += log_text
                             + " (hex=0x" + byte.toString(16).padStart(2,"0")
                             + "; bin=0b" + byte.toString(2).padStart(8,"0")
                             + "; ASCII='" + String.fromCharCode(byte)
                             + "')\n";
                         text_payload += String.fromCharCode(byte);
+
+                        let area_values = Object.assign({}, basic_area_values);
+                        area_values["desc"] = "ASCII='" + String.fromCharCode(byte) + "'";
+                        add_area("byte_" + read_offset, regions, [255, 255, 192], () => { return area_values; }, dynamic_areas);
                     }
                 } else if (mode == 0b0111) {
                     // ECI marker
-                    var [eci_marker, read_offset, log_text, regions] = read_int_with_desc(bit_array, read_offset, 8, "ECI marker");
-                    let area_values = {"offset":read_offset-8, "value":eci_marker};
+                    var [eci_marker, read_offset, log_text, regions, basic_area_values] = read_int_with_desc(bit_array, read_offset, 8, "ECI marker");
+                    let area_values = Object.assign({}, basic_area_values);
                     if (eci_marker == 26) {
                         log_text += " (UTF-8 charset)";
                         area_values["desc"] = "UTF-8 charset";
@@ -550,7 +579,7 @@
                         area_values["valid"] = false;
                     }
                     detail_text += log_text + "\n";
-                    add_area("eci_marker_" + read_offset, regions, [0, 255, 255], function() { return area_values; }, dynamic_areas);
+                    add_area("eci_marker_" + read_offset, regions, [192, 255, 255], () => { return area_values; }, dynamic_areas);
                 } else if (mode == 0b0) {
                     detail_text += "end-of-message marker reached.\n";
                     break;
