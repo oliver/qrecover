@@ -13,6 +13,7 @@
     }
 
     var areas = new Array();
+    var highlighted_area = null;
 
     var canvas, ctx;
 
@@ -105,8 +106,16 @@
 
         var top_div = document.getElementById("area_details");
         for (var id in areas) {
-            var area = areas[id];
+            let area = areas[id];
             area.div = document.createElement("div");
+            area.div.addEventListener("mouseover", function (e) {
+                highlighted_area = area;
+                draw_code();
+            });
+            area.div.addEventListener("mouseout", function (e) {
+                highlighted_area = null;
+                draw_code();
+            });
             top_div.appendChild(area.div);
         }
 
@@ -297,8 +306,8 @@
         draw_code();
     }
 
-    function draw_rect (px, py, w, h) {
-        ctx.fillRect(px*pixel_size, py*pixel_size, w*pixel_size, h*pixel_size);
+    function draw_rect (px, py, w, h, draw_function_name = "fillRect") {
+        ctx[draw_function_name](px*pixel_size, py*pixel_size, w*pixel_size, h*pixel_size);
     }
 
     function draw_code () {
@@ -335,6 +344,12 @@
             [curr_x, curr_y, end_reached] = next_data_pixel_pos(curr_x, curr_y);
             i++;
         } while (!end_reached);
+
+        if (highlighted_area) {
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 3;
+            draw_rect(highlighted_area.x, highlighted_area.y, highlighted_area.w, highlighted_area.h, "strokeRect");
+        }
     }
 
     function draw_pixel (px, py, set_pixel) {
