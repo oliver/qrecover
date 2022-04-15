@@ -91,6 +91,8 @@
                 document.getElementById("mouse_pos").innerHTML = "(" + (pix_x+0) + " / " + (pix_y+0) + ")";
             }
         }, false);
+
+        load_from_img_object(document.getElementById('img_example_code'));
     }
 
     function add_all_areas () {
@@ -480,21 +482,25 @@
             var img_obj = new Image();
             img_obj.src = URL.createObjectURL(file);
             img_obj.onload = function () {
-                var img_canvas = document.createElement("canvas");
-                img_canvas.width = img_obj.width;
-                img_canvas.height = img_obj.height;
-                img_canvas.getContext("2d").drawImage(img_obj, 0, 0, img_obj.width, img_obj.height);
-                var image_pixel_data = img_canvas.getContext("2d").getImageData(0, 0, img_obj.width, img_obj.height).data;
-
-                for (var x = 0; x < Math.min(img_obj.width, code_size); x++) {
-                    for (var y = 0; y < Math.min(img_obj.height, code_size); y++) {
-                        const red_value = image_pixel_data[(y*img_obj.width + x) * 4];
-                        pixel_data[x][y] = (red_value < 128) ? true : false;
-                    }
-                }
-                draw_code();
+                load_from_img_object(img_obj);
             }
         }
+    }
+
+    function load_from_img_object (img_obj) {
+        var img_canvas = document.createElement("canvas");
+        img_canvas.width = img_obj.width;
+        img_canvas.height = img_obj.height;
+        img_canvas.getContext("2d").drawImage(img_obj, 0, 0, img_obj.width, img_obj.height);
+        var image_pixel_data = img_canvas.getContext("2d").getImageData(0, 0, img_obj.width, img_obj.height).data;
+
+        for (var x = 0; x < Math.min(img_obj.width, code_size); x++) {
+            for (var y = 0; y < Math.min(img_obj.height, code_size); y++) {
+                const red_value = image_pixel_data[(y*img_obj.width + x) * 4];
+                pixel_data[x][y] = (red_value < 128) ? true : false;
+            }
+        }
+        draw_code();
     }
 
     function update_load_button () {
@@ -519,5 +525,7 @@
         </div>
         <br>
         <span id="mouse_pos"></span>
+
+        <img id="img_example_code" style="display: none" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAABQUlEQVRIS61W0RKDIAwD/f9Pxmk9y8WYQrmbT7Mgbdoko9Zaf9dT1OPxa09Reyxuj635bz7H4rZLJvGD1UFRwijek2AlXhki8QoZHRbDiPx9moSRcLV/SeIIuH0jZLiWnolqH5KB13H4PYmkFrAGD1HtGbHLzo75G2SezUh9dg+eF6LKGBFqZIjWRIL9VcLLijGi/t0u1sjdR1IzohuJUemtJ5kxJCNGbl+nv89kRd1M0a7syOPcu9jguD0ZMToSqRNlFaxaPMAL2ratHMfRnRhn+dqPLozDVpYdoVPWg+3/WH3UNuW+iASLYs1MFT9Dx3NgTS17l6KxUv2n1TgTRc0oxkbJc3l9pyg88yhOjO/7vpfW2utOkPpnRIozMXz4TAyk83KSjK+x76VvKzjgSNnKhZ/Y+N4V3WI+1T6+pVp7AmL1+/532aUIAAAAAElFTkSuQmCC">
     </body>
     </html>
