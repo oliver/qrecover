@@ -306,8 +306,8 @@
     }
 
     function event_to_pixel (e) {
-        var pix_x = Math.floor((e.clientX - canvas.offsetLeft) / pixel_size);
-        var pix_y = Math.floor((e.clientY - canvas.offsetTop) / pixel_size);
+        var pix_x = Math.floor((e.pageX - canvas.offsetLeft) / pixel_size);
+        var pix_y = Math.floor((e.pageY - canvas.offsetTop) / pixel_size);
         return [pix_x, pix_y];
     }
 
