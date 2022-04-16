@@ -461,7 +461,7 @@
             return [result_int, offset+len];
         }
 
-        function read_int_with_desc (bits, offset, len) {
+        function read_int_and_add_row (bits, offset, len, row_prep_func) {
             var orig_offset = offset;
             var [int_value, read_offset] = read_int(bits, offset, len);
 
@@ -471,15 +471,15 @@
                 regions.push([pos.x, pos.y, 1, 1]);
             }
 
-            return [
-                int_value,
-                read_offset,
-                regions,
-                {
-                    "offset":orig_offset,
-                    "value":int_value
-                }
-            ];
+            var read_values = {
+                "offset":orig_offset,
+                "value":int_value
+            };
+
+            var [name, color] = row_prep_func(read_values);
+            add_area(name + "_" + orig_offset, regions, color, () => { return read_values; }, dynamic_areas);
+
+            return [int_value, read_offset];
         }
 
         dynamic_areas = new Map();
@@ -488,8 +488,6 @@
             var text_payload = "";
             var read_offset = 0;
             while (read_offset < bit_array.length) {
-                var [mode, read_offset, regions, basic_area_values] = read_int_with_desc(bit_array, read_offset, 4);
-
                 const mode_names = new Map([
                     [0b0000, "End of Message"],
                     [0b0010, "Alphanumeric"],
@@ -497,75 +495,68 @@
                     [0b0111, "ECI"]
                 ]);
 
-                {
-                    let area_values = Object.assign({}, basic_area_values);
-                    if (mode_names.get(mode)) {
-                        area_values["desc"] = mode_names.get(mode);
-                        area_values["valid"] = true;
+                var [mode, read_offset] = read_int_and_add_row(bit_array, read_offset, 4, (read_result) => {
+                    if (mode_names.get(read_result["value"])) {
+                        read_result["desc"] = mode_names.get(read_result["value"]);
+                        read_result["valid"] = true;
                     } else {
-                        area_values["desc"] = "Unsupported mode \"" + mode + "\"; decoding aborted";
-                        area_values["valid"] = false;
+                        read_result["desc"] = "Unsupported mode \"" + read_result["value"] + "\"; decoding aborted";
+                        read_result["valid"] = false;
                     }
-                    add_area("mode_" + read_offset, regions, [255, 0, 0], () => { return area_values; }, dynamic_areas);
-                }
+                    return ["mode", [255, 0, 0]];
+                });
 
                 if (mode == 0b0010) {
                     // Alphanumeric encoding
-                    var [payload_length, read_offset, regions, basic_area_values] = read_int_with_desc(bit_array, read_offset, 9);
-                    {
-                        let area_values = Object.assign({}, basic_area_values);
-                        add_area("payload_length_" + read_offset, regions, [255, 192, 255], () => { return area_values; }, dynamic_areas);
-                    }
+                    var [payload_length, read_offset] = read_int_and_add_row(bit_array, read_offset, 9, (read_result) => {
+                        return ["payload_length", [255, 192, 255]];
+                    });
 
                     for (var j = 0; j < Math.floor(payload_length / 2); j++) {
-                        var [two_chars, read_offset, regions, basic_area_values] = read_int_with_desc(bit_array, read_offset, 11);
+                        var [two_chars, read_offset] = read_int_and_add_row(bit_array, read_offset, 11, (read_result) => {
+                            var char2_code = read_result["value"] % 45;
+                            var char1_code = (read_result["value"] - char2_code) / 45;
 
-                        var char2_code = two_chars % 45;
-                        var char1_code = (two_chars - char2_code) / 45;
+                            text_payload += alphanumeric_table.get(char1_code) + alphanumeric_table.get(char2_code);
 
-                        text_payload += alphanumeric_table.get(char1_code) + alphanumeric_table.get(char2_code);
-
-                        let area_values = Object.assign({}, basic_area_values);
-                        area_values["desc"] = char1_code + "=" + alphanumeric_table.get(char1_code) + "; " + char2_code + "=" + alphanumeric_table.get(char2_code);
-                        add_area("two_chars_" + read_offset, regions, [255, 255, 192], () => { return area_values; }, dynamic_areas);
+                            read_result["desc"] = char1_code + "=" + alphanumeric_table.get(char1_code) + "; " + char2_code + "=" + alphanumeric_table.get(char2_code);
+                            return ["two_chars", [255, 255, 192]];
+                        });
                     }
                     if (payload_length % 2 != 0) {
                         // read additional character
-                        var [final_char, read_offset, regions, basic_area_values] = read_int_with_desc(bit_array, read_offset, 6);
-                        text_payload += alphanumeric_table.get(final_char);
+                        var [final_char, read_offset] = read_int_and_add_row(bit_array, read_offset, 6, (read_result) => {
+                            text_payload += alphanumeric_table.get(read_result["value"]);
 
-                        let area_values = Object.assign({}, basic_area_values);
-                        area_values["desc"] = final_char + "=" + alphanumeric_table.get(final_char);
-                        add_area("final_char_" + read_offset, regions, [255, 255, 192], () => { return area_values; }, dynamic_areas);
+                            read_result["desc"] = read_result["value"] + "=" + alphanumeric_table.get(read_result["value"]);
+                            return ["final_char", [255, 255, 192]];
+                        });
                     }
                 } else if (mode == 0b0100) {
                     // Byte encoding
-                    var [payload_length, read_offset, regions, basic_area_values] = read_int_with_desc(bit_array, read_offset, 8);
-                    {
-                        let area_values = Object.assign({}, basic_area_values);
-                        add_area("payload_length_" + read_offset, regions, [255, 192, 255], () => { return area_values; }, dynamic_areas);
-                    }
+                    var [payload_length, read_offset] = read_int_and_add_row(bit_array, read_offset, 8, (read_result) => {
+                        return ["payload_length", [255, 192, 255]];
+                    });
 
                     for (var j = 0; j < payload_length; j++) {
-                        var [byte, read_offset, regions, basic_area_values] = read_int_with_desc(bit_array, read_offset, 8);
-                        text_payload += String.fromCharCode(byte);
-
-                        let area_values = Object.assign({}, basic_area_values);
-                        area_values["desc"] = "ASCII='" + String.fromCharCode(byte) + "'";
-                        add_area("byte_" + read_offset, regions, [255, 255, 192], () => { return area_values; }, dynamic_areas);
+                        var [byte, read_offset] = read_int_and_add_row(bit_array, read_offset, 8, (read_result) => {
+                            text_payload += String.fromCharCode(read_result["value"]);
+                            read_result["desc"] = "ASCII='" + String.fromCharCode(read_result["value"]) + "'";
+                            return ["byte", [255, 255, 192]];
+                        });
                     }
                 } else if (mode == 0b0111) {
                     // ECI marker
-                    var [eci_marker, read_offset, regions, basic_area_values] = read_int_with_desc(bit_array, read_offset, 8);
-                    let area_values = Object.assign({}, basic_area_values);
-                    if (eci_marker == 26) {
-                        area_values["desc"] = "UTF-8 charset";
-                        area_values["valid"] = true;
-                    } else {
-                        area_values["desc"] = "Unsupported ECI marker \"" + eci_marker + "\"";
-                        area_values["valid"] = false;
-                    }
-                    add_area("eci_marker_" + read_offset, regions, [192, 255, 255], () => { return area_values; }, dynamic_areas);
+                    var [eci_marker, read_offset] = read_int_and_add_row(bit_array, read_offset, 8, (read_result) => {
+                        if (read_result["value"] == 26) {
+                            read_result["desc"] = "UTF-8 charset";
+                            read_result["valid"] = true;
+                        } else {
+                            read_result["desc"] = "Unsupported ECI marker \"" + read_result["value"] + "\"";
+                            read_result["valid"] = false;
+                        }
+                        return ["eci_marker", [192, 255, 255]];
+                    });
                 } else if (mode == 0b0) {
                     // End of Message
                     break;
