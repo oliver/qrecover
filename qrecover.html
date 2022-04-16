@@ -591,8 +591,10 @@
         } catch (ex) {
             detail_text += "decoding error: " + ex + "'; decoding aborted.\n";
         }
-        detail_text += "</pre><br>\nFound " + text_payload.length + " characters:<br><pre>" + text_payload + "</pre>";
+        detail_text += "</pre>";
         document.getElementById("data_details").innerHTML = detail_text;
+
+        document.getElementById("text_payload").innerHTML = "Decoded " + bit_array.length + " data bits; found " + text_payload.length + " characters:<br><pre>" + text_payload + "</pre>";
 
         update_area_details_list();
     }
@@ -724,7 +726,9 @@
             <div>
                 <canvas id="can" style="border:2px solid;"></canvas>
                 <br>
-                <span id="mouse_pos"></span>
+                <div id="mouse_pos">&nbsp;</div>
+                <br>
+                <div id="text_payload"></div>
             </div>
 
             <div style="height: 90vh; overflow: scroll">
