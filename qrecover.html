@@ -131,6 +131,7 @@
         canvas = document.getElementById('can');
         canvas.width = code_size*pixel_size;
         canvas.height = code_size*pixel_size;
+        canvas.parentElement.style.width = "" + (code_size*pixel_size) + "px";
         ctx = canvas.getContext("2d");
 
         canvas.addEventListener("click", function (e) {
@@ -484,6 +485,7 @@
 
         dynamic_areas = new Map();
         var detail_text = "Decoded Data (from " +  bit_array.length + " bits):<br><pre>";
+        document.getElementById("error_list").innerHTML = "";
         try {
             var text_payload = "";
             var read_offset = 0;
@@ -590,6 +592,8 @@
             }
         } catch (ex) {
             detail_text += "decoding error: " + ex + "'; decoding aborted.\n";
+
+            document.getElementById("error_list").innerHTML += "Note: decoding failed (\"" + ex + "\"); decoding was aborted.";
         }
         detail_text += "</pre>";
         document.getElementById("data_details").innerHTML = detail_text;
@@ -729,6 +733,8 @@
                 <div id="mouse_pos">&nbsp;</div>
                 <br>
                 <div id="text_payload"></div>
+                <br>
+                <div id="error_list"></div>
             </div>
 
             <div style="height: 90vh; overflow: scroll">
