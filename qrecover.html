@@ -390,6 +390,10 @@
                 highlight_area(null);
             });
 
+            if (highlighted_area && id == highlighted_area.id) {
+                highlighted_area = area;
+            }
+
             var result_obj;
             try {
                 result_obj = area.check_function(area);
@@ -571,6 +575,9 @@
         document.getElementById("text_payload").innerHTML = "Decoded " + bit_array.length + " data bits; found " + text_payload.length + " characters:<br><pre>" + text_payload + "</pre>";
 
         update_area_details_list();
+
+        // restore highlight in newly-populated area list:
+        highlight_area(highlighted_area);
     }
 
     // Returns the actual next data pixel position (taking static areas into account)
