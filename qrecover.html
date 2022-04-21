@@ -16,6 +16,8 @@
     var dynamic_areas  = new Map();
     var highlighted_area = null;
 
+    var static_area_grid = null;
+
     var canvas, ctx;
 
 
@@ -127,6 +129,7 @@
         update_load_button();
 
         add_static_areas();
+        static_area_grid = calculate_static_area_grid();
 
         canvas = document.getElementById('can');
         canvas.width = code_size*pixel_size;
@@ -288,8 +291,7 @@
             mask_data[x] = new Array(code_size);
             for (var y = 0; y < code_size; y++) {
                 // apply mask only for data areas:
-                const found_static_area = inside_areas(x, y, static_areas);
-                if (!found_static_area) {
+                if (!inside_static_areas(x, y)) {
                     mask_data[x][y] = mask_bit_function(y, x);
                 }
             }
@@ -614,7 +616,7 @@
             if (end_reached) {
                 return [undefined, undefined, true];
             }
-        } while (inside_areas(x, y, static_areas));
+        } while (inside_static_areas(x, y));
         return [x, y, false];
     }
 
@@ -635,6 +637,25 @@
             }
         }
         return null;
+    }
+
+    function inside_static_areas (x, y) {
+        // Performance-optimized variant of inside_areas(), which only checks against static_areas
+        // and uses a precalculated lookup array.
+        return static_area_grid[x][y];
+    }
+
+    function calculate_static_area_grid () {
+        // create an array that stores for each pixel position the static area it is covered by (or null):
+        var grid_data = new Array(code_size);
+        for (var x = 0; x < code_size; x++) {
+            grid_data[x] = new Array(code_size);
+            for (var y = 0; y < code_size; y++) {
+                const found_static_area = inside_areas(x, y, static_areas);
+                grid_data[x][y] = found_static_area;
+            }
+        }
+        return grid_data;
     }
 
     // Returns the next data pixel position on the grid (regardless of static areas).
