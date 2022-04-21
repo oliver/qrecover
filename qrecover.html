@@ -268,7 +268,7 @@
         return int_result;
     }
 
-    function get_masked_pixels () {
+    function get_full_mask () {
         const mask_types = {
             0: function (i,j) { return (i+j) % 2 == 0; },
             1: function (i,j) { return i % 2 == 0; },
@@ -283,12 +283,23 @@
         var mask_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1"))["value"];
         const mask_bit_function = mask_types[mask_value];
 
+        var mask_data = new Array(code_size);
+        for (var x = 0; x < code_size; x++) {
+            mask_data[x] = new Array(code_size);
+            for (var y = 0; y < code_size; y++) {
+                mask_data[x][y] = mask_bit_function(y, x);
+            }
+        }
+        return mask_data;
+    }
+
+    function get_masked_pixels () {
+        var mask_data = get_full_mask();
         var masked_pixel_data = new Array(code_size);
         for (var x = 0; x < code_size; x++) {
             masked_pixel_data[x] = new Array(code_size);
             for (var y = 0; y < code_size; y++) {
-                var mask_bit_set = mask_bit_function(y, x);
-                masked_pixel_data[x][y] = pixel_data[x][y] ^ mask_bit_set;
+                masked_pixel_data[x][y] = pixel_data[x][y] ^ mask_data[x][y];
             }
         }
         return masked_pixel_data;
