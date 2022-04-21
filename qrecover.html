@@ -251,8 +251,12 @@
         // TODO: decode these bits
         add_area("format_ec_ul", [[8, 0, 1, 6], [8, 7, 1, 1], [7, 8, 2, 1], [5, 8, 1, 1]], [192, 128, 128], function() { return {}; });
         add_area("format_ec_ur", [[code_size-8, 8, 8, 1]], [192, 128, 128], function() { return {}; });
-        add_area("format_ec_bl", [[8, code_size-8, 1, 3]], [192, 128, 128], function() { return {}; });
+        add_area("format_ec_bl", [[8, code_size-7, 1, 2]], [192, 128, 128], function() { return {}; });
 
+        add_area("dark_module", [[8, code_size-8, 1, 1]], [128, 128, 192], function(area) {
+            expect_pixels(area.regions, "x");
+            return {"valid": true};
+        });
     }
 
     function bits_to_int (bool_array) {
