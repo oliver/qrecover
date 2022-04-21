@@ -335,8 +335,17 @@
 
         var displayed_pixel_data = pixel_data;
         if (document.getElementById("cb_show_unmasked").checked) {
-            // TODO: apply unmasking only to data areas
             displayed_pixel_data = get_masked_pixels();
+
+            for (var x = 0; x < code_size; x++) {
+                for (var y = 0; y < code_size; y++) {
+                    const found_area = inside_areas(x, y, static_areas);
+                    if (found_area) {
+                        // undo unmasking for static areas:
+                        displayed_pixel_data[x][y] = pixel_data[x][y];
+                    }
+                }
+            }
         }
 
         for (var x = 0; x < code_size; x++) {
