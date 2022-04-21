@@ -287,7 +287,11 @@
         for (var x = 0; x < code_size; x++) {
             mask_data[x] = new Array(code_size);
             for (var y = 0; y < code_size; y++) {
-                mask_data[x][y] = mask_bit_function(y, x);
+                // apply mask only for data areas:
+                const found_static_area = inside_areas(x, y, static_areas);
+                if (!found_static_area) {
+                    mask_data[x][y] = mask_bit_function(y, x);
+                }
             }
         }
         return mask_data;
@@ -345,18 +349,11 @@
         ctx.fillRect(0, 0, code_size*pixel_size, code_size*pixel_size);
 
         var displayed_pixel_data = pixel_data;
-        if (document.getElementById("cb_show_unmasked").checked) {
+        if (document.getElementById("rb_show_unmasked").checked) {
             displayed_pixel_data = get_masked_pixels();
-
-            for (var x = 0; x < code_size; x++) {
-                for (var y = 0; y < code_size; y++) {
-                    const found_area = inside_areas(x, y, static_areas);
-                    if (found_area) {
-                        // undo unmasking for static areas:
-                        displayed_pixel_data[x][y] = pixel_data[x][y];
-                    }
-                }
-            }
+        }
+        else if (document.getElementById("rb_show_mask").checked) {
+            displayed_pixel_data = get_full_mask();
         }
 
         for (var x = 0; x < code_size; x++) {
@@ -729,7 +726,11 @@
             <input accept="image/*" type="file" id="imgInp" onchange="update_load_button();" />
             <input type="button" id="btn_load_image" value="Load Selected File" onclick="load_from_file(this.form.imgInp)">
         </form>
-        <input type="checkbox" id="cb_show_unmasked" onchange="draw_code()"><label for="cb_show_unmasked">Show Unmasked</label><br>
+        Show:
+        <input type="radio" name="mask_mode" id="rb_show_masked" onchange="draw_code()" checked><label for="rb_show_masked">Masked</label>
+        <input type="radio" name="mask_mode" id="rb_show_unmasked" onchange="draw_code()"><label for="rb_show_unmasked">Unmasked</label>
+        <input type="radio" name="mask_mode" id="rb_show_mask" onchange="draw_code()"><label for="rb_show_mask">Mask Itself</label>
+        <br>
         <br>
 
         <div style="display: flex; align-items: flex-start;">
