@@ -268,7 +268,11 @@
 
         // error correction values for format and mask (currently only added so that the data bits are read correctly):
         // TODO: decode these bits
-        add_area("format_ec_ul", [[8, 0, 1, 6], [8, 7, 1, 1], [7, 8, 2, 1], [5, 8, 1, 1]], [192, 128, 128], function(area) {
+        add_area("format_ec_ul", [
+                [5, 8, 1, 1], [7, 8, 2, 1], [8, 7, 1, 1],
+                // list these regions separately, to get correct order of bits:
+                [8, 5, 1, 1], [8, 4, 1, 1], [8, 3, 1, 1], [8, 2, 1, 1], [8, 1, 1, 1], [8, 0, 1, 1]
+            ], [192, 128, 128], function(area) {
             var value = 0;
             for (var region of area.regions) {
                 const bool_array = get_pixels_as_bools(region);
@@ -278,7 +282,7 @@
                 }
             }
             return {
-                "num_bits": 10,
+                "num_bits": area.num_pixels,
                 "value": value,
             };
         });
