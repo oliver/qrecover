@@ -273,17 +273,25 @@
                 // list these regions separately, to get correct order of bits:
                 [8, 5, 1, 1], [8, 4, 1, 1], [8, 3, 1, 1], [8, 2, 1, 1], [8, 1, 1, 1], [8, 0, 1, 1]
             ], [192, 128, 128], function(area) {
+
+            const masked_pixels = get_masked_pixels();
             var value = 0;
             for (var region of area.regions) {
-                const bool_array = get_pixels_as_bools(region);
+                const bool_array = get_pixels_as_bools(region, masked_pixels);
                 for (b of bool_array) {
                     value <<= 1;
                     value |= b;
                 }
             }
+
+            const ec_value = static_areas.get("format_ec_1").check_function(static_areas.get("format_ec_1")).value;
+            const mask_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1")).value;
+            const full_ec_bits = (ec_value << 13) | (mask_value << 10) | value;
+
             return {
                 "num_bits": area.num_pixels,
                 "value": value,
+                "desc": "full_ec_bits=" + full_ec_bits
             };
         });
         add_area("format_ec_ur", [[code_size-8, 8, 8, 1]], [192, 128, 128], function() { return {}; });
