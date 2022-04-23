@@ -367,10 +367,18 @@
             }
         }
 
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 2.5;
         for (const [id, area] of get_all_areas().entries()) {
             ctx.fillStyle = "rgba(" + area.color[0] + ", " + area.color[1] + ", " + area.color[2] + ", 0.5)";
             for (region of area.regions) {
                 draw_rect(region.x, region.y, region.w, region.h);
+            }
+            for (var line of area.outline) {
+                ctx.beginPath();
+                ctx.moveTo(line.x * pixel_size, line.y * pixel_size);
+                ctx.lineTo((line.x+line.w) * pixel_size, (line.y+line.h) * pixel_size);
+                ctx.stroke();
             }
         }
         draw_grid();
