@@ -268,7 +268,20 @@
 
         // error correction values for format and mask (currently only added so that the data bits are read correctly):
         // TODO: decode these bits
-        add_area("format_ec_ul", [[8, 0, 1, 6], [8, 7, 1, 1], [7, 8, 2, 1], [5, 8, 1, 1]], [192, 128, 128], function() { return {}; });
+        add_area("format_ec_ul", [[8, 0, 1, 6], [8, 7, 1, 1], [7, 8, 2, 1], [5, 8, 1, 1]], [192, 128, 128], function(area) {
+            var value = 0;
+            for (var region of area.regions) {
+                const bool_array = get_pixels_as_bools(region);
+                for (b of bool_array) {
+                    value <<= 1;
+                    value |= b;
+                }
+            }
+            return {
+                "num_bits": 10,
+                "value": value,
+            };
+        });
         add_area("format_ec_ur", [[code_size-8, 8, 8, 1]], [192, 128, 128], function() { return {}; });
         add_area("format_ec_bl", [[8, code_size-7, 1, 2]], [192, 128, 128], function() { return {}; });
 
@@ -312,6 +325,27 @@
                 }
             }
         }
+
+        function set_pixels (pixel_data, region, bool_array) {
+            if (region.w * region.h != bool_array.length) {
+                throw "bad bool_array size"
+            }
+
+            var i = 0;
+            for (var y = region.y; y < region.y+region.h; y++) {
+                for (var x = region.x; x < region.x+region.w; x++) {
+                    pixel_data[x][y] = bool_array[i];
+                    i++;
+                }
+            }
+        }
+        
+        set_pixels(mask_data, static_areas.get("format_ec_1").regions[0], [true, false]);
+        set_pixels(mask_data, static_areas.get("format_ec_2").regions[0], [false, true]);
+
+        set_pixels(mask_data, static_areas.get("format_mask_1").regions[0], [true, false, true]);
+        set_pixels(mask_data, static_areas.get("format_mask_2").regions[0], [true, false, true]);
+
         return mask_data;
     }
 
