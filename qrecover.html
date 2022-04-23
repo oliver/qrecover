@@ -728,7 +728,8 @@
         var lines_v = new Map();
 
         function make_key (x, y) {
-            return "" + x + "/" + y;
+            // pad integers, to get correct comparisons when sorting lines:
+            return "" + x.toString().padStart(4, "0") + "/" + y.toString().padStart(4, "0");
         }
 
         function parse_key (key) {
@@ -773,19 +774,38 @@
             }
         }
 
+        lines_h = new Map([...lines_h].sort());
+        lines_v = new Map([...lines_v].sort());
+
         // create lists of final lines from lines_h/v
-        // TODO: merge adjacent lines into single longer lines
         var result_lines = new Array();
         for (const [key, num_lines] of lines_h.entries()) {
             if (num_lines > 0) {
                 const [x,y] = parse_key(key);
-                result_lines.push({"x": x, "y": y, "w": 1, "h": 0 });
+                // merge following line segments together:
+                for (var i = 1; /* empty */ ; i++) {
+                    const next_key = make_key(x+i, y);
+                    if (lines_h.get(next_key) > 0) {
+                        lines_h.set(next_key, 0);
+                    } else {
+                        break;
+                    }
+                }
+                result_lines.push({"x": x, "y": y, "w": i, "h": 0 });
             }
         }
         for (const [key, num_lines] of lines_v.entries()) {
             if (num_lines > 0) {
                 const [x,y] = parse_key(key);
-                result_lines.push({"x": x, "y": y, "w": 0, "h": 1 });
+                for (var i = 1; /* empty */ ; i++) {
+                    const next_key = make_key(x, y+i);
+                    if (lines_v.get(next_key) > 0) {
+                        lines_v.set(next_key, 0);
+                    } else {
+                        break;
+                    }
+                }
+                result_lines.push({"x": x, "y": y, "w": 0, "h": i });
             }
         }
 
