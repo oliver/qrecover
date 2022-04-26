@@ -288,6 +288,9 @@
             const mask_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1")).value;
             const full_ec_bits = (ec_value << 13) | (mask_value << 10) | value;
 
+            // TODO: check whether full_ec_bits is correct
+            // TODO: if full_ec_bits is not a valid value, give some indication about the broken bits...
+
             return {
                 "num_bits": area.num_pixels,
                 "value": value,
