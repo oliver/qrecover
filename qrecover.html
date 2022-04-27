@@ -288,13 +288,25 @@
             const mask_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1")).value;
             const full_ec_bits = (ec_value << 13) | (mask_value << 10) | value;
 
-            // TODO: check whether full_ec_bits is correct
+            function check_format_ec(format_and_ec) {
+                const gen = 0b10100110111
+                for (var i = 4; i >= 0; i--) {
+                    if (format_and_ec & (1 << (i+10))) {
+                        format_and_ec ^= gen << i;
+                    }
+                }
+                return format_and_ec;
+            }
+
+            const check_result = check_format_ec(full_ec_bits);
+
             // TODO: if full_ec_bits is not a valid value, give some indication about the broken bits...
 
             return {
                 "num_bits": area.num_pixels,
                 "value": value,
-                "desc": "full_ec_bits=" + full_ec_bits
+                "desc": "full_ec_bits=" + full_ec_bits + "; check result: " + check_result,
+                "valid": (check_result == 0)
             };
         });
         add_area("format_ec_ur", [[code_size-8, 8, 8, 1]], [192, 128, 128], function() { return {}; });
