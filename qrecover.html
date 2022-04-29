@@ -310,10 +310,28 @@
             }
 
             function get_best_match (input_format_code) {
+                console.log("input_format_code:  " + input_format_code.toString(2).padStart(15,"0"));
+
                 var valid_format_codes = new Array();
                 for (var i = 0; i < 32; i++) {
                     const format_code = (i << 10) | check_format_ec(i << 10);
                     valid_format_codes.push(format_code);
+                }
+
+                var ranked_codes = new Array();
+                for (var tested_format_code of valid_format_codes) {
+                    const distance = hamming_weight(input_format_code ^ tested_format_code);
+                    ranked_codes.push({"code": tested_format_code, "distance": distance});
+                }
+                ranked_codes.sort((a,b) => {
+                    if (a.distance != b.distance) {
+                        return a.distance - b.distance;
+                    } else {
+                        return a.code - b.code;
+                    }
+                });
+                for (var {code, distance} of ranked_codes) {
+                    console.log("tested format code: " + code.toString(2).padStart(15,"0") + "; distance: " + distance);
                 }
 
                 var lowest_distance = 15;
