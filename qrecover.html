@@ -300,14 +300,53 @@
 
             const check_result = check_format_ec(full_ec_bits);
 
-            // TODO: if full_ec_bits is not a valid value, give some indication about the broken bits...
+            function hamming_weight (input) {
+                var num_bits_set = 0;
+                while (input != 0) {
+                    num_bits_set += (input & 1);
+                    input >>= 1;
+                }
+                return num_bits_set;
+            }
 
-            return {
+            function get_best_match (input_format_code) {
+                var valid_format_codes = new Array();
+                for (var i = 0; i < 32; i++) {
+                    const format_code = (i << 10) | check_format_ec(i << 10);
+                    valid_format_codes.push(format_code);
+                }
+
+                var lowest_distance = 15;
+                var best_match = -1;
+                for (var tested_format_code of valid_format_codes) {
+                    const distance = hamming_weight(input_format_code ^ tested_format_code);
+                    if (distance < lowest_distance) {
+                        lowest_distance = distance;
+                        best_match = tested_format_code;
+                    } else if (distance == lowest_distance) {
+                        best_match = -1;
+                    }
+                }
+                return [best_match, lowest_distance];
+            }
+
+            var result = {
                 "num_bits": area.num_pixels,
                 "value": value,
                 "desc": "full_ec_bits=" + full_ec_bits + "; check result: " + check_result,
                 "valid": (check_result == 0)
             };
+
+            if (check_result != 0) {
+                const [best_match, lowest_distance] = get_best_match(full_ec_bits);
+                if (best_match == -1) {
+                    result["desc"] += "; error correction failed";
+                } else {
+                    result["desc"] += "; best match: " + best_match.toString(2).padStart(15,"0") + " (" + lowest_distance + " bit(s) differ)";
+                }
+            }
+
+            return result;
         });
         add_area("format_ec_ur", [[code_size-8, 8, 8, 1]], [192, 128, 128], function() { return {}; });
         add_area("format_ec_bl", [[8, code_size-7, 1, 2]], [192, 128, 128], function() { return {}; });
