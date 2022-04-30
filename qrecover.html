@@ -367,8 +367,8 @@
 
             return result;
         });
-        add_area("format_ec_ur", [[code_size-8, 8, 8, 1]], [192, 128, 128], function() { return {}; });
-        add_area("format_ec_bl", [[8, code_size-7, 1, 2]], [192, 128, 128], function() { return {}; });
+
+        add_area("format_ec_data_2", [[8, code_size-6, 1, 1], [8, code_size-7, 1, 1], [code_size-8, 8, 8, 1]], [192, 128, 128], function() { return {}; });
 
         add_area("dark_module", [[8, code_size-8, 1, 1]], [128, 128, 192], function(area) {
             expect_pixels(area.regions, "x");
