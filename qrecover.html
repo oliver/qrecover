@@ -362,7 +362,7 @@
         }
 
         // error correction values for format and mask (currently only added so that the data bits are read correctly):
-        add_area("format_ec_ul", [
+        add_area("format_ec_data_1", [
                 [5, 8, 1, 1], [7, 8, 2, 1], [8, 7, 1, 1],
                 // list these regions separately, to get correct order of bits:
                 [8, 5, 1, 1], [8, 4, 1, 1], [8, 3, 1, 1], [8, 2, 1, 1], [8, 1, 1, 1], [8, 0, 1, 1]
@@ -451,7 +451,7 @@
         set_pixels(mask_data, static_areas.get("format_mask_1").regions[0], [true, false, true]);
         set_pixels_in_regions(mask_data, static_areas.get("format_mask_2").regions, [true, false, true]);
 
-        set_pixels_in_regions(mask_data, static_areas.get("format_ec_ul").regions, [false, false, false, false, false, true, false, false, true, false]);
+        set_pixels_in_regions(mask_data, static_areas.get("format_ec_data_1").regions, [false, false, false, false, false, true, false, false, true, false]);
         set_pixels_in_regions(mask_data, static_areas.get("format_ec_data_2").regions, [false, false, false, false, false, true, false, false, true, false]);
 
         return mask_data;
