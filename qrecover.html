@@ -77,6 +77,15 @@
         return result_array;
     }
 
+    // @param regions An array of region objects, each of which can be passed to get_pixels_as_bools()
+    function get_pixels_from_regions_as_bools (regions, pixel_data_to_read = pixel_data) {
+        var result_array = new Array();
+        for (var region of regions) {
+            result_array = result_array.concat(get_pixels_as_bools(region, pixel_data_to_read));
+        }
+        return result_array;
+    }
+
     function get_pixels_as_string (region) {
         var result_string = "";
         for (var bool_value of get_pixels_as_bools(region)) {
@@ -274,15 +283,7 @@
                 [8, 5, 1, 1], [8, 4, 1, 1], [8, 3, 1, 1], [8, 2, 1, 1], [8, 1, 1, 1], [8, 0, 1, 1]
             ], [192, 128, 128], function(area) {
 
-            const masked_pixels = get_masked_pixels();
-            var value = 0;
-            for (var region of area.regions) {
-                const bool_array = get_pixels_as_bools(region, masked_pixels);
-                for (b of bool_array) {
-                    value <<= 1;
-                    value |= b;
-                }
-            }
+            const value = bits_to_int(get_pixels_from_regions_as_bools(area.regions, get_masked_pixels()));
 
             const ec_value = static_areas.get("format_ec_1").check_function(static_areas.get("format_ec_1")).value;
             const mask_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1")).value;
