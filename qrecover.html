@@ -143,6 +143,12 @@
         canvas.parentElement.style.width = "" + (code_size*pixel_size) + "px";
         ctx = canvas.getContext("2d");
 
+        preview_canvas = document.getElementById("preview_canvas");
+        preview_canvas.width = code_size;
+        preview_canvas.height = code_size;
+        preview_context = preview_canvas.getContext("2d");
+        document.getElementById("preview_image").width = code_size * 3;
+
         canvas.addEventListener("click", function (e) {
             var [pix_x, pix_y] = event_to_pixel(e);
             toggle_pixel(pix_x, pix_y);
@@ -432,6 +438,25 @@
                 ctx.stroke();
             }
         }
+
+        // draw preview image:
+        preview_context.fillStyle = "white";
+        preview_context.fillRect(0, 0, code_size, code_size);
+
+        var image_data = preview_context.getImageData(0, 0, code_size, code_size);
+        for (var x = 0; x < code_size; x++) {
+            for (var y = 0; y < code_size; y++) {
+                if (pixel_data[x][y]) {
+                    const offset = y * (code_size * 4) + x * 4;
+                    image_data.data[offset+0] = 0;
+                    image_data.data[offset+1] = 0;
+                    image_data.data[offset+2] = 0;
+                }
+            }
+        }
+
+        preview_context.putImageData(image_data, 0, 0);
+        document.getElementById("preview_image").src = preview_canvas.toDataURL();
     }
 
     function draw_pixel (px, py, set_pixel) {
@@ -883,6 +908,8 @@
     </script>
 
     <body onload="init()">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+        <div>
         <form>
             <input accept="image/*" type="file" id="imgInp" onchange="update_load_button();" />
             <input type="button" id="btn_load_image" value="Load Selected File" onclick="load_from_file(this.form.imgInp)">
@@ -898,6 +925,13 @@
         <input type="radio" name="numbering_mode" id="rb_numbers_none" onchange="draw_code()"><label for="rb_numbers_none">Hide</label>
         <br>
         <br>
+        </div>
+
+            <div>
+                <canvas id="preview_canvas" style="display: none"></canvas>
+                <img id="preview_image" title="Preview of edited QR code" style="image-rendering: crisp-edges;">
+            </div>
+        </div>
 
         <div style="display: flex; align-items: flex-start;">
             <div>
