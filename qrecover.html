@@ -394,9 +394,11 @@
         ctx.lineWidth = 2.5;
         ctx.font = "11px monospace";
         for (const [id, area] of get_all_areas().entries()) {
-            ctx.fillStyle = "rgba(" + area.color[0] + ", " + area.color[1] + ", " + area.color[2] + ", 0.5)";
-            for (region of area.regions) {
-                draw_rect(region.x, region.y, region.w, region.h);
+            if (document.getElementById("cb_colors_enabled").checked) {
+                ctx.fillStyle = "rgba(" + area.color[0] + ", " + area.color[1] + ", " + area.color[2] + ", 0.5)";
+                for (region of area.regions) {
+                    draw_rect(region.x, region.y, region.w, region.h);
+                }
             }
             for (var line of area.outline) {
                 ctx.beginPath();
@@ -924,6 +926,8 @@
         <input type="radio" name="numbering_mode" id="rb_numbers_per_area" onchange="draw_code()"><label for="rb_numbers_per_area">Show for each area</label>
         <input type="radio" name="numbering_mode" id="rb_numbers_none" onchange="draw_code()"><label for="rb_numbers_none">Hide</label>
         <br>
+        <input type="checkbox" id="cb_colors_enabled" onchange="draw_code()" checked><label for="cb_colors_enabled">Color areas</label>
+        <br>
         <br>
         </div>
 
@@ -944,7 +948,7 @@
                 <div id="error_list"></div>
             </div>
 
-            <div style="height: 90vh; overflow: scroll">
+            <div style="height: 85vh; overflow: scroll">
                 <table id="area_table" style="margin-left: 20px">
                     <thead>
                         <tr>
