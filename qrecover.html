@@ -207,7 +207,7 @@
         return num_bits_set;
     }
 
-    function get_best_match (input_format_code) {
+    function get_best_corrections (input_format_code) {
         console.log("input_format_code:  " + input_format_code.toString(2).padStart(15,"0"));
 
         var valid_format_codes = new Array();
@@ -232,18 +232,7 @@
             console.log("tested format code: " + code.toString(2).padStart(15,"0") + "; distance: " + distance);
         }
 
-        var lowest_distance = 15;
-        var best_match = -1;
-        for (var tested_format_code of valid_format_codes) {
-            const distance = hamming_weight(input_format_code ^ tested_format_code);
-            if (distance < lowest_distance) {
-                lowest_distance = distance;
-                best_match = tested_format_code;
-            } else if (distance == lowest_distance) {
-                best_match = -1;
-            }
-        }
-        return [best_match, lowest_distance];
+        return ranked_codes;
     }
 
 
@@ -865,11 +854,14 @@
         const check_result = check_format_ec(full_ec_1_bits);
         if (check_result != 0) {
             var desc_text = "Format data has invalid checksum";
-            const [best_match, lowest_distance] = get_best_match(full_ec_1_bits);
-            if (best_match == -1) {
-                desc_text += "; error correction failed";
+            const potential_corrections = get_best_corrections(full_ec_1_bits);
+            const best_distance = potential_corrections[0].distance; // array is sorted, with lowest-distance results first
+            const best_matches = potential_corrections.filter(element => (element.distance == best_distance));
+
+            if (best_matches.length != 1) {
+                desc_text += "; error correction failed (found " + best_matches.length + " possible corrections where " + best_distance + " bits differ)";
             } else {
-                desc_text += "; best match: " + best_match.toString(2).padStart(15,"0") + " (" + lowest_distance + " bit(s) differ)";
+                desc_text += "; best correction: " + best_matches[0].code.toString(2).padStart(15,"0") + " (" + best_distance + " bit(s) differ)";
             }
 
             var list_element = document.createElement("li");
