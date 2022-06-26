@@ -423,7 +423,10 @@
                 }
             }
         }
-        draw_grid();
+
+        if (document.getElementById("cb_grid_enabled").checked) {
+            draw_grid();
+        }
 
         if (document.getElementById("rb_numbers_data_bits").checked) {
             // draw data pixel numbers:
@@ -936,6 +939,7 @@
         <br>
         <input type="checkbox" id="cb_colors_enabled" onchange="draw_code()" checked><label for="cb_colors_enabled">Color areas</label>
         <input type="checkbox" id="cb_outlines_enabled" onchange="draw_code()" checked><label for="cb_outlines_enabled">Show Outlines</label>
+        <input type="checkbox" id="cb_grid_enabled" onchange="draw_code()" checked><label for="cb_grid_enabled">Show Grid</label>
         <br>
         <br>
         </div>
