@@ -280,8 +280,19 @@
         add_area("format_mask_2", [[8, code_size-3, 1, 1], [8, code_size-4, 1, 1], [8, code_size-5, 1, 1]], [128, 255, 0], function (area) {
             const bits = get_pixels_from_regions_as_bools(area.regions);
             const mask_value = bits_to_int(bits) ^ 0b101;
+
+            const mask_1_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1")).value;
+            var valid = true;
+            var desc_text = "Mask: " + mask_value + " (0b" + mask_value.toString(2) + ")";
+            if (mask_1_value != mask_value) {
+                valid = false;
+                desc_text += "; error: value doesn't match \"format_mask_1\" value";
+            }
+            // TODO: also perform this validity check in format_mask_1 itself.
+
             return {
-                "desc": "Mask: " + mask_value + " (0b" + mask_value.toString(2) + ")",
+                "desc": desc_text,
+                "valid": valid,
                 "num_bits": 3,
                 "value": mask_value
             };
