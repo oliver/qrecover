@@ -850,13 +850,37 @@
         const mask_1_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1")).value;
         const ec_data_1_value = static_areas.get("format_ec_data_1").check_function(static_areas.get("format_ec_data_1")).value;
         const full_ec_1_bits = (ec_1_value << 13) | (mask_1_value << 10) | ec_data_1_value;
+        const check_result_1 = check_format_ec(full_ec_1_bits);
 
-        const check_result = check_format_ec(full_ec_1_bits);
-        if (check_result != 0) {
+        const ec_2_value = static_areas.get("format_ec_2").check_function(static_areas.get("format_ec_2")).value;
+        const mask_2_value = static_areas.get("format_mask_2").check_function(static_areas.get("format_mask_2")).value;
+        const ec_data_2_value = static_areas.get("format_ec_data_2").check_function(static_areas.get("format_ec_data_2")).value;
+        const full_ec_2_bits = (ec_2_value << 13) | (mask_2_value << 10) | ec_data_2_value;
+        const check_result_2 = check_format_ec(full_ec_2_bits);
+
+        if (check_result_1 != 0 || check_result_2 != 0) {
             var desc_text = "Format data has invalid checksum";
-            const potential_corrections = get_best_corrections(full_ec_1_bits);
-            const best_distance = potential_corrections[0].distance; // array is sorted, with lowest-distance results first
-            const best_matches = potential_corrections.filter(element => (element.distance == best_distance));
+
+            const potential_corrections_1 = get_best_corrections(full_ec_1_bits);
+            const potential_corrections_2 = get_best_corrections(full_ec_2_bits);
+
+            // create list of best corrections, taking both format info sections into account:
+            var combined_corrections = new Array();
+            for (var {code, distance} of potential_corrections_1) {
+                const matching_element_in_2 = potential_corrections_2.find(element => (element.code == code));
+                combined_corrections.push({"code": code, "distance_sum": distance + matching_element_in_2.distance});
+            }
+
+            combined_corrections.sort((a,b) => {
+                if (a.distance_sum != b.distance_sum) {
+                    return a.distance_sum - b.distance_sum;
+                } else {
+                    return a.code - b.code;
+                }
+            });
+
+            const best_distance = combined_corrections[0].distance_sum;
+            const best_matches = combined_corrections.filter(element => (element.distance_sum == best_distance));
 
             if (best_matches.length != 1) {
                 desc_text += "; error correction failed (found " + best_matches.length + " possible corrections where " + best_distance + " bits differ)";
