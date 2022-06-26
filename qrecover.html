@@ -167,6 +167,10 @@
             }
         }, false);
 
+        canvas.addEventListener("mouseout", function (e) {
+            highlight_area(null);
+        }, false);
+
         if (!restore_state()) {
             load_from_img_object(document.getElementById('img_example_code'));
         }
