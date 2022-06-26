@@ -846,7 +846,9 @@
                 }
             }
         } catch (ex) {
-            document.getElementById("error_list").innerHTML += "Note: decoding failed (\"" + ex + "\"); decoding was aborted.";
+            var list_element = document.createElement("li");
+            list_element.appendChild(document.createTextNode("Note: decoding failed (\"" + ex + "\"); decoding was aborted."));
+            document.getElementById("error_list").appendChild(list_element);
         }
         document.getElementById("text_payload").innerHTML = "Decoded " + bit_array.length + " data bits; found " + text_payload.length + " characters:<br><pre>" + text_payload + "</pre>";
 
@@ -1127,7 +1129,7 @@
                 <br>
                 <div id="text_payload"></div>
                 <br>
-                <div id="error_list"></div>
+                <ul id="error_list"></ul>
             </div>
 
             <div style="height: 85vh; overflow: scroll">
