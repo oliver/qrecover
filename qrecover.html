@@ -361,26 +361,20 @@
         function do_complete_format_ec_check (area, format_ec_area_id, format_mask_area_id) {
             const value = bits_to_int(get_pixels_from_regions_as_bools(area.regions, get_masked_pixels()));
 
+            var result = {
+                "num_bits": area.num_pixels,
+                "value": value
+            };
+
             const ec_value = static_areas.get(format_ec_area_id).check_function(static_areas.get(format_ec_area_id)).value;
             const mask_value = static_areas.get(format_mask_area_id).check_function(static_areas.get(format_mask_area_id)).value;
             const full_ec_bits = (ec_value << 13) | (mask_value << 10) | value;
 
             const check_result = check_format_ec(full_ec_bits);
 
-            var result = {
-                "num_bits": area.num_pixels,
-                "value": value,
-                "desc": "full_ec_bits=" + full_ec_bits + "; check result: " + check_result,
-                "valid": (check_result == 0)
-            };
-
             if (check_result != 0) {
-                const [best_match, lowest_distance] = get_best_match(full_ec_bits);
-                if (best_match == -1) {
-                    result["desc"] += "; error correction failed";
-                } else {
-                    result["desc"] += "; best match: " + best_match.toString(2).padStart(15,"0") + " (" + lowest_distance + " bit(s) differ)";
-                }
+                result["valid"] = false;
+                result["desc"] = "checksum does not match content";
             }
 
             return result;
@@ -396,6 +390,7 @@
         });
 
         add_area("format_ec_data_2", [[8, code_size-6, 1, 1], [8, code_size-7, 1, 1], [code_size-8, 8, 8, 1]], [192, 128, 128], function(area) {
+            // TODO: also check that format_ec_data_1 has the same value?
             return do_complete_format_ec_check(area, "format_ec_2", "format_mask_2");
         });
 
@@ -855,9 +850,32 @@
         document.getElementById("text_payload").innerHTML = "Decoded " + bit_array.length + " data bits; found " + text_payload.length + " characters:<br><pre>" + text_payload + "</pre>";
 
         update_area_details_list();
+        perform_global_checks();
 
         // restore highlight in newly-populated area list:
         highlight_area(highlighted_area);
+    }
+
+    function perform_global_checks () {
+        const ec_1_value = static_areas.get("format_ec_1").check_function(static_areas.get("format_ec_1")).value;
+        const mask_1_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1")).value;
+        const ec_data_1_value = static_areas.get("format_ec_data_1").check_function(static_areas.get("format_ec_data_1")).value;
+        const full_ec_1_bits = (ec_1_value << 13) | (mask_1_value << 10) | ec_data_1_value;
+
+        const check_result = check_format_ec(full_ec_1_bits);
+        if (check_result != 0) {
+            var desc_text = "Format data has invalid checksum";
+            const [best_match, lowest_distance] = get_best_match(full_ec_1_bits);
+            if (best_match == -1) {
+                desc_text += "; error correction failed";
+            } else {
+                desc_text += "; best match: " + best_match.toString(2).padStart(15,"0") + " (" + lowest_distance + " bit(s) differ)";
+            }
+
+            var list_element = document.createElement("li");
+            list_element.appendChild(document.createTextNode(desc_text));
+            document.getElementById("error_list").appendChild(list_element);
+        }
     }
 
     // Returns the actual next data pixel position (taking static areas into account)
