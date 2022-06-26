@@ -400,11 +400,19 @@
                     draw_rect(region.x, region.y, region.w, region.h);
                 }
             }
-            for (var line of area.outline) {
-                ctx.beginPath();
-                ctx.moveTo(line.x * pixel_size, line.y * pixel_size);
-                ctx.lineTo((line.x+line.w) * pixel_size, (line.y+line.h) * pixel_size);
-                ctx.stroke();
+
+            if (document.getElementById("cb_outlines_enabled").checked) {
+                if (document.getElementById("cb_colors_enabled").checked) {
+                    ctx.strokeStyle = "black";
+                } else {
+                    ctx.strokeStyle = "gray";
+                }
+                for (var line of area.outline) {
+                    ctx.beginPath();
+                    ctx.moveTo(line.x * pixel_size, line.y * pixel_size);
+                    ctx.lineTo((line.x+line.w) * pixel_size, (line.y+line.h) * pixel_size);
+                    ctx.stroke();
+                }
             }
 
             if (document.getElementById("rb_numbers_per_area").checked) {
@@ -927,6 +935,7 @@
         <input type="radio" name="numbering_mode" id="rb_numbers_none" onchange="draw_code()"><label for="rb_numbers_none">Hide</label>
         <br>
         <input type="checkbox" id="cb_colors_enabled" onchange="draw_code()" checked><label for="cb_colors_enabled">Color areas</label>
+        <input type="checkbox" id="cb_outlines_enabled" onchange="draw_code()" checked><label for="cb_outlines_enabled">Show Outlines</label>
         <br>
         <br>
         </div>
