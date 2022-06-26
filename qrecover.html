@@ -252,7 +252,19 @@
         add_area("format_ec_2", [[8, code_size-1, 1, 1], [8, code_size-2, 1, 1]], [255, 128, 0], function (area) {
             const bits = get_pixels_from_regions_as_bools(area.regions);
             const ec_level = bits_to_int(bits) ^ 0b10;
-            return {"value": ec_level, "num_bits": 2, "desc": "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")"};
+
+            const ec_1_value = static_areas.get("format_ec_1").check_function(static_areas.get("format_ec_1")).value;
+            var valid = true;
+            var desc_text = "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")";
+            if (ec_1_value != ec_level) {
+                valid = false;
+                desc_text += "; error: value doesn't match \"format_ec_1\" value";
+            }
+            // TODO: also perform this validity check in format_ec_1 itself.
+            // But to avoid infinite recursion, I guess the best solution would be to split part of the check_function() into a new value_function(),
+            // which can just return the value and num_bits, but does not perform own validity checks.
+
+            return {"value": ec_level, "num_bits": 2, "desc": desc_text, "valid": valid};
         });
 
         // mask pattern (redundantly):
