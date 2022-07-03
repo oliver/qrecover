@@ -916,8 +916,8 @@
 
                 var item_text = "<span style='text-decoration: underline dashed;'>"
                     + payload_bits.toString(2).padStart(5,"0")
-                    + " = EC: " + error_correction_levels[ec_value] + ", mask: " + mask_value + "</span>"
-                    + " (" + distance_sum + " bit(s) differ)";
+                    + " = EC: " + error_correction_levels[ec_value] + ", mask: " + mask_value
+                    + " (" + distance_sum + " bit(s) differ) <button>Apply</button></span>";
 
                 var new_sub_item = document.createElement("li");
                 new_sub_item.innerHTML = item_text;
@@ -930,6 +930,12 @@
                 span.addEventListener("mouseout", function (e) {
                     show_correction(null);
                 }, false);
+
+                const button = new_sub_item.querySelector("button");
+                button.addEventListener("click", function (e) {
+                    apply_correction(replacements);
+                    show_correction(null);
+                }, false);
             }
         }
     }
@@ -937,6 +943,15 @@
     function show_correction (replacements) {
         highlighted_differences = replacements;
         draw_code();
+    }
+
+    function apply_correction (replacements) {
+        for ({x, y, value} of replacements) {
+            pixel_data[x][y] = value;
+        }
+        decode();
+        draw_code();
+        save_state();
     }
 
     // Returns the actual next data pixel position (taking static areas into account)
