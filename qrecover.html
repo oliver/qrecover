@@ -87,28 +87,20 @@
         return result_array;
     }
 
-    function get_pixels_as_string (region) {
-        var result_string = "";
-        for (var bool_value of get_pixels_as_bools(region)) {
-            result_string += (bool_value ? "x" : ".");
-        }
-        return result_string;
-    }
-
     function expect_pixels (regions, expected_values) {
-        for (var region of regions) {
-            var pixel_string = get_pixels_as_string(region);
+        const bool_array = get_pixels_from_regions_as_bools(regions);
+        if (expected_values.length != bool_array.length) {
+            throw {"desc":"internal error: bad expected size"};
+        }
+        for (var i = 0; i < bool_array.length; i++) {
+            const expected_value = (expected_values[i] == "x" ? true : false);
+            if (bool_array[i] != expected_value) {
+                const [x, y] = pixel_at_bit_offset(regions, i);
+                throw {
+                    "x": x,
+                    "y": y
+                };
 
-            if (expected_values.length != region.w * region.h) {
-                throw {"desc":"internal error: bad expected size"};
-            }
-            for (var i = 0; i < pixel_string.length; i++) {
-                if (pixel_string[i] != expected_values[i]) {
-                    throw {
-                        "x": (i % region.w ) + 1,
-                        "y": (Math.floor(i / region.w)) + 1
-                    };
-                }
             }
         }
     }
@@ -255,18 +247,12 @@
         });
 
         // spacers around all position markers:
-        add_area("spacing_ul_1", [[0, 7, 8, 1]], [192, 255, 128], function (area) {
-            expect_pixels(area.regions, "........");
+        add_area("spacing_ul_1", [[0, 7, 8, 1], [7, 0, 1, 7]], [192, 255, 128], function (area) {
+            expect_pixels(area.regions, "........" + ".......");
             return {"valid": true};
         });
-        add_area("spacing_ul_2", [[7, 0, 1, 7]], [192, 255, 128], function (area) {
-            expect_pixels(area.regions, ".......");
-            return {"valid": true};
-        });
-        add_area("spacing_ur_1", [[code_size-8, 7, 8, 1]], [192, 255, 128], static_areas.get("spacing_ul_1").check_function);
-        add_area("spacing_ur_2", [[code_size-8, 0, 1, 7]], [192, 255, 128], static_areas.get("spacing_ul_2").check_function);
-        add_area("spacing_bl_1", [[0, code_size-8, 8, 1]], [192, 255, 128], static_areas.get("spacing_ul_1").check_function);
-        add_area("spacing_bl_2", [[7, code_size-7, 1, 7]], [192, 255, 128], static_areas.get("spacing_ul_2").check_function);
+        add_area("spacing_ur_1", [[code_size-8, 0, 1, 7], [code_size-8, 7, 8, 1]], [192, 255, 128], static_areas.get("spacing_ul_1").check_function);
+        add_area("spacing_bl_1", [[0, code_size-8, 8, 1], [7, code_size-7, 1, 7]], [192, 255, 128], static_areas.get("spacing_ul_1").check_function);
 
         // two timing strips:
         add_area("timing_top", [[8, 6, 9, 1]], [0, 0, 255], function (area) {
