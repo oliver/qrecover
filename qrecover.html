@@ -208,32 +208,14 @@
         return num_bits_set;
     }
 
-    function get_best_corrections (input_format_code) {
-        console.log("input_format_code:  " + input_format_code.toString(2).padStart(15,"0"));
-
-        var valid_format_codes = new Array();
+    function get_corrections (input_format_code) {
+        var all_codes = new Array();
         for (var i = 0; i < 32; i++) {
             const format_code = (i << 10) | check_format_ec(i << 10);
-            valid_format_codes.push(format_code);
+            const distance = hamming_weight(input_format_code ^ format_code);
+            all_codes.push({"code": format_code, "distance": distance});
         }
-
-        var ranked_codes = new Array();
-        for (var tested_format_code of valid_format_codes) {
-            const distance = hamming_weight(input_format_code ^ tested_format_code);
-            ranked_codes.push({"code": tested_format_code, "distance": distance});
-        }
-        ranked_codes.sort((a,b) => {
-            if (a.distance != b.distance) {
-                return a.distance - b.distance;
-            } else {
-                return a.code - b.code;
-            }
-        });
-        for (var {code, distance} of ranked_codes) {
-            console.log("tested format code: " + code.toString(2).padStart(15,"0") + "; distance: " + distance);
-        }
-
-        return ranked_codes;
+        return all_codes;
     }
 
     const error_correction_levels = {
@@ -870,8 +852,8 @@
         const check_result_2 = check_format_ec(full_ec_2_bits);
 
         if (check_result_1 != 0 || check_result_2 != 0) {
-            const potential_corrections_1 = get_best_corrections(full_ec_1_bits);
-            const potential_corrections_2 = get_best_corrections(full_ec_2_bits);
+            const potential_corrections_1 = get_corrections(full_ec_1_bits);
+            const potential_corrections_2 = get_corrections(full_ec_2_bits);
 
             // create list of best corrections, taking both format info sections into account:
             var combined_corrections = new Array();
