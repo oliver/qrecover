@@ -533,7 +533,7 @@
         ctx.font = "11px monospace";
         for (const [id, area] of get_all_areas().entries()) {
             if (document.getElementById("cb_colors_enabled").checked) {
-                ctx.fillStyle = "rgba(" + area.color[0] + ", " + area.color[1] + ", " + area.color[2] + ", 0.5)";
+                ctx.fillStyle = "rgba(" + area.color[0] + ", " + area.color[1] + ", " + area.color[2] + ", 0.3)";
                 for (region of area.regions) {
                     draw_rect(region.x, region.y, region.w, region.h);
                 }
