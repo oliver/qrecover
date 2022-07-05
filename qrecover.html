@@ -727,19 +727,36 @@
             return [int_value, read_offset];
         }
 
+        function calc_num_data_bytes (ec_level) {
+            // TODO: this result should also take the size of the QR code into account.
+            // Currently this value is only correct for a version-2 code (25x25 pixels)!
+            const ec_level_name = error_correction_levels[ec_level][0];
+            if (ec_level_name == "L")
+                return 34;
+            if (ec_level_name == "M")
+                return 28;
+            if (ec_level_name == "Q")
+                return 22;
+            if (ec_level_name == "H")
+                return 16;
+        }
+
+        const ec_level = static_areas.get("format_ec_1").check_function(static_areas.get("format_ec_1")).value;
+        const num_data_bits = calc_num_data_bytes(ec_level) * 8;
+
+        const mode_names = new Map([
+            [0b0000, "End of Message"],
+            [0b0010, "Alphanumeric"],
+            [0b0100, "Byte"],
+            [0b0111, "ECI"]
+        ]);
+
         dynamic_areas = new Map();
         document.getElementById("error_list").innerHTML = "";
         try {
             var text_payload = "";
             var read_offset = 0;
             while (read_offset < bit_array.length) {
-                const mode_names = new Map([
-                    [0b0000, "End of Message"],
-                    [0b0010, "Alphanumeric"],
-                    [0b0100, "Byte"],
-                    [0b0111, "ECI"]
-                ]);
-
                 var [mode, read_offset] = read_int_and_add_row(bit_array, read_offset, 4, (read_result) => {
                     if (mode_names.get(read_result["value"])) {
                         read_result["desc"] = mode_names.get(read_result["value"]);
@@ -777,6 +794,7 @@
                             return ["final_char", [255, 255, 192]];
                         });
                     }
+                    break;
                 } else if (mode == 0b0100) {
                     // Byte encoding
                     var [payload_length, read_offset] = read_int_and_add_row(bit_array, read_offset, 8, (read_result) => {
@@ -790,6 +808,7 @@
                             return ["byte", [255, 255, 192]];
                         });
                     }
+                    break;
                 } else if (mode == 0b0111) {
                     // ECI marker
                     var [eci_marker, read_offset] = read_int_and_add_row(bit_array, read_offset, 8, (read_result) => {
@@ -802,13 +821,54 @@
                         }
                         return ["eci_marker", [192, 255, 255]];
                     });
-                } else if (mode == 0b0) {
-                    // End of Message
-                    break;
                 } else {
                     // Unsupported mode
                     break;
                 }
+            }
+
+            if (read_offset < num_data_bits - 4) {
+                var [mode, read_offset] = read_int_and_add_row(bit_array, read_offset, 4, (read_result) => {
+                    if (read_result["value"] == 0) {
+                        read_result["desc"] = mode_names.get(read_result["value"]);
+                        read_result["valid"] = true;
+                    } else {
+                        read_result["desc"] = "Unsupported mode \"" + read_result["value"] + "\" (terminator expected)";
+                        read_result["valid"] = false;
+                    }
+                    return ["terminator", [255, 0, 0]];
+                });
+            }
+            if (read_offset % 8 != 0) {
+                const num_bits_missing_for_byte = 8 - (read_offset % 8);
+                var [mode, read_offset] = read_int_and_add_row(bit_array, read_offset, num_bits_missing_for_byte, (read_result) => {
+                    read_result["desc"] = "Padding Bits"
+                    if (read_result["value"] == 0) {
+                        read_result["valid"] = true;
+                    } else {
+                        read_result["desc"] += " (invalid values; should be 0)";
+                        read_result["valid"] = false;
+                    }
+                    return ["padding", [255, 255, 192]];
+                });
+            }
+            const valid_padding_values = [236, 17];
+            var padding_value_index = 0;
+            while (read_offset < num_data_bits) {
+                let expected_padding_value = valid_padding_values[padding_value_index];
+                padding_value_index++;
+                padding_value_index %= 2;
+                const pad_length = Math.min(num_data_bits - read_offset, 8);
+                var [mode, read_offset] = read_int_and_add_row(bit_array, read_offset, pad_length, (read_result) => {
+                    read_result["desc"] = "Padding Byte"
+                    if (read_result["value"] == expected_padding_value) {
+                        read_result["valid"] = true;
+                    } else {
+                        read_result["desc"] += " (invalid value; should be " + expected_padding_value + ")";
+                        read_result["valid"] = false;
+                    }
+                    return ["padding", [255, 255, 192]];
+                });
             }
         } catch (ex) {
             var list_element = document.createElement("li");
