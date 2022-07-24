@@ -15,6 +15,9 @@
     var static_areas = new Map();
     var dynamic_areas  = new Map();
     var highlighted_area = null;
+    var highlighted_differences = null;
+
+    var static_area_grid = null;
 
     var canvas, ctx;
 
@@ -44,14 +47,20 @@
             "id":id,
             "regions":[],
             "color":color_values,
+            "outline:":null,
             "check_function":check_function
         });
 
+        var num_pixels = 0;
         for (region of region_list) {
             target_map.get(id).regions.push({
                 "x": region[0], "y": region[1], "w": region[2], "h": region[3]
             });
+            num_pixels += region[2] * region[3];
         }
+        target_map.get(id).num_pixels = num_pixels;
+
+        target_map.get(id).outline = calc_outline(target_map.get(id).regions, pixel_size);
     }
 
     function get_all_areas () {
@@ -69,28 +78,29 @@
         return result_array;
     }
 
-    function get_pixels_as_string (region) {
-        var result_string = "";
-        for (var bool_value of get_pixels_as_bools(region)) {
-            result_string += (bool_value ? "x" : ".");
+    // @param regions An array of region objects, each of which can be passed to get_pixels_as_bools()
+    function get_pixels_from_regions_as_bools (regions, pixel_data_to_read = pixel_data) {
+        var result_array = new Array();
+        for (var region of regions) {
+            result_array = result_array.concat(get_pixels_as_bools(region, pixel_data_to_read));
         }
-        return result_string;
+        return result_array;
     }
 
     function expect_pixels (regions, expected_values) {
-        for (var region of regions) {
-            var pixel_string = get_pixels_as_string(region);
+        const bool_array = get_pixels_from_regions_as_bools(regions);
+        if (expected_values.length != bool_array.length) {
+            throw {"desc":"internal error: bad expected size"};
+        }
+        for (var i = 0; i < bool_array.length; i++) {
+            const expected_value = (expected_values[i] == "x" ? true : false);
+            if (bool_array[i] != expected_value) {
+                const [x, y] = pixel_at_bit_offset(regions, i);
+                throw {
+                    "x": x,
+                    "y": y
+                };
 
-            if (expected_values.length != region.w * region.h) {
-                throw {"desc":"internal error: bad expected size"};
-            }
-            for (var i = 0; i < pixel_string.length; i++) {
-                if (pixel_string[i] != expected_values[i]) {
-                    throw {
-                        "x": (i % region.w ) + 1,
-                        "y": (Math.floor(i / region.w)) + 1
-                    };
-                }
             }
         }
     }
@@ -127,12 +137,19 @@
         update_load_button();
 
         add_static_areas();
+        static_area_grid = calculate_static_area_grid();
 
         canvas = document.getElementById('can');
         canvas.width = code_size*pixel_size;
         canvas.height = code_size*pixel_size;
         canvas.parentElement.style.width = "" + (code_size*pixel_size) + "px";
         ctx = canvas.getContext("2d");
+
+        preview_canvas = document.getElementById("preview_canvas");
+        preview_canvas.width = code_size;
+        preview_canvas.height = code_size;
+        preview_context = preview_canvas.getContext("2d");
+        document.getElementById("preview_image").width = code_size * 3;
 
         canvas.addEventListener("click", function (e) {
             var [pix_x, pix_y] = event_to_pixel(e);
@@ -152,12 +169,53 @@
             }
         }, false);
 
+        canvas.addEventListener("mouseout", function (e) {
+            highlight_area(null);
+        }, false);
+
         if (!restore_state()) {
             load_from_img_object(document.getElementById('img_example_code'));
         }
         decode();
         draw_code();
     }
+
+
+    function check_format_ec(format_and_ec) {
+        const gen = 0b10100110111
+        for (var i = 4; i >= 0; i--) {
+            if (format_and_ec & (1 << (i+10))) {
+                format_and_ec ^= gen << i;
+            }
+        }
+        return format_and_ec;
+    }
+
+    function hamming_weight (input) {
+        var num_bits_set = 0;
+        while (input != 0) {
+            num_bits_set += (input & 1);
+            input >>= 1;
+        }
+        return num_bits_set;
+    }
+
+    function get_corrections (input_format_code) {
+        var all_codes = new Array();
+        for (var i = 0; i < 32; i++) {
+            const format_code = (i << 10) | check_format_ec(i << 10);
+            const distance = hamming_weight(input_format_code ^ format_code);
+            all_codes.push({"code": format_code, "distance": distance});
+        }
+        return all_codes;
+    }
+
+    const error_correction_levels = {
+        2: "H / High",
+        3: "Q / Quartile",
+        0: "M / Medium",
+        1: "L / Low"
+    };
 
     function add_static_areas () {
         // three position markers:
@@ -189,18 +247,12 @@
         });
 
         // spacers around all position markers:
-        add_area("spacing_ul_1", [[0, 7, 8, 1]], [192, 255, 128], function (area) {
-            expect_pixels(area.regions, "........");
+        add_area("spacing_ul_1", [[0, 7, 8, 1], [7, 0, 1, 7]], [192, 255, 128], function (area) {
+            expect_pixels(area.regions, "........" + ".......");
             return {"valid": true};
         });
-        add_area("spacing_ul_2", [[7, 0, 1, 7]], [192, 255, 128], function (area) {
-            expect_pixels(area.regions, ".......");
-            return {"valid": true};
-        });
-        add_area("spacing_ur_1", [[code_size-8, 7, 8, 1]], [192, 255, 128], static_areas.get("spacing_ul_1").check_function);
-        add_area("spacing_ur_2", [[code_size-8, 0, 1, 7]], [192, 255, 128], static_areas.get("spacing_ul_2").check_function);
-        add_area("spacing_bl_1", [[0, code_size-8, 8, 1]], [192, 255, 128], static_areas.get("spacing_ul_1").check_function);
-        add_area("spacing_bl_2", [[7, code_size-7, 1, 7]], [192, 255, 128], static_areas.get("spacing_ul_2").check_function);
+        add_area("spacing_ur_1", [[code_size-8, 0, 1, 7], [code_size-8, 7, 8, 1]], [192, 255, 128], static_areas.get("spacing_ul_1").check_function);
+        add_area("spacing_bl_1", [[0, code_size-8, 8, 1], [7, code_size-7, 1, 7]], [192, 255, 128], static_areas.get("spacing_ul_1").check_function);
 
         // two timing strips:
         add_area("timing_top", [[8, 6, 9, 1]], [0, 0, 255], function (area) {
@@ -210,21 +262,27 @@
         add_area("timing_left", [[6, 8, 1, 9]], [0, 0, 255], static_areas.get("timing_top").check_function);
 
         // error correction level (redundantly):
-        const error_correction_levels = {
-            0: "H / High",
-            1: "Q / Quartile",
-            2: "M / Medium",
-            3: "L / Low"
-        };
         add_area("format_ec_1", [[0, 8, 2, 1]], [255, 128, 0], function (area) {
             const [bit0, bit1] = get_pixels_as_bools(area.regions[0]);
             const ec_level = bits_to_int([bit0, bit1]) ^ 0b10;
             return {"value": ec_level, "num_bits": 2, "desc": "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")"};
         });
-        add_area("format_ec_2", [[8, code_size-2, 1, 2]], [255, 128, 0], function (area) {
-            const [bit1, bit0] = get_pixels_as_bools(area.regions[0]);
-            const ec_level = bits_to_int([bit0, bit1]) ^ 0b10;
-            return {"value": ec_level, "num_bits": 2, "desc": "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")"};
+        add_area("format_ec_2", [[8, code_size-1, 1, 1], [8, code_size-2, 1, 1]], [255, 128, 0], function (area) {
+            const bits = get_pixels_from_regions_as_bools(area.regions);
+            const ec_level = bits_to_int(bits) ^ 0b10;
+
+            const ec_1_value = static_areas.get("format_ec_1").check_function(static_areas.get("format_ec_1")).value;
+            var valid = true;
+            var desc_text = "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")";
+            if (ec_1_value != ec_level) {
+                valid = false;
+                desc_text += "; error: value doesn't match \"format_ec_1\" value";
+            }
+            // TODO: also perform this validity check in format_ec_1 itself.
+            // But to avoid infinite recursion, I guess the best solution would be to split part of the check_function() into a new value_function(),
+            // which can just return the value and num_bits, but does not perform own validity checks.
+
+            return {"value": ec_level, "num_bits": 2, "desc": desc_text, "valid": valid};
         });
 
         // mask pattern (redundantly):
@@ -237,22 +295,67 @@
                 "value": mask_value
             };
         });
-        add_area("format_mask_2", [[8, code_size-5, 1, 3]], [128, 255, 0], function (area) {
-            const [bit2, bit1, bit0] = get_pixels_as_bools(area.regions[0]);
-            const mask_value = bits_to_int([bit0, bit1, bit2]) ^ 0b101;
+        add_area("format_mask_2", [[8, code_size-3, 1, 1], [8, code_size-4, 1, 1], [8, code_size-5, 1, 1]], [128, 255, 0], function (area) {
+            const bits = get_pixels_from_regions_as_bools(area.regions);
+            const mask_value = bits_to_int(bits) ^ 0b101;
+
+            const mask_1_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1")).value;
+            var valid = true;
+            var desc_text = "Mask: " + mask_value + " (0b" + mask_value.toString(2) + ")";
+            if (mask_1_value != mask_value) {
+                valid = false;
+                desc_text += "; error: value doesn't match \"format_mask_1\" value";
+            }
+            // TODO: also perform this validity check in format_mask_1 itself.
+
             return {
-                "desc": "Mask: " + mask_value + " (0b" + mask_value.toString(2) + ")",
+                "desc": desc_text,
+                "valid": valid,
                 "num_bits": 3,
                 "value": mask_value
             };
         });
 
-        // error correction values for format and mask (currently only added so that the data bits are read correctly):
-        // TODO: decode these bits
-        add_area("format_ec_ul", [[8, 0, 1, 6], [8, 7, 1, 1], [7, 8, 2, 1], [5, 8, 1, 1]], [192, 128, 128], function() { return {}; });
-        add_area("format_ec_ur", [[code_size-8, 8, 8, 1]], [192, 128, 128], function() { return {}; });
-        add_area("format_ec_bl", [[8, code_size-8, 1, 3]], [192, 128, 128], function() { return {}; });
+        function do_complete_format_ec_check (area, format_ec_area_id, format_mask_area_id) {
+            const value = bits_to_int(get_pixels_from_regions_as_bools(area.regions, get_masked_pixels()));
 
+            var result = {
+                "num_bits": area.num_pixels,
+                "value": value
+            };
+
+            const ec_value = static_areas.get(format_ec_area_id).check_function(static_areas.get(format_ec_area_id)).value;
+            const mask_value = static_areas.get(format_mask_area_id).check_function(static_areas.get(format_mask_area_id)).value;
+            const full_ec_bits = (ec_value << 13) | (mask_value << 10) | value;
+
+            const check_result = check_format_ec(full_ec_bits);
+
+            if (check_result != 0) {
+                result["valid"] = false;
+                result["desc"] = "checksum does not match content";
+            }
+
+            return result;
+        }
+
+        // error correction values for format and mask (currently only added so that the data bits are read correctly):
+        add_area("format_ec_data_1", [
+                [5, 8, 1, 1], [7, 8, 2, 1], [8, 7, 1, 1],
+                // list these regions separately, to get correct order of bits:
+                [8, 5, 1, 1], [8, 4, 1, 1], [8, 3, 1, 1], [8, 2, 1, 1], [8, 1, 1, 1], [8, 0, 1, 1]
+            ], [192, 128, 128], function(area) {
+            return do_complete_format_ec_check(area, "format_ec_1", "format_mask_1");
+        });
+
+        add_area("format_ec_data_2", [[8, code_size-6, 1, 1], [8, code_size-7, 1, 1], [code_size-8, 8, 8, 1]], [192, 128, 128], function(area) {
+            // TODO: also check that format_ec_data_1 has the same value?
+            return do_complete_format_ec_check(area, "format_ec_2", "format_mask_2");
+        });
+
+        add_area("dark_module", [[8, code_size-8, 1, 1]], [128, 128, 192], function(area) {
+            expect_pixels(area.regions, "x");
+            return {"valid": true};
+        });
     }
 
     function bits_to_int (bool_array) {
@@ -264,7 +367,7 @@
         return int_result;
     }
 
-    function get_masked_pixels () {
+    function get_full_mask () {
         const mask_types = {
             0: function (i,j) { return (i+j) % 2 == 0; },
             1: function (i,j) { return i % 2 == 0; },
@@ -279,15 +382,83 @@
         var mask_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1"))["value"];
         const mask_bit_function = mask_types[mask_value];
 
+        var mask_data = new Array(code_size);
+        for (var x = 0; x < code_size; x++) {
+            mask_data[x] = new Array(code_size);
+            for (var y = 0; y < code_size; y++) {
+                // apply mask only for data areas:
+                if (!inside_static_areas(x, y)) {
+                    mask_data[x][y] = mask_bit_function(y, x);
+                }
+            }
+        }
+
+        function set_pixels (pixel_data, region, bool_array) {
+            if (region.w * region.h != bool_array.length) {
+                throw "bad bool_array size"
+            }
+
+            var i = 0;
+            for (var y = region.y; y < region.y+region.h; y++) {
+                for (var x = region.x; x < region.x+region.w; x++) {
+                    pixel_data[x][y] = bool_array[i];
+                    i++;
+                }
+            }
+        }
+
+        function set_pixels_in_regions (pixel_data, regions, bool_array) {
+            var i = 0;
+            for (var region of regions) {
+                for (var y = region.y; y < region.y+region.h; y++) {
+                    for (var x = region.x; x < region.x+region.w; x++) {
+                        pixel_data[x][y] = bool_array[i];
+                        i++;
+                    }
+                }
+            }
+            if (i != bool_array.length) {
+                throw "bad bool_array size"
+            }
+        }
+
+        // 10 101 0000010010
+        set_pixels(mask_data, static_areas.get("format_ec_1").regions[0], [true, false]);
+        set_pixels_in_regions(mask_data, static_areas.get("format_ec_2").regions, [true, false]);
+
+        set_pixels(mask_data, static_areas.get("format_mask_1").regions[0], [true, false, true]);
+        set_pixels_in_regions(mask_data, static_areas.get("format_mask_2").regions, [true, false, true]);
+
+        set_pixels_in_regions(mask_data, static_areas.get("format_ec_data_1").regions, [false, false, false, false, false, true, false, false, true, false]);
+        set_pixels_in_regions(mask_data, static_areas.get("format_ec_data_2").regions, [false, false, false, false, false, true, false, false, true, false]);
+
+        return mask_data;
+    }
+
+    function get_masked_pixels () {
+        var mask_data = get_full_mask();
         var masked_pixel_data = new Array(code_size);
         for (var x = 0; x < code_size; x++) {
             masked_pixel_data[x] = new Array(code_size);
             for (var y = 0; y < code_size; y++) {
-                var mask_bit_set = mask_bit_function(y, x);
-                masked_pixel_data[x][y] = pixel_data[x][y] ^ mask_bit_set;
+                masked_pixel_data[x][y] = pixel_data[x][y] ^ mask_data[x][y];
             }
         }
         return masked_pixel_data;
+    }
+
+    function pixel_at_bit_offset (regions, offset) {
+        for (var region of regions) {
+            if (offset >= (region.w * region.h)) {
+                offset -= (region.w * region.h);
+                continue;
+            }
+
+            const x = offset % region.w;
+            const y = Math.floor(offset / region.w);
+            return [region.x + x, region.y + y];
+        }
+        throw "offset " + offset + " is too large";
     }
 
     function draw_grid () {
@@ -330,9 +501,11 @@
         ctx.fillRect(0, 0, code_size*pixel_size, code_size*pixel_size);
 
         var displayed_pixel_data = pixel_data;
-        if (document.getElementById("cb_show_unmasked").checked) {
-            // TODO: apply unmasking only to data areas
+        if (document.getElementById("rb_show_unmasked").checked) {
             displayed_pixel_data = get_masked_pixels();
+        }
+        else if (document.getElementById("rb_show_mask").checked) {
+            displayed_pixel_data = get_full_mask();
         }
 
         for (var x = 0; x < code_size; x++) {
@@ -341,33 +514,96 @@
             }
         }
 
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 2.5;
+        ctx.font = "11px monospace";
         for (const [id, area] of get_all_areas().entries()) {
-            ctx.fillStyle = "rgba(" + area.color[0] + ", " + area.color[1] + ", " + area.color[2] + ", 0.5)";
-            for (region of area.regions) {
-                draw_rect(region.x, region.y, region.w, region.h);
+            if (document.getElementById("cb_colors_enabled").checked) {
+                ctx.fillStyle = "rgba(" + area.color[0] + ", " + area.color[1] + ", " + area.color[2] + ", 0.3)";
+                for (region of area.regions) {
+                    draw_rect(region.x, region.y, region.w, region.h);
+                }
+            }
+
+            if (document.getElementById("cb_outlines_enabled").checked) {
+                if (document.getElementById("cb_colors_enabled").checked) {
+                    ctx.strokeStyle = "black";
+                } else {
+                    ctx.strokeStyle = "gray";
+                }
+                for (var line of area.outline) {
+                    ctx.beginPath();
+                    ctx.moveTo(line.x * pixel_size, line.y * pixel_size);
+                    ctx.lineTo((line.x+line.w) * pixel_size, (line.y+line.h) * pixel_size);
+                    ctx.stroke();
+                }
+            }
+
+            if (document.getElementById("rb_numbers_per_area").checked) {
+                for (var i = 0; i < area.num_pixels; i++) {
+                    const [x, y] = pixel_at_bit_offset(area.regions, i);
+                    ctx.fillStyle = displayed_pixel_data[x][y] ? "white" : "black";
+                    ctx.fillText(("" + i).padStart(3, " "), x*pixel_size, (y+1)*pixel_size - 5);
+                }
             }
         }
-        draw_grid();
 
-        // draw data pixel numbers:
-        var curr_x = code_size-1;
-        var curr_y = code_size-1;
-        ctx.font = "11px monospace";
-        var i = 0;
-        do {
-            ctx.fillStyle = displayed_pixel_data[curr_x][curr_y] ? "white" : "black";
-            ctx.fillText(("" + i).padStart(3, " "), curr_x*pixel_size, (curr_y+1)*pixel_size - 5);
-            [curr_x, curr_y, end_reached] = next_data_pixel_pos(curr_x, curr_y);
-            i++;
-        } while (!end_reached);
+        if (document.getElementById("cb_grid_enabled").checked) {
+            draw_grid();
+        }
+
+        if (document.getElementById("rb_numbers_data_bits").checked) {
+            // draw data pixel numbers:
+            var curr_x = code_size-1;
+            var curr_y = code_size-1;
+            var i = 0;
+            do {
+                ctx.fillStyle = displayed_pixel_data[curr_x][curr_y] ? "white" : "black";
+                ctx.fillText(("" + i).padStart(3, " "), curr_x*pixel_size, (curr_y+1)*pixel_size - 5);
+                [curr_x, curr_y, end_reached] = next_data_pixel_pos(curr_x, curr_y);
+                i++;
+            } while (!end_reached);
+        }
+
+        if (highlighted_differences) {
+            const inset_pixels = pixel_size * 0.3;
+            ctx.fillStyle = "red";
+            for ({x, y, value} of highlighted_differences) {
+                if (value != pixel_data[x][y]) {
+                    ctx.fillRect(x * pixel_size + inset_pixels, y * pixel_size + inset_pixels, pixel_size - (2*inset_pixels), pixel_size - (2*inset_pixels));
+                }
+            }
+        }
 
         if (highlighted_area) {
             ctx.strokeStyle = "red";
             ctx.lineWidth = 3;
-            for (region of highlighted_area.regions) {
-                draw_rect(region.x, region.y, region.w, region.h, "strokeRect");
+            for (var line of highlighted_area.outline) {
+                ctx.beginPath();
+                ctx.moveTo(line.x * pixel_size, line.y * pixel_size);
+                ctx.lineTo((line.x+line.w) * pixel_size, (line.y+line.h) * pixel_size);
+                ctx.stroke();
             }
         }
+
+        // draw preview image:
+        preview_context.fillStyle = "white";
+        preview_context.fillRect(0, 0, code_size, code_size);
+
+        var image_data = preview_context.getImageData(0, 0, code_size, code_size);
+        for (var x = 0; x < code_size; x++) {
+            for (var y = 0; y < code_size; y++) {
+                if (pixel_data[x][y]) {
+                    const offset = y * (code_size * 4) + x * 4;
+                    image_data.data[offset+0] = 0;
+                    image_data.data[offset+1] = 0;
+                    image_data.data[offset+2] = 0;
+                }
+            }
+        }
+
+        preview_context.putImageData(image_data, 0, 0);
+        document.getElementById("preview_image").src = preview_canvas.toDataURL();
     }
 
     function draw_pixel (px, py, set_pixel) {
@@ -575,14 +811,115 @@
                 }
             }
         } catch (ex) {
-            document.getElementById("error_list").innerHTML += "Note: decoding failed (\"" + ex + "\"); decoding was aborted.";
+            var list_element = document.createElement("li");
+            list_element.appendChild(document.createTextNode("Note: decoding failed (\"" + ex + "\"); decoding was aborted."));
+            document.getElementById("error_list").appendChild(list_element);
         }
         document.getElementById("text_payload").innerHTML = "Decoded " + bit_array.length + " data bits; found " + text_payload.length + " characters:<br><pre>" + text_payload + "</pre>";
 
         update_area_details_list();
+        perform_global_checks();
 
         // restore highlight in newly-populated area list:
         highlight_area(highlighted_area);
+    }
+
+    function perform_global_checks () {
+        const ec_1_value = static_areas.get("format_ec_1").check_function(static_areas.get("format_ec_1")).value;
+        const mask_1_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1")).value;
+        const ec_data_1_value = static_areas.get("format_ec_data_1").check_function(static_areas.get("format_ec_data_1")).value;
+        const full_ec_1_bits = (ec_1_value << 13) | (mask_1_value << 10) | ec_data_1_value;
+        const check_result_1 = check_format_ec(full_ec_1_bits);
+
+        const ec_2_value = static_areas.get("format_ec_2").check_function(static_areas.get("format_ec_2")).value;
+        const mask_2_value = static_areas.get("format_mask_2").check_function(static_areas.get("format_mask_2")).value;
+        const ec_data_2_value = static_areas.get("format_ec_data_2").check_function(static_areas.get("format_ec_data_2")).value;
+        const full_ec_2_bits = (ec_2_value << 13) | (mask_2_value << 10) | ec_data_2_value;
+        const check_result_2 = check_format_ec(full_ec_2_bits);
+
+        if (check_result_1 != 0 || check_result_2 != 0) {
+            const potential_corrections_1 = get_corrections(full_ec_1_bits);
+            const potential_corrections_2 = get_corrections(full_ec_2_bits);
+
+            // create list of best corrections, taking both format info sections into account:
+            var combined_corrections = new Array();
+            for (var {code, distance} of potential_corrections_1) {
+                const matching_element_in_2 = potential_corrections_2.find(element => (element.code == code));
+                combined_corrections.push({"code": code, "distance_sum": distance + matching_element_in_2.distance});
+            }
+
+            combined_corrections.sort((a,b) => {
+                if (a.distance_sum != b.distance_sum) {
+                    return a.distance_sum - b.distance_sum;
+                } else {
+                    return a.code - b.code;
+                }
+            });
+
+            var new_list_element = document.createElement("li");
+            new_list_element.innerHTML = "Format data has invalid checksum. Possible corrections:";
+            document.getElementById("error_list").appendChild(new_list_element);
+            var new_sub_list = document.createElement("ul");
+            new_list_element.appendChild(new_sub_list);
+
+            for (var {code, distance_sum} of combined_corrections) {
+                const replacement_code = code;
+                let replacements = new Array();
+
+                const all_regions_1 = static_areas.get("format_ec_1").regions.concat(static_areas.get("format_mask_1").regions, static_areas.get("format_ec_data_1").regions);
+                const all_regions_2 = static_areas.get("format_ec_2").regions.concat(static_areas.get("format_mask_2").regions, static_areas.get("format_ec_data_2").regions);
+                const num_bits = 15;
+                const replacement_code_masked = replacement_code ^ 0b101010000010010;
+                for (var i = 0; i < num_bits; i++) {
+                    const bit = (replacement_code_masked >> (num_bits - i - 1)) & 1;
+                    const [x_1, y_1] = pixel_at_bit_offset(all_regions_1, i);
+                    replacements.push({"x": x_1, "y": y_1, "value": bit});
+                    const [x_2, y_2] = pixel_at_bit_offset(all_regions_2, i);
+                    replacements.push({"x": x_2, "y": y_2, "value": bit});
+                }
+
+                const ec_value = (replacement_code >> 13) & 0b11;
+                const mask_value = (replacement_code >> 10) & 0b111;
+                const payload_bits = (replacement_code >> 10) & 0b11111;
+
+                var item_text = "<span style='text-decoration: underline dashed;'>"
+                    + payload_bits.toString(2).padStart(5,"0")
+                    + " = EC: " + error_correction_levels[ec_value] + ", mask: " + mask_value
+                    + " (" + distance_sum + " bit(s) differ) <button>Apply</button></span>";
+
+                var new_sub_item = document.createElement("li");
+                new_sub_item.innerHTML = item_text;
+                new_sub_list.appendChild(new_sub_item);
+
+                const span = new_sub_item.querySelector("span");
+                span.addEventListener("mouseover", function (e) {
+                    show_correction(replacements);
+                }, false);
+                span.addEventListener("mouseout", function (e) {
+                    show_correction(null);
+                }, false);
+
+                const button = new_sub_item.querySelector("button");
+                button.addEventListener("click", function (e) {
+                    apply_correction(replacements);
+                    show_correction(null);
+                }, false);
+            }
+        }
+    }
+
+    function show_correction (replacements) {
+        highlighted_differences = replacements;
+        draw_code();
+    }
+
+    function apply_correction (replacements) {
+        for ({x, y, value} of replacements) {
+            pixel_data[x][y] = value;
+        }
+        decode();
+        draw_code();
+        save_state();
     }
 
     // Returns the actual next data pixel position (taking static areas into account)
@@ -593,7 +930,7 @@
             if (end_reached) {
                 return [undefined, undefined, true];
             }
-        } while (inside_areas(x, y, static_areas));
+        } while (inside_static_areas(x, y));
         return [x, y, false];
     }
 
@@ -614,6 +951,25 @@
             }
         }
         return null;
+    }
+
+    function inside_static_areas (x, y) {
+        // Performance-optimized variant of inside_areas(), which only checks against static_areas
+        // and uses a precalculated lookup array.
+        return static_area_grid[x][y];
+    }
+
+    function calculate_static_area_grid () {
+        // create an array that stores for each pixel position the static area it is covered by (or null):
+        var grid_data = new Array(code_size);
+        for (var x = 0; x < code_size; x++) {
+            grid_data[x] = new Array(code_size);
+            for (var y = 0; y < code_size; y++) {
+                const found_static_area = inside_areas(x, y, static_areas);
+                grid_data[x][y] = found_static_area;
+            }
+        }
+        return grid_data;
     }
 
     // Returns the next data pixel position on the grid (regardless of static areas).
@@ -666,6 +1022,105 @@
         }
     }
 
+
+    // @param regions Array of rectangular regions
+    // @param cell_size Width/height of a single quadratic cell
+    // @returns A list of lines (start_x, start_y, end_x, end_y) that draw the outline of the regions
+    function calc_outline (regions, cell_size) {
+
+        // Maps for single horizontal and vertical lines.
+        // Each line is one cell long and goes from the smaller to the larger coordinate.
+        // Key: x/y coordinate of start point (as string, to achieve correct comparison).
+        // Value: integer (number of lines with that start point).
+        var lines_h = new Map();
+        var lines_v = new Map();
+
+        function make_key (x, y) {
+            // pad integers, to get correct comparisons when sorting lines:
+            return "" + x.toString().padStart(4, "0") + "/" + y.toString().padStart(4, "0");
+        }
+
+        function parse_key (key) {
+            const parts = key.split("/");
+            return [parseInt(parts[0]), parseInt(parts[1])];
+        }
+
+        function increment_int_map_value (map, key) {
+            if (!map.has(key)) {
+                map.set(key, 0);
+            }
+            map.set(key, map.get(key) + 1);
+        }
+
+        // add outlines of each region to lines_h and lines_v
+        for (var region of regions) {
+            for (var x = 0; x < region.w; x++) {
+                increment_int_map_value(lines_h, make_key(region.x + x, region.y));
+                increment_int_map_value(lines_h, make_key(region.x + x, region.y + region.h));
+            }
+            for (var y = 0; y < region.h; y++) {
+                increment_int_map_value(lines_v, make_key(region.x, region.y + y));
+                increment_int_map_value(lines_v, make_key(region.x + region.w, region.y + y));
+            }
+        }
+
+        // remove (set to 0) any map entries where value > 1 (if the same line exists twice, it indicates adjacent regions)
+        for (const [key, num_lines] of lines_h.entries()) {
+            if (num_lines < 0 || num_lines > 2) {
+                console.log("internal error: unexpected number of overlapping lines");
+            }
+            if (num_lines == 2) {
+                lines_h.set(key, 0);
+            }
+        }
+        for (const [key, num_lines] of lines_v.entries()) {
+            if (num_lines < 0 || num_lines > 2) {
+                console.log("internal error: unexpected number of overlapping lines");
+            }
+            if (num_lines == 2) {
+                lines_v.set(key, 0);
+            }
+        }
+
+        lines_h = new Map([...lines_h].sort());
+        lines_v = new Map([...lines_v].sort());
+
+        // create lists of final lines from lines_h/v
+        var result_lines = new Array();
+        for (const [key, num_lines] of lines_h.entries()) {
+            if (num_lines > 0) {
+                const [x,y] = parse_key(key);
+                // merge following line segments together:
+                for (var i = 1; /* empty */ ; i++) {
+                    const next_key = make_key(x+i, y);
+                    if (lines_h.get(next_key) > 0) {
+                        lines_h.set(next_key, 0);
+                    } else {
+                        break;
+                    }
+                }
+                result_lines.push({"x": x, "y": y, "w": i, "h": 0 });
+            }
+        }
+        for (const [key, num_lines] of lines_v.entries()) {
+            if (num_lines > 0) {
+                const [x,y] = parse_key(key);
+                for (var i = 1; /* empty */ ; i++) {
+                    const next_key = make_key(x, y+i);
+                    if (lines_v.get(next_key) > 0) {
+                        lines_v.set(next_key, 0);
+                    } else {
+                        break;
+                    }
+                }
+                result_lines.push({"x": x, "y": y, "w": 0, "h": i });
+            }
+        }
+
+        return result_lines;
+    }
+
+
     function load_from_file (img_input_field) {
         const [file] = img_input_field.files;
         if (file) {
@@ -701,25 +1156,47 @@
     </script>
 
     <body onload="init()">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+        <div>
         <form>
             <input accept="image/*" type="file" id="imgInp" onchange="update_load_button();" />
             <input type="button" id="btn_load_image" value="Load Selected File" onclick="load_from_file(this.form.imgInp)">
         </form>
-        <input type="checkbox" id="cb_show_unmasked" onchange="draw_code()"><label for="cb_show_unmasked">Show Unmasked</label><br>
+        Mask Display:
+        <input type="radio" name="mask_mode" id="rb_show_masked" onchange="draw_code()" checked><label for="rb_show_masked">Masked</label>
+        <input type="radio" name="mask_mode" id="rb_show_unmasked" onchange="draw_code()"><label for="rb_show_unmasked">Unmasked</label>
+        <input type="radio" name="mask_mode" id="rb_show_mask" onchange="draw_code()"><label for="rb_show_mask">Mask Itself</label>
         <br>
+        Numbers:
+        <input type="radio" name="numbering_mode" id="rb_numbers_none" onchange="draw_code()" checked><label for="rb_numbers_none">Hide</label>
+        <input type="radio" name="numbering_mode" id="rb_numbers_per_area" onchange="draw_code()"><label for="rb_numbers_per_area">Show for each area</label>
+        <input type="radio" name="numbering_mode" id="rb_numbers_data_bits" onchange="draw_code()"><label for="rb_numbers_data_bits">Show for data bits</label>
+        <br>
+        <input type="checkbox" id="cb_colors_enabled" onchange="draw_code()" checked><label for="cb_colors_enabled">Color areas</label>
+        <input type="checkbox" id="cb_outlines_enabled" onchange="draw_code()" checked><label for="cb_outlines_enabled">Show Outlines</label>
+        <input type="checkbox" id="cb_grid_enabled" onchange="draw_code()" checked><label for="cb_grid_enabled">Show Grid</label>
+        <br>
+        <br>
+        </div>
+
+            <div>
+                <canvas id="preview_canvas" style="display: none"></canvas>
+                <img id="preview_image" title="Preview of edited QR code" style="image-rendering: crisp-edges;">
+            </div>
+        </div>
 
         <div style="display: flex; align-items: flex-start;">
             <div>
-                <canvas id="can" style="border:2px solid;"></canvas>
+                <canvas id="can"></canvas>
                 <br>
                 <div id="mouse_pos">&nbsp;</div>
                 <br>
                 <div id="text_payload"></div>
                 <br>
-                <div id="error_list"></div>
+                <ul id="error_list" style="height: 18vh; overflow: scroll"></ul>
             </div>
 
-            <div style="height: 90vh; overflow: scroll">
+            <div style="height: 85vh; overflow: scroll">
                 <table id="area_table" style="margin-left: 20px">
                     <thead>
                         <tr>
