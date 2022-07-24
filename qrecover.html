@@ -48,6 +48,7 @@
             "regions":[],
             "color":color_values,
             "outline:":null,
+            "dom_elements": new Map(),
             "check_function":check_function
         });
 
@@ -61,6 +62,7 @@
         target_map.get(id).num_pixels = num_pixels;
 
         target_map.get(id).outline = calc_outline(target_map.get(id).regions, pixel_size);
+        return target_map.get(id);
     }
 
     function get_all_areas () {
@@ -122,13 +124,17 @@
 
     function highlight_area (area) {
         if (highlighted_area) {
-            highlighted_area.div.style.outline = "";
+            for (const [element_location_id, element] of highlighted_area.dom_elements) {
+                element.style.outline = "";
+            }
         }
 
         highlighted_area = area;
 
         if (highlighted_area) {
-            highlighted_area.div.style.outline = "3px solid red";
+            for (const [element_location_id, element] of highlighted_area.dom_elements) {
+                element.style.outline = "3px solid red";
+            }
         }
         draw_code();
     }
@@ -620,11 +626,11 @@
 
         for (const [id, area] of get_all_areas().entries()) {
             var new_row = table_body.insertRow();
-            area.div = new_row;
-            area.div.addEventListener("mouseover", function (e) {
+            area.dom_elements.set("area_table_div", new_row);
+            new_row.addEventListener("mouseover", function (e) {
                 highlight_area(area);
             });
-            area.div.addEventListener("mouseout", function (e) {
+            new_row.addEventListener("mouseout", function (e) {
                 highlight_area(null);
             });
 
@@ -705,7 +711,7 @@
             return [result_int, offset+len];
         }
 
-        function read_int_and_add_row (bits, offset, len, row_prep_func) {
+        function read_int_and_add_row (bits, offset, len, row_prep_func, row_post_func) {
             var orig_offset = offset;
             var [int_value, read_offset] = read_int(bits, offset, len);
 
@@ -722,7 +728,11 @@
             };
 
             var [name, color] = row_prep_func(read_values);
-            add_area(name + "_" + orig_offset, regions, color, () => { return read_values; }, dynamic_areas);
+            const new_area = add_area(name + "_" + orig_offset, regions, color, () => { return read_values; }, dynamic_areas);
+
+            if (row_post_func) {
+                row_post_func(read_values, new_area);
+            }
 
             return [int_value, read_offset];
         }
@@ -754,7 +764,7 @@
         dynamic_areas = new Map();
         document.getElementById("error_list").innerHTML = "";
         try {
-            var text_payload = "";
+            var text_characters = [];
             var read_offset = 0;
             while (read_offset < bit_array.length) {
                 var [mode, read_offset] = read_int_and_add_row(bit_array, read_offset, 4, (read_result) => {
@@ -778,20 +788,23 @@
                         var [two_chars, read_offset] = read_int_and_add_row(bit_array, read_offset, 11, (read_result) => {
                             var char2_code = read_result["value"] % 45;
                             var char1_code = (read_result["value"] - char2_code) / 45;
-
-                            text_payload += alphanumeric_table.get(char1_code) + alphanumeric_table.get(char2_code);
+                            read_result["text_payload"] = alphanumeric_table.get(char1_code) + alphanumeric_table.get(char2_code);
 
                             read_result["desc"] = char1_code + "=" + alphanumeric_table.get(char1_code) + "; " + char2_code + "=" + alphanumeric_table.get(char2_code);
                             return ["two_chars", [255, 255, 192]];
+                        }, (read_result, area) => {
+                            text_characters.push({"chars": read_result["text_payload"], "area": area });
                         });
                     }
                     if (payload_length % 2 != 0) {
                         // read additional character
                         var [final_char, read_offset] = read_int_and_add_row(bit_array, read_offset, 6, (read_result) => {
-                            text_payload += alphanumeric_table.get(read_result["value"]);
+                            read_result["text_payload"] = alphanumeric_table.get(read_result["value"]);
 
                             read_result["desc"] = read_result["value"] + "=" + alphanumeric_table.get(read_result["value"]);
                             return ["final_char", [255, 255, 192]];
+                        }, (read_result, area) => {
+                            text_characters.push({"chars": read_result["text_payload"], "area": area });
                         });
                     }
                     break;
@@ -803,9 +816,10 @@
 
                     for (var j = 0; j < payload_length; j++) {
                         var [byte, read_offset] = read_int_and_add_row(bit_array, read_offset, 8, (read_result) => {
-                            text_payload += String.fromCharCode(read_result["value"]);
                             read_result["desc"] = "ASCII='" + String.fromCharCode(read_result["value"]) + "'";
                             return ["byte", [255, 255, 192]];
+                        }, (read_result, area) => {
+                            text_characters.push({"chars": String.fromCharCode(read_result["value"]), "area": area });
                         });
                     }
                     break;
@@ -875,7 +889,31 @@
             list_element.appendChild(document.createTextNode("Note: decoding failed (\"" + ex + "\"); decoding was aborted."));
             document.getElementById("error_list").appendChild(list_element);
         }
-        document.getElementById("text_payload").innerHTML = "Decoded " + bit_array.length + " data bits; found " + text_payload.length + " characters:<br><pre>" + text_payload + "</pre>";
+
+        var num_text_characters = 0;
+        for (const entry of text_characters) {
+            num_text_characters += entry.chars.length;
+        }
+        document.getElementById("text_payload").innerHTML = "Decoded " + bit_array.length + " data bits; found " + num_text_characters + " characters:<br>";
+
+        const pre_element = document.createElement("pre");
+        document.getElementById("text_payload").appendChild(pre_element);
+
+        for (let entry of text_characters) {
+            const span_element = document.createElement("span");
+            var displayed_chars = entry.chars;
+            // TODO: also replace any other characters that would result in a zero-width span:
+            displayed_chars = displayed_chars.replace(/\n/, "\u23ce\n");
+            span_element.appendChild(document.createTextNode(displayed_chars));
+            span_element.addEventListener("mouseover", function (e) {
+                highlight_area(entry.area);
+            });
+            span_element.addEventListener("mouseout", function (e) {
+                highlight_area(null);
+            });
+            entry.area.dom_elements.set("text_payload_span", span_element);
+            pre_element.appendChild(span_element);
+        }
 
         update_area_details_list();
         perform_global_checks();
