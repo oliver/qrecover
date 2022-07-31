@@ -63,7 +63,7 @@
         }
         target_map.get(id).num_pixels = num_pixels;
 
-        target_map.get(id).outline = calc_outline(target_map.get(id).regions, pixel_size);
+        target_map.get(id).outline = calc_outline(target_map.get(id).regions);
         return target_map.get(id);
     }
 
@@ -918,9 +918,8 @@
 
 
     // @param regions Array of rectangular regions
-    // @param cell_size Width/height of a single quadratic cell
     // @returns A list of lines (start_x, start_y, end_x, end_y) that draw the outline of the regions
-    function calc_outline (regions, cell_size) {
+    function calc_outline (regions) {
 
         // Maps for single horizontal and vertical lines.
         // Each line is one cell long and goes from the smaller to the larger coordinate.
