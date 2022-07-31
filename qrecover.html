@@ -5,6 +5,7 @@
 
     <script src="error_correction.js"></script>
     <script src="main_canvas.js"></script>
+    <script src="preview_image.js"></script>
 
     <script type="text/javascript">
     var code_size = 25;
@@ -147,12 +148,7 @@
         static_area_grid = calculate_static_area_grid();
 
         init_main_canvas(document.getElementById("can"), document.getElementById("mouse_pos"));
-
-        preview_canvas = document.getElementById("preview_canvas");
-        preview_canvas.width = code_size;
-        preview_canvas.height = code_size;
-        preview_context = preview_canvas.getContext("2d");
-        document.getElementById("preview_image").width = code_size * 3;
+        init_preview_image(document.getElementById("preview_canvas"), document.getElementById("preview_image"));
 
         if (!restore_state()) {
             load_from_img_object(document.getElementById('img_example_code'));

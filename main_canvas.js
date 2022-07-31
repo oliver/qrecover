@@ -152,24 +152,7 @@ function draw_code () {
         }
     }
 
-    // draw preview image:
-    preview_context.fillStyle = "white";
-    preview_context.fillRect(0, 0, code_size, code_size);
-
-    var image_data = preview_context.getImageData(0, 0, code_size, code_size);
-    for (var x = 0; x < code_size; x++) {
-        for (var y = 0; y < code_size; y++) {
-            if (pixel_data[x][y]) {
-                const offset = y * (code_size * 4) + x * 4;
-                image_data.data[offset+0] = 0;
-                image_data.data[offset+1] = 0;
-                image_data.data[offset+2] = 0;
-            }
-        }
-    }
-
-    preview_context.putImageData(image_data, 0, 0);
-    document.getElementById("preview_image").src = preview_canvas.toDataURL();
+    draw_preview_image();
 }
 
 function draw_pixel (px, py, set_pixel) {
