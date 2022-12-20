@@ -24,18 +24,18 @@ class PixelData {
 
 
 // @param region An object with x,y,w,h attributes
-function get_pixels_as_bools (region, pixel_data_to_read = pixel_data.data_array) {
+function get_pixels_as_bools (region, pixel_data_to_read) {
     var result_array = new Array();
     for (var y = region.y; y < region.y+region.h; y++) {
         for (var x = region.x; x < region.x+region.w; x++) {
-            result_array.push(pixel_data_to_read[x][y] ? true : false);
+            result_array.push(pixel_data_to_read.get(x, y) ? true : false);
         }
     }
     return result_array;
 }
 
 // @param regions An array of region objects, each of which can be passed to get_pixels_as_bools()
-function get_pixels_from_regions_as_bools (regions, pixel_data_to_read = pixel_data.data_array) {
+function get_pixels_from_regions_as_bools (regions, pixel_data_to_read) {
     var result_array = new Array();
     for (var region of regions) {
         result_array = result_array.concat(get_pixels_as_bools(region, pixel_data_to_read));
