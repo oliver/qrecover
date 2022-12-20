@@ -142,6 +142,15 @@
     }
 
     function decode () {
+        decode_inner();
+        update_area_details_list();
+        perform_global_checks();
+
+        // restore highlight in newly-populated area list:
+        highlight_area(highlighted_area);
+    }
+
+    function decode_inner () {
         // read data bits (into an array of bools):
         var curr_x = code_size-1;
         var curr_y = code_size-1;
@@ -374,12 +383,6 @@
             entry.area.dom_elements.set("text_payload_span", span_element);
             pre_element.appendChild(span_element);
         }
-
-        update_area_details_list();
-        perform_global_checks();
-
-        // restore highlight in newly-populated area list:
-        highlight_area(highlighted_area);
     }
 
     function perform_global_checks () {
