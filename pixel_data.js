@@ -137,7 +137,8 @@ function get_masked_pixels () {
     return masked_pixel_data;
 }
 
-function pixel_at_bit_offset (regions, offset) {
+/// Returns the x/y coordinates for the specified offset in the specified list of regions.
+function pixel_coords_at_bit_offset (regions, offset) {
     for (var region of regions) {
         if (offset >= (region.w * region.h)) {
             offset -= (region.w * region.h);
