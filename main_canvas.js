@@ -13,7 +13,11 @@ function init_main_canvas (canvas_element, mouse_pos_element) {
 
     canvas.addEventListener("click", function (e) {
         var [pix_x, pix_y] = event_to_pixel(e);
-        toggle_pixel(pix_x, pix_y);
+        var new_value = !(pixel_data.get(pix_x, pix_y));
+        pixel_data.set(pix_x, pix_y, new_value);
+
+        decode();
+        draw_code();
         save_state();
     }, false);
 

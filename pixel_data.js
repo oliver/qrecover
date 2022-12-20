@@ -151,10 +151,3 @@ function pixel_coords_at_bit_offset (regions, offset) {
     }
     throw "offset " + offset + " is too large";
 }
-
-function toggle_pixel (px, py) {
-    var set_pixel = !(pixel_data.get(px, py));
-    pixel_data.set(px, py, set_pixel);
-    decode();
-    draw_code();
-}
