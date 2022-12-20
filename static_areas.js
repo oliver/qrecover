@@ -13,7 +13,7 @@ function bits_to_int (bool_array) {
 }
 
 function expect_pixels (regions, expected_values) {
-    const bool_array = get_pixels_from_regions_as_bools(regions, pixel_data);
+    const bool_array = pixel_data.get_pixels_from_regions_as_bools(regions);
     if (expected_values.length != bool_array.length) {
         throw {"desc":"internal error: bad expected size"};
     }
@@ -81,7 +81,7 @@ function add_static_areas () {
         return {"value": ec_level, "num_bits": 2, "desc": "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")"};
     });
     add_area("format_ec_2", [[8, code_size-1, 1, 1], [8, code_size-2, 1, 1]], [255, 128, 0], function (area) {
-        const bits = get_pixels_from_regions_as_bools(area.regions, pixel_data);
+        const bits = pixel_data.get_pixels_from_regions_as_bools(area.regions);
         const ec_level = bits_to_int(bits) ^ 0b10;
 
         const ec_1_value = static_areas.get("format_ec_1").check_function(static_areas.get("format_ec_1")).value;
@@ -109,7 +109,7 @@ function add_static_areas () {
         };
     });
     add_area("format_mask_2", [[8, code_size-3, 1, 1], [8, code_size-4, 1, 1], [8, code_size-5, 1, 1]], [128, 255, 0], function (area) {
-        const bits = get_pixels_from_regions_as_bools(area.regions, pixel_data);
+        const bits = pixel_data.get_pixels_from_regions_as_bools(area.regions);
         const mask_value = bits_to_int(bits) ^ 0b101;
 
         const mask_1_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1")).value;
@@ -130,7 +130,7 @@ function add_static_areas () {
     });
 
     function do_complete_format_ec_check (area, format_ec_area_id, format_mask_area_id) {
-        const value = bits_to_int(get_pixels_from_regions_as_bools(area.regions, get_masked_pixels()));
+        const value = bits_to_int(get_masked_pixels().get_pixels_from_regions_as_bools(area.regions));
 
         var result = {
             "num_bits": area.num_pixels,

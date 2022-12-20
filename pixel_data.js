@@ -31,16 +31,15 @@ class PixelData {
         }
         return result_array;
     }
-}
 
-
-// @param regions An array of region objects, each of which can be passed to get_pixels_as_bools()
-function get_pixels_from_regions_as_bools (regions, pixel_data_to_read) {
-    var result_array = new Array();
-    for (var region of regions) {
-        result_array = result_array.concat(pixel_data_to_read.get_pixels_as_bools(region));
+    // @param regions An array of region objects, each of which can be passed to get_pixels_as_bools()
+    get_pixels_from_regions_as_bools (regions) {
+        var result_array = new Array();
+        for (var region of regions) {
+            result_array = result_array.concat(this.get_pixels_as_bools(region));
+        }
+        return result_array;
     }
-    return result_array;
 }
 
 
