@@ -77,7 +77,7 @@ function get_full_mask () {
         }
     }
 
-    function set_pixels (pixel_data, region, bool_array) {
+    function set_pixels (pix_data, region, bool_array) {
         if (region.w * region.h != bool_array.length) {
             throw "bad bool_array size"
         }
@@ -85,18 +85,18 @@ function get_full_mask () {
         var i = 0;
         for (var y = region.y; y < region.y+region.h; y++) {
             for (var x = region.x; x < region.x+region.w; x++) {
-                pixel_data[x][y] = bool_array[i];
+                pix_data[x][y] = bool_array[i];
                 i++;
             }
         }
     }
 
-    function set_pixels_in_regions (pixel_data, regions, bool_array) {
+    function set_pixels_in_regions (pix_data, regions, bool_array) {
         var i = 0;
         for (var region of regions) {
             for (var y = region.y; y < region.y+region.h; y++) {
                 for (var x = region.x; x < region.x+region.w; x++) {
-                    pixel_data[x][y] = bool_array[i];
+                    pix_data[x][y] = bool_array[i];
                     i++;
                 }
             }
