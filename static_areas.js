@@ -76,7 +76,7 @@ function add_static_areas () {
 
     // error correction level (redundantly):
     add_area("format_ec_1", [[0, 8, 2, 1]], [255, 128, 0], function (area) {
-        const [bit0, bit1] = get_pixels_as_bools(area.regions[0], pixel_data);
+        const [bit0, bit1] = pixel_data.get_pixels_as_bools(area.regions[0]);
         const ec_level = bits_to_int([bit0, bit1]) ^ 0b10;
         return {"value": ec_level, "num_bits": 2, "desc": "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")"};
     });
@@ -100,7 +100,7 @@ function add_static_areas () {
 
     // mask pattern (redundantly):
     add_area("format_mask_1", [[2, 8, 3, 1]], [128, 255, 0], function (area) {
-        const [bit0, bit1, bit2] = get_pixels_as_bools(area.regions[0], pixel_data);
+        const [bit0, bit1, bit2] = pixel_data.get_pixels_as_bools(area.regions[0]);
         const mask_value = bits_to_int([bit0, bit1, bit2]) ^ 0b101;
         return {
             "desc": "Mask: " + mask_value + " (0b" + mask_value.toString(2) + ")",
