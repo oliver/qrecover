@@ -2,20 +2,29 @@
 // Functions for working with the per-pixel data
 //
 
-
+/// The global PixelData object which holds the currently displayed pixel data.
 var pixel_data;
 
-function init_pixel_data() {
-    pixel_data = new Array(code_size);
-    for (var i = 0; i < pixel_data.length; i++) {
-        pixel_data[i] = new Array(code_size);
-        pixel_data[i].fill(false);
+class PixelData {
+    constructor(code_size) {
+        this.data_array = new Array(code_size);
+        for (var i = 0; i < this.data_array.length; i++) {
+            this.data_array[i] = new Array(code_size);
+            this.data_array[i].fill(false);
+        }
+    }
+
+    get(x, y) {
+        return this.data_array[x][y];
+    }
+    set(x, y, new_value) {
+        this.data_array[x][y] = new_value;
     }
 }
 
 
 // @param region An object with x,y,w,h attributes
-function get_pixels_as_bools (region, pixel_data_to_read = pixel_data) {
+function get_pixels_as_bools (region, pixel_data_to_read = pixel_data.data_array) {
     var result_array = new Array();
     for (var y = region.y; y < region.y+region.h; y++) {
         for (var x = region.x; x < region.x+region.w; x++) {
@@ -26,7 +35,7 @@ function get_pixels_as_bools (region, pixel_data_to_read = pixel_data) {
 }
 
 // @param regions An array of region objects, each of which can be passed to get_pixels_as_bools()
-function get_pixels_from_regions_as_bools (regions, pixel_data_to_read = pixel_data) {
+function get_pixels_from_regions_as_bools (regions, pixel_data_to_read = pixel_data.data_array) {
     var result_array = new Array();
     for (var region of regions) {
         result_array = result_array.concat(get_pixels_as_bools(region, pixel_data_to_read));
@@ -36,13 +45,13 @@ function get_pixels_from_regions_as_bools (regions, pixel_data_to_read = pixel_d
 
 
 function save_state () {
-    sessionStorage.setItem("pixel_data", JSON.stringify(pixel_data));
+    sessionStorage.setItem("pixel_data", JSON.stringify(pixel_data.data_array));
 }
 
 function restore_state () {
     try {
         if (sessionStorage.getItem("pixel_data")) {
-            pixel_data = JSON.parse(sessionStorage.getItem("pixel_data"));
+            pixel_data.data_array = JSON.parse(sessionStorage.getItem("pixel_data"));
             return true;
         }
     } catch (ex) {
@@ -66,13 +75,12 @@ function get_full_mask () {
     var mask_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1"))["value"];
     const mask_bit_function = mask_types[mask_value];
 
-    var mask_data = new Array(code_size);
+    var mask_data = new PixelData(code_size);
     for (var x = 0; x < code_size; x++) {
-        mask_data[x] = new Array(code_size);
         for (var y = 0; y < code_size; y++) {
             // apply mask only for data areas:
             if (!inside_static_areas(x, y)) {
-                mask_data[x][y] = mask_bit_function(y, x);
+                mask_data.set(x, y, mask_bit_function(y, x));
             }
         }
     }
@@ -85,7 +93,7 @@ function get_full_mask () {
         var i = 0;
         for (var y = region.y; y < region.y+region.h; y++) {
             for (var x = region.x; x < region.x+region.w; x++) {
-                pix_data[x][y] = bool_array[i];
+                pix_data.set(x, y, bool_array[i]);
                 i++;
             }
         }
@@ -96,7 +104,7 @@ function get_full_mask () {
         for (var region of regions) {
             for (var y = region.y; y < region.y+region.h; y++) {
                 for (var x = region.x; x < region.x+region.w; x++) {
-                    pix_data[x][y] = bool_array[i];
+                    pix_data.set(x, y, bool_array[i]);
                     i++;
                 }
             }
@@ -121,11 +129,10 @@ function get_full_mask () {
 
 function get_masked_pixels () {
     var mask_data = get_full_mask();
-    var masked_pixel_data = new Array(code_size);
+    var masked_pixel_data = new PixelData(code_size);
     for (var x = 0; x < code_size; x++) {
-        masked_pixel_data[x] = new Array(code_size);
         for (var y = 0; y < code_size; y++) {
-            masked_pixel_data[x][y] = pixel_data[x][y] ^ mask_data[x][y];
+            masked_pixel_data.set(x, y, pixel_data.get(x, y) ^ mask_data.get(x, y));
         }
     }
     return masked_pixel_data;
@@ -146,8 +153,8 @@ function pixel_at_bit_offset (regions, offset) {
 }
 
 function toggle_pixel (px, py) {
-    var set_pixel = !(pixel_data[px][py]);
-    pixel_data[px][py] = set_pixel;
+    var set_pixel = !(pixel_data.get(px, py));
+    pixel_data.set(px, py, set_pixel);
     decode();
     draw_code();
 }

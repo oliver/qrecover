@@ -76,7 +76,7 @@ function draw_code () {
 
     for (var x = 0; x < code_size; x++) {
         for (var y = 0; y < code_size; y++) {
-            draw_pixel(x, y, displayed_pixel_data[x][y]);
+            draw_pixel(x, y, displayed_pixel_data.get(x, y));
         }
     }
 
@@ -108,7 +108,7 @@ function draw_code () {
         if (document.getElementById("rb_numbers_per_area").checked) {
             for (var i = 0; i < area.num_pixels; i++) {
                 const [x, y] = pixel_at_bit_offset(area.regions, i);
-                ctx.fillStyle = displayed_pixel_data[x][y] ? "white" : "black";
+                ctx.fillStyle = displayed_pixel_data.get(x, y) ? "white" : "black";
                 ctx.fillText(("" + i).padStart(3, " "), x*pixel_size, (y+1)*pixel_size - 5);
             }
         }
@@ -124,7 +124,7 @@ function draw_code () {
         var curr_y = code_size-1;
         var i = 0;
         do {
-            ctx.fillStyle = displayed_pixel_data[curr_x][curr_y] ? "white" : "black";
+            ctx.fillStyle = displayed_pixel_data.get(curr_x, curr_y) ? "white" : "black";
             ctx.fillText(("" + i).padStart(3, " "), curr_x*pixel_size, (curr_y+1)*pixel_size - 5);
             [curr_x, curr_y, end_reached] = next_data_pixel_pos(curr_x, curr_y);
             i++;
@@ -135,7 +135,7 @@ function draw_code () {
         const inset_pixels = pixel_size * 0.3;
         ctx.fillStyle = "red";
         for ({x, y, value} of highlighted_differences) {
-            if (value != pixel_data[x][y]) {
+            if (value != pixel_data.get(x, y)) {
                 ctx.fillRect(x * pixel_size + inset_pixels, y * pixel_size + inset_pixels, pixel_size - (2*inset_pixels), pixel_size - (2*inset_pixels));
             }
         }

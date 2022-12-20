@@ -130,7 +130,7 @@ function add_static_areas () {
     });
 
     function do_complete_format_ec_check (area, format_ec_area_id, format_mask_area_id) {
-        const value = bits_to_int(get_pixels_from_regions_as_bools(area.regions, get_masked_pixels()));
+        const value = bits_to_int(get_pixels_from_regions_as_bools(area.regions, get_masked_pixels().data_array));
 
         var result = {
             "num_bits": area.num_pixels,
