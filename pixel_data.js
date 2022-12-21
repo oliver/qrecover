@@ -5,6 +5,62 @@
 /// The global PixelData object which holds the currently displayed pixel data.
 var pixel_data;
 
+
+/// Represents a rectangular region in a pixel grid, consisting of an x/y coordinate and a width and height.
+class Region {
+    constructor(x, y, w, h) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+    }
+
+    for_each_pixel(func) {
+        for (var y = this.y; y < this.y+this.h; y++) {
+            for (var x = this.x; x < this.x+this.w; x++) {
+                func(x, y);
+            }
+        }
+    }
+}
+
+/// Represents a list of Region objects.
+class RegionList {
+    constructor() {
+        this.regions = new Array();
+    }
+
+    static from_raw_objects(array_of_raw_region_objects) {
+        var new_regionlist = new RegionList();
+        for (var region of array_of_raw_region_objects) {
+            new_regionlist.regions.push(new Region(region.x, region.y, region.w, region.h))
+        }
+        return new_regionlist;
+    }
+
+    for_each_pixel(func) {
+        for (var region of this.regions) {
+            region.for_each_pixel(func);
+        }
+    }
+
+    /// Returns the x/y coordinates for the specified offset in the list of regions
+    pixel_coords_at_bit_offset (offset) {
+        for (var region of this.regions) {
+            if (offset >= (region.w * region.h)) {
+                offset -= (region.w * region.h);
+                continue;
+            }
+
+            const x = offset % region.w;
+            const y = Math.floor(offset / region.w);
+            return [region.x + x, region.y + y];
+        }
+        throw "offset " + offset + " is too large";
+    }
+}
+
+
 class PixelData {
     constructor(code_size) {
         this.data_array = new Array(code_size);
@@ -86,28 +142,25 @@ function get_full_mask () {
 
     function set_pixels_in_regions (pix_data, regions, bool_array) {
         var i = 0;
-        for (var region of regions) {
-            for (var y = region.y; y < region.y+region.h; y++) {
-                for (var x = region.x; x < region.x+region.w; x++) {
-                    pix_data.set(x, y, bool_array[i]);
-                    i++;
-                }
-            }
-        }
+        regions.for_each_pixel((x, y) => {
+            pix_data.set(x, y, bool_array[i]);
+            i++;
+        });
+
         if (i != bool_array.length) {
             throw "bad bool_array size"
         }
     }
 
     // 10 101 0000010010
-    set_pixels_in_regions(mask_data, static_areas.get("format_ec_1").regions, [true, false]);
-    set_pixels_in_regions(mask_data, static_areas.get("format_ec_2").regions, [true, false]);
+    set_pixels_in_regions(mask_data, RegionList.from_raw_objects(static_areas.get("format_ec_1").regions), [true, false]);
+    set_pixels_in_regions(mask_data, RegionList.from_raw_objects(static_areas.get("format_ec_2").regions), [true, false]);
 
-    set_pixels_in_regions(mask_data, static_areas.get("format_mask_1").regions, [true, false, true]);
-    set_pixels_in_regions(mask_data, static_areas.get("format_mask_2").regions, [true, false, true]);
+    set_pixels_in_regions(mask_data, RegionList.from_raw_objects(static_areas.get("format_mask_1").regions), [true, false, true]);
+    set_pixels_in_regions(mask_data, RegionList.from_raw_objects(static_areas.get("format_mask_2").regions), [true, false, true]);
 
-    set_pixels_in_regions(mask_data, static_areas.get("format_ec_data_1").regions, [false, false, false, false, false, true, false, false, true, false]);
-    set_pixels_in_regions(mask_data, static_areas.get("format_ec_data_2").regions, [false, false, false, false, false, true, false, false, true, false]);
+    set_pixels_in_regions(mask_data, RegionList.from_raw_objects(static_areas.get("format_ec_data_1").regions), [false, false, false, false, false, true, false, false, true, false]);
+    set_pixels_in_regions(mask_data, RegionList.from_raw_objects(static_areas.get("format_ec_data_2").regions), [false, false, false, false, false, true, false, false, true, false]);
 
     return mask_data;
 }
@@ -121,19 +174,4 @@ function get_masked_pixels () {
         }
     }
     return masked_pixel_data;
-}
-
-/// Returns the x/y coordinates for the specified offset in the specified list of regions.
-function pixel_coords_at_bit_offset (regions, offset) {
-    for (var region of regions) {
-        if (offset >= (region.w * region.h)) {
-            offset -= (region.w * region.h);
-            continue;
-        }
-
-        const x = offset % region.w;
-        const y = Math.floor(offset / region.w);
-        return [region.x + x, region.y + y];
-    }
-    throw "offset " + offset + " is too large";
 }

@@ -44,15 +44,15 @@ function perform_global_checks () {
             const replacement_code = code;
             let replacements = new Array();
 
-            const all_regions_1 = static_areas.get("format_ec_1").regions.concat(static_areas.get("format_mask_1").regions, static_areas.get("format_ec_data_1").regions);
-            const all_regions_2 = static_areas.get("format_ec_2").regions.concat(static_areas.get("format_mask_2").regions, static_areas.get("format_ec_data_2").regions);
+            const all_regions_1 = RegionList.from_raw_objects( static_areas.get("format_ec_1").regions.concat(static_areas.get("format_mask_1").regions, static_areas.get("format_ec_data_1").regions) );
+            const all_regions_2 = RegionList.from_raw_objects( static_areas.get("format_ec_2").regions.concat(static_areas.get("format_mask_2").regions, static_areas.get("format_ec_data_2").regions) );
             const num_bits = 15;
             const replacement_code_masked = replacement_code ^ 0b101010000010010;
             for (var i = 0; i < num_bits; i++) {
                 const bit = (replacement_code_masked >> (num_bits - i - 1)) & 1;
-                const [x_1, y_1] = pixel_coords_at_bit_offset(all_regions_1, i);
+                const [x_1, y_1] = all_regions_1.pixel_coords_at_bit_offset(i);
                 replacements.push({"x": x_1, "y": y_1, "value": bit});
-                const [x_2, y_2] = pixel_coords_at_bit_offset(all_regions_2, i);
+                const [x_2, y_2] = all_regions_2.pixel_coords_at_bit_offset(i);
                 replacements.push({"x": x_2, "y": y_2, "value": bit});
             }
 

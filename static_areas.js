@@ -20,7 +20,7 @@ function expect_pixels (regions, expected_values) {
     for (var i = 0; i < bool_array.length; i++) {
         const expected_value = (expected_values[i] == "x" ? true : false);
         if (bool_array[i] != expected_value) {
-            const [x, y] = pixel_coords_at_bit_offset(regions, i);
+            const [x, y] = RegionList.from_raw_objects(regions).pixel_coords_at_bit_offset(i);
             throw {
                 "x": x,
                 "y": y

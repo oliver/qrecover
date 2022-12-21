@@ -111,7 +111,7 @@ function draw_code () {
 
         if (document.getElementById("rb_numbers_per_area").checked) {
             for (var i = 0; i < area.num_pixels; i++) {
-                const [x, y] = pixel_coords_at_bit_offset(area.regions, i);
+                const [x, y] = RegionList.from_raw_objects(area.regions).pixel_coords_at_bit_offset(i);
                 ctx.fillStyle = displayed_pixel_data.get(x, y) ? "white" : "black";
                 ctx.fillText(("" + i).padStart(3, " "), x*pixel_size, (y+1)*pixel_size - 5);
             }
