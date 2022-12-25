@@ -32,7 +32,7 @@ function decode_inner () {
     var bit_array = new Array();
     var bit_offset_to_pixel_position = new Array();
     do {
-        var bit_set = get_masked_pixels().get_pixels_as_bools({"x":curr_x, "y":curr_y, "w":1, "h":1})[0];
+        var bit_set = get_masked_pixels().get(curr_x, curr_y);
         bit_array.push(bit_set);
         bit_offset_to_pixel_position.push({"x":curr_x, "y":curr_y});
         [curr_x, curr_y, end_reached] = next_data_pixel_pos(curr_x, curr_y);
