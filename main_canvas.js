@@ -90,7 +90,7 @@ function draw_code () {
     for (const [id, area] of get_all_areas().entries()) {
         if (document.getElementById("cb_colors_enabled").checked) {
             ctx.fillStyle = "rgba(" + area.color[0] + ", " + area.color[1] + ", " + area.color[2] + ", 0.3)";
-            for (region of area.regions) {
+            for (region of area.regions.regions) {
                 draw_rect(region.x, region.y, region.w, region.h);
             }
         }
@@ -111,7 +111,7 @@ function draw_code () {
 
         if (document.getElementById("rb_numbers_per_area").checked) {
             for (var i = 0; i < area.num_pixels; i++) {
-                const [x, y] = RegionList.from_raw_objects(area.regions).pixel_coords_at_bit_offset(i);
+                const [x, y] = area.regions.pixel_coords_at_bit_offset(i);
                 ctx.fillStyle = displayed_pixel_data.get(x, y) ? "white" : "black";
                 ctx.fillText(("" + i).padStart(3, " "), x*pixel_size, (y+1)*pixel_size - 5);
             }

@@ -58,10 +58,10 @@ function decode_inner () {
         var orig_offset = offset;
         var [int_value, read_offset] = read_int(bits, offset, len);
 
-        var regions = [];
+        var region_coordinates = [];
         for (var i = 0; i < len; i++) {
             const pos = bit_offset_to_pixel_position[orig_offset+i];
-            regions.push([pos.x, pos.y, 1, 1]);
+            region_coordinates.push([pos.x, pos.y, 1, 1]);
         }
 
         var read_values = {
@@ -71,7 +71,7 @@ function decode_inner () {
         };
 
         var [name, color] = row_prep_func(read_values);
-        const new_area = add_area(name + "_" + orig_offset, regions, color, () => { return read_values; }, dynamic_areas);
+        const new_area = add_area(name + "_" + orig_offset, RegionList.from_nested_arrays(region_coordinates), color, () => { return read_values; }, dynamic_areas);
 
         if (row_post_func) {
             row_post_func(read_values, new_area);

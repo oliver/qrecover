@@ -30,11 +30,20 @@ class RegionList {
         this.regions = new Array();
     }
 
-    static from_raw_objects(array_of_raw_region_objects) {
+    /// Returns a new RegionList object, created from a nested array of region coordinates.
+    /// @param array_of_arrays Array of 4-element arrays; the inner arrays specify [x, y, width, height] of each region.
+    static from_nested_arrays(array_of_arrays) {
         var new_regionlist = new RegionList();
-        for (var region of array_of_raw_region_objects) {
-            new_regionlist.regions.push(new Region(region.x, region.y, region.w, region.h))
+        for (var arr of array_of_arrays) {
+            new_regionlist.regions.push(new Region(arr[0], arr[1], arr[2], arr[3]))
         }
+        return new_regionlist;
+    }
+
+    /// Returns a new RegionList containing the regions from this list and from other_regionlist.
+    concat (other_regionlist) {
+        var new_regionlist = new RegionList();
+        new_regionlist.regions = this.regions.concat(other_regionlist.regions);
         return new_regionlist;
     }
 
@@ -142,14 +151,14 @@ function get_full_mask () {
     }
 
     // 10 101 0000010010
-    set_pixels_in_regions(mask_data, RegionList.from_raw_objects(static_areas.get("format_ec_1").regions), [true, false]);
-    set_pixels_in_regions(mask_data, RegionList.from_raw_objects(static_areas.get("format_ec_2").regions), [true, false]);
+    set_pixels_in_regions(mask_data, static_areas.get("format_ec_1").regions, [true, false]);
+    set_pixels_in_regions(mask_data, static_areas.get("format_ec_2").regions, [true, false]);
 
-    set_pixels_in_regions(mask_data, RegionList.from_raw_objects(static_areas.get("format_mask_1").regions), [true, false, true]);
-    set_pixels_in_regions(mask_data, RegionList.from_raw_objects(static_areas.get("format_mask_2").regions), [true, false, true]);
+    set_pixels_in_regions(mask_data, static_areas.get("format_mask_1").regions, [true, false, true]);
+    set_pixels_in_regions(mask_data, static_areas.get("format_mask_2").regions, [true, false, true]);
 
-    set_pixels_in_regions(mask_data, RegionList.from_raw_objects(static_areas.get("format_ec_data_1").regions), [false, false, false, false, false, true, false, false, true, false]);
-    set_pixels_in_regions(mask_data, RegionList.from_raw_objects(static_areas.get("format_ec_data_2").regions), [false, false, false, false, false, true, false, false, true, false]);
+    set_pixels_in_regions(mask_data, static_areas.get("format_ec_data_1").regions, [false, false, false, false, false, true, false, false, true, false]);
+    set_pixels_in_regions(mask_data, static_areas.get("format_ec_data_2").regions, [false, false, false, false, false, true, false, false, true, false]);
 
     return mask_data;
 }

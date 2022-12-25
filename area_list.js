@@ -9,7 +9,7 @@ var static_area_grid = null;
 function add_area (id, region_list, color_values, check_function, target_map = static_areas) {
     target_map.set(id, {
         "id":id,
-        "regions":[],
+        "regions":region_list,
         "color":color_values,
         "outline:":null,
         "dom_elements": new Map(),
@@ -17,11 +17,8 @@ function add_area (id, region_list, color_values, check_function, target_map = s
     });
 
     var num_pixels = 0;
-    for (region of region_list) {
-        target_map.get(id).regions.push({
-            "x": region[0], "y": region[1], "w": region[2], "h": region[3]
-        });
-        num_pixels += region[2] * region[3];
+    for (region of region_list.regions) {
+        num_pixels += region.w * region.h;
     }
     target_map.get(id).num_pixels = num_pixels;
 
@@ -34,7 +31,7 @@ function get_all_areas () {
 }
 
 function inside_area (x, y, area) {
-    for (region of area.regions) {
+    for (region of area.regions.regions) {
         if (x >= region.x && x < region.x+region.w &&
             y >= region.y && y < region.y+region.h) {
             return true;
@@ -75,9 +72,9 @@ function calculate_static_area_grid () {
     return grid_data;
 }
 
-// @param regions Array of rectangular regions
+// @param region_list RegionList object
 // @returns A list of lines (start_x, start_y, end_x, end_y) that draw the outline of the regions
-function calc_outline (regions) {
+function calc_outline (region_list) {
 
     // Maps for single horizontal and vertical lines.
     // Each line is one cell long and goes from the smaller to the larger coordinate.
@@ -104,7 +101,7 @@ function calc_outline (regions) {
     }
 
     // add outlines of each region to lines_h and lines_v
-    for (var region of regions) {
+    for (var region of region_list.regions) {
         for (var x = 0; x < region.w; x++) {
             increment_int_map_value(lines_h, make_key(region.x + x, region.y));
             increment_int_map_value(lines_h, make_key(region.x + x, region.y + region.h));
