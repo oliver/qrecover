@@ -77,23 +77,12 @@ class PixelData {
         this.data_array[x][y] = new_value;
     }
 
-    // @param region An object with x,y,w,h attributes
-    get_pixels_as_bools (region) {
+    // @param region_list A RegionList object
+    get_pixels_from_regions_as_bools (region_list) {
         var result_array = new Array();
-        for (var y = region.y; y < region.y+region.h; y++) {
-            for (var x = region.x; x < region.x+region.w; x++) {
-                result_array.push(this.get(x, y) ? true : false);
-            }
-        }
-        return result_array;
-    }
-
-    // @param regions An array of region objects, each of which can be passed to get_pixels_as_bools()
-    get_pixels_from_regions_as_bools (regions) {
-        var result_array = new Array();
-        for (var region of regions) {
-            result_array = result_array.concat(this.get_pixels_as_bools(region));
-        }
+        region_list.for_each_pixel((x, y) => {
+            result_array.push(this.get(x, y));
+        });
         return result_array;
     }
 }
