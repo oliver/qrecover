@@ -269,7 +269,7 @@ function next_data_pixel_pos (x, y) {
         if (end_reached) {
             return [undefined, undefined, true];
         }
-    } while (inside_static_areas(x, y));
+    } while (static_areas.is_inside(x, y));
     return [x, y, false];
 }
 

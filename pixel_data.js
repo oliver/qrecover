@@ -132,7 +132,7 @@ function get_full_mask () {
     for (var x = 0; x < code_size; x++) {
         for (var y = 0; y < code_size; y++) {
             // apply mask only for data areas:
-            if (!inside_static_areas(x, y)) {
+            if (!static_areas.is_inside(x, y)) {
                 mask_data.set(x, y, mask_bit_function(y, x));
             }
         }

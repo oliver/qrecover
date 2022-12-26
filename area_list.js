@@ -38,11 +38,24 @@ class Area {
 
 
 class AreaMap extends Map {
+    // performance optimization for is_inside(): stores for each pixel coordinate the area that contains the coordinate (or null)
+    #area_grid = null;
+
     add_area (new_area) {
         this.set(new_area.id, new_area);
+        this.#area_grid = null;
     }
 
     is_inside (x, y) {
+        if (this.#area_grid == null) {
+            this.#update_area_grid();
+        }
+
+        return this.#area_grid[x][y];
+    }
+
+
+    #is_inside_uncached (x, y) {
         for (const [id, area] of this.entries()) {
             if (area.is_inside(x, y)) {
                 return area;
@@ -50,38 +63,25 @@ class AreaMap extends Map {
         }
         return null;
     }
+
+    #update_area_grid () {
+        this.#area_grid = new Array(code_size);
+        for (var x = 0; x < code_size; x++) {
+            this.#area_grid[x] = new Array(code_size);
+            for (var y = 0; y < code_size; y++) {
+                const found_area = this.#is_inside_uncached(x, y);
+                this.#area_grid[x][y] = found_area;
+            }
+        }
+    }
 }
 
 
 var static_areas = new AreaMap();
 var dynamic_areas  = new AreaMap();
-var static_area_grid = null;
 
 function get_all_area_objects () {
     return new Map([...static_areas, ...dynamic_areas]).values();
-}
-
-function inside_static_areas (x, y) {
-    // Performance-optimized variant of AreaMap.is_inside(), which only checks against static_areas
-    // and uses a precalculated lookup array.
-    return static_area_grid[x][y];
-}
-
-function update_static_area_cache() {
-    static_area_grid = calculate_static_area_grid();
-}
-
-function calculate_static_area_grid () {
-    // create an array that stores for each pixel position the static area it is covered by (or null):
-    var grid_data = new Array(code_size);
-    for (var x = 0; x < code_size; x++) {
-        grid_data[x] = new Array(code_size);
-        for (var y = 0; y < code_size; y++) {
-            const found_static_area = static_areas.is_inside(x, y);
-            grid_data[x][y] = found_static_area;
-        }
-    }
-    return grid_data;
 }
 
 // @param region_list RegionList object
