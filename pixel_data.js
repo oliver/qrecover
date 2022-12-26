@@ -94,6 +94,18 @@ class PixelData {
         });
         return result_array;
     }
+
+    set_pixels_in_regions (region_list, bool_array) {
+        var i = 0;
+        region_list.for_each_pixel((x, y) => {
+            this.set(x, y, bool_array[i]);
+            i++;
+        });
+
+        if (i != bool_array.length) {
+            throw "bad bool_array size"
+        }
+    }
 }
 
 
@@ -138,27 +150,15 @@ function get_full_mask () {
         }
     }
 
-    function set_pixels_in_regions (pix_data, regions, bool_array) {
-        var i = 0;
-        regions.for_each_pixel((x, y) => {
-            pix_data.set(x, y, bool_array[i]);
-            i++;
-        });
-
-        if (i != bool_array.length) {
-            throw "bad bool_array size"
-        }
-    }
-
     // 10 101 0000010010
-    set_pixels_in_regions(mask_data, static_areas.get("format_ec_1").regions, [true, false]);
-    set_pixels_in_regions(mask_data, static_areas.get("format_ec_2").regions, [true, false]);
+    mask_data.set_pixels_in_regions(static_areas.get("format_ec_1").regions, [true, false]);
+    mask_data.set_pixels_in_regions(static_areas.get("format_ec_2").regions, [true, false]);
 
-    set_pixels_in_regions(mask_data, static_areas.get("format_mask_1").regions, [true, false, true]);
-    set_pixels_in_regions(mask_data, static_areas.get("format_mask_2").regions, [true, false, true]);
+    mask_data.set_pixels_in_regions(static_areas.get("format_mask_1").regions, [true, false, true]);
+    mask_data.set_pixels_in_regions(static_areas.get("format_mask_2").regions, [true, false, true]);
 
-    set_pixels_in_regions(mask_data, static_areas.get("format_ec_data_1").regions, [false, false, false, false, false, true, false, false, true, false]);
-    set_pixels_in_regions(mask_data, static_areas.get("format_ec_data_2").regions, [false, false, false, false, false, true, false, false, true, false]);
+    mask_data.set_pixels_in_regions(static_areas.get("format_ec_data_1").regions, [false, false, false, false, false, true, false, false, true, false]);
+    mask_data.set_pixels_in_regions(static_areas.get("format_ec_data_2").regions, [false, false, false, false, false, true, false, false, true, false]);
 
     return mask_data;
 }
