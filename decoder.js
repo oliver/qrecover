@@ -136,7 +136,7 @@ function decode_inner (decoder) {
 
         var [name, color] = row_prep_func(read_values);
         const new_area = new Area(name + "_" + orig_offset, RegionList.from_nested_arrays(region_coordinates), color, () => { return read_values; });
-        dynamic_areas.add_area(new_area);
+        decoder.dynamic_areas.add_area(new_area);
 
         if (row_post_func) {
             row_post_func(read_values, new_area);
@@ -169,7 +169,7 @@ function decode_inner (decoder) {
         [0b0111, "ECI"]
     ]);
 
-    dynamic_areas = new AreaMap();
+    decoder.dynamic_areas = new AreaMap();
     document.getElementById("error_list").innerHTML = "";
     try {
         var text_characters = [];

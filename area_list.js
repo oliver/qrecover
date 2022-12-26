@@ -78,10 +78,9 @@ class AreaMap extends Map {
 
 
 var static_areas = new AreaMap();
-var dynamic_areas  = new AreaMap();
 
 function get_all_area_objects () {
-    return new Map([...static_areas, ...dynamic_areas]).values();
+    return new Map([...static_areas, ... global_decoder_obj.dynamic_areas]).values();
 }
 
 // @param region_list RegionList object

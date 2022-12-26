@@ -29,7 +29,7 @@ function init_main_canvas (canvas_element, mouse_pos_element) {
 
         var hovered_area = static_areas.is_inside(pix_x, pix_y);
         if (!hovered_area) {
-            hovered_area = dynamic_areas.is_inside(pix_x, pix_y);
+            hovered_area = global_decoder_obj.dynamic_areas.is_inside(pix_x, pix_y);
         }
 
         if (highlighted_area != hovered_area) {
