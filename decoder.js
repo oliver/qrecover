@@ -24,6 +24,19 @@ for (var i = 10; i <= 35; i++) {
 }
 
 
+class QRDecoder {
+    pixel_data;
+    static_areas;
+    dynamic_areas;
+
+    constructor (code_size) {
+        this.pixel_data = new PixelData(code_size);
+        this.static_areas = new AreaMap();
+        this.dynamic_areas = new AreaMap();
+    }
+}
+
+
 function decode_inner () {
     // read data bits (into an array of bools):
     var curr_x = code_size-1;

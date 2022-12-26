@@ -38,7 +38,11 @@
         draw_code();
     }
 
+    var global_decoder_obj = null;
+
     function init() {
+        global_decoder_obj = new QRDecoder(code_size);
+
         pixel_data = new PixelData(code_size);
         update_load_button();
 
