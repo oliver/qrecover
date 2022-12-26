@@ -24,6 +24,16 @@ class Area {
 
         this.outline = calc_outline(this.regions);
     }
+
+    is_inside (x, y) {
+        for (const region of this.regions.regions) {
+            if (x >= region.x && x < region.x+region.w &&
+                y >= region.y && y < region.y+region.h) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 
@@ -42,19 +52,9 @@ function get_all_areas () {
     return new Map([...static_areas, ...dynamic_areas]);
 }
 
-function inside_area (x, y, area) {
-    for (region of area.regions.regions) {
-        if (x >= region.x && x < region.x+region.w &&
-            y >= region.y && y < region.y+region.h) {
-            return true;
-        }
-    }
-    return false;
-}
-
 function inside_areas (x, y, area_map) {
     for (const [id, area] of area_map.entries()) {
-        if (inside_area(x, y, area)) {
+        if (area.is_inside(x, y)) {
             return area;
         }
     }
