@@ -63,8 +63,7 @@
     };
 
     function decode () {
-        add_static_areas(global_decoder_obj);
-        decode_inner(global_decoder_obj);
+        global_decoder_obj.decode();
         update_area_details_list(global_decoder_obj);
         perform_global_checks(global_decoder_obj);
 

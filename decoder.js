@@ -111,10 +111,15 @@ class QRDecoder {
     get_all_area_objects () {
         return new Map([... this.static_areas, ... this.dynamic_areas]).values();
     }
+
+    decode () {
+        this.static_areas = add_static_areas(this);
+        this.dynamic_areas = add_dynamic_areas(this);
+    }
 }
 
 
-function decode_inner (decoder) {
+function add_dynamic_areas (decoder) {
     // read data bits (into an array of bools):
     var curr_x = code_size-1;
     var curr_y = code_size-1;
@@ -129,6 +134,8 @@ function decode_inner (decoder) {
     } while (!end_reached);
 
     // decode data bits:
+
+    var new_dynamic_areas = new AreaMap();
 
     function read_int_and_add_row (bits, len, name, color) {
         var orig_offset = bits.read_offset;
@@ -146,7 +153,7 @@ function decode_inner (decoder) {
             "num_bits": len,
             "value": int_value
         };
-        decoder.dynamic_areas.add_area(new_area);
+        new_dynamic_areas.add_area(new_area);
 
         return [int_value, new_area];
     }
@@ -175,7 +182,6 @@ function decode_inner (decoder) {
         [0b0111, "ECI"]
     ]);
 
-    decoder.dynamic_areas = new AreaMap();
     document.getElementById("error_list").innerHTML = "";
     try {
         var text_characters = [];
@@ -302,6 +308,8 @@ function decode_inner (decoder) {
         entry.area.dom_elements.set("text_payload_span", span_element);
         pre_element.appendChild(span_element);
     }
+
+    return new_dynamic_areas;
 }
 
 
