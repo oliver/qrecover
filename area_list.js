@@ -41,6 +41,15 @@ class AreaMap extends Map {
     add_area (new_area) {
         this.set(new_area.id, new_area);
     }
+
+    is_inside (x, y) {
+        for (const [id, area] of this.entries()) {
+            if (area.is_inside(x, y)) {
+                return area;
+            }
+        }
+        return null;
+    }
 }
 
 
@@ -49,20 +58,11 @@ var dynamic_areas  = new AreaMap();
 var static_area_grid = null;
 
 function get_all_areas () {
-    return new Map([...static_areas, ...dynamic_areas]);
-}
-
-function inside_areas (x, y, area_map) {
-    for (const [id, area] of area_map.entries()) {
-        if (area.is_inside(x, y)) {
-            return area;
-        }
-    }
-    return null;
+    return new AreaMap([...static_areas, ...dynamic_areas]);
 }
 
 function inside_static_areas (x, y) {
-    // Performance-optimized variant of inside_areas(), which only checks against static_areas
+    // Performance-optimized variant of AreaMap.is_inside(), which only checks against static_areas
     // and uses a precalculated lookup array.
     return static_area_grid[x][y];
 }
@@ -77,7 +77,7 @@ function calculate_static_area_grid () {
     for (var x = 0; x < code_size; x++) {
         grid_data[x] = new Array(code_size);
         for (var y = 0; y < code_size; y++) {
-            const found_static_area = inside_areas(x, y, static_areas);
+            const found_static_area = static_areas.is_inside(x, y);
             grid_data[x][y] = found_static_area;
         }
     }

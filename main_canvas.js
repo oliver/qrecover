@@ -27,7 +27,7 @@ function init_main_canvas (canvas_element, mouse_pos_element) {
             mouse_pos_element.innerHTML = "(" + (pix_x+0) + " / " + (pix_y+0) + ")";
         }
 
-        const hovered_area = inside_areas(pix_x, pix_y, get_all_areas());
+        const hovered_area = get_all_areas().is_inside(pix_x, pix_y);
         if (highlighted_area != hovered_area) {
             highlight_area(hovered_area);
         }
