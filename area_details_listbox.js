@@ -6,7 +6,7 @@ function update_area_details_list () {
     var table_body = document.getElementById("area_table_body");
     table_body.innerHTML = "";
 
-    for (const [id, area] of get_all_areas().entries()) {
+    for (const area of get_all_area_objects()) {
         var new_row = table_body.insertRow();
         area.dom_elements.set("area_table_div", new_row);
         new_row.addEventListener("mouseover", function (e) {
@@ -16,7 +16,8 @@ function update_area_details_list () {
             highlight_area(null);
         });
 
-        if (highlighted_area && id == highlighted_area.id) {
+        // preserve highlighting in area list when clicking on canvas:
+        if (highlighted_area && area.id == highlighted_area.id) {
             highlighted_area = area;
         }
 
@@ -45,7 +46,7 @@ function update_area_details_list () {
         }
 
         add_cell(result_obj["offset"], (cell) => { cell.innerHTML = result_obj["offset"]; }).style.textAlign = "right";
-        add_cell(id, (cell) => { cell.innerHTML = id; });
+        add_cell(area.id, (cell) => { cell.innerHTML = area.id; });
 
         add_cell(result_obj["value"], (cell) => { cell.innerHTML = result_obj["value"]; }).style.textAlign = "right";
         var num_hex_digits = Math.ceil(result_obj["num_bits"] / 4);

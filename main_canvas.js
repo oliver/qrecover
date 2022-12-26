@@ -27,7 +27,11 @@ function init_main_canvas (canvas_element, mouse_pos_element) {
             mouse_pos_element.innerHTML = "(" + (pix_x+0) + " / " + (pix_y+0) + ")";
         }
 
-        const hovered_area = get_all_areas().is_inside(pix_x, pix_y);
+        var hovered_area = static_areas.is_inside(pix_x, pix_y);
+        if (!hovered_area) {
+            hovered_area = dynamic_areas.is_inside(pix_x, pix_y);
+        }
+
         if (highlighted_area != hovered_area) {
             highlight_area(hovered_area);
         }
@@ -87,7 +91,7 @@ function draw_code () {
     ctx.strokeStyle = "black";
     ctx.lineWidth = 2.5;
     ctx.font = "11px monospace";
-    for (const [id, area] of get_all_areas().entries()) {
+    for (const area of get_all_area_objects()) {
         if (document.getElementById("cb_colors_enabled").checked) {
             ctx.fillStyle = "rgba(" + area.color[0] + ", " + area.color[1] + ", " + area.color[2] + ", 0.3)";
             for (region of area.regions.regions) {

@@ -57,8 +57,8 @@ var static_areas = new AreaMap();
 var dynamic_areas  = new AreaMap();
 var static_area_grid = null;
 
-function get_all_areas () {
-    return new AreaMap([...static_areas, ...dynamic_areas]);
+function get_all_area_objects () {
+    return new Map([...static_areas, ...dynamic_areas]).values();
 }
 
 function inside_static_areas (x, y) {
