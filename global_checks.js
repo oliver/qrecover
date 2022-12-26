@@ -3,15 +3,15 @@
 //
 
 function perform_global_checks (decoder) {
-    const ec_1_value = decoder.static_areas.get("format_ec_1").check_function(decoder.static_areas.get("format_ec_1")).value;
-    const mask_1_value = decoder.static_areas.get("format_mask_1").check_function(decoder.static_areas.get("format_mask_1")).value;
-    const ec_data_1_value = decoder.static_areas.get("format_ec_data_1").check_function(decoder.static_areas.get("format_ec_data_1")).value;
+    const ec_1_value = decoder.static_areas.get("format_ec_1").value_details.value;
+    const mask_1_value = decoder.static_areas.get("format_mask_1").value_details.value;
+    const ec_data_1_value = decoder.static_areas.get("format_ec_data_1").value_details.value;
     const full_ec_1_bits = (ec_1_value << 13) | (mask_1_value << 10) | ec_data_1_value;
     const check_result_1 = check_format_ec(full_ec_1_bits);
 
-    const ec_2_value = decoder.static_areas.get("format_ec_2").check_function(decoder.static_areas.get("format_ec_2")).value;
-    const mask_2_value = decoder.static_areas.get("format_mask_2").check_function(decoder.static_areas.get("format_mask_2")).value;
-    const ec_data_2_value = decoder.static_areas.get("format_ec_data_2").check_function(decoder.static_areas.get("format_ec_data_2")).value;
+    const ec_2_value = decoder.static_areas.get("format_ec_2").value_details.value;
+    const mask_2_value = decoder.static_areas.get("format_mask_2").value_details.value;
+    const ec_data_2_value = decoder.static_areas.get("format_ec_data_2").value_details.value;
     const full_ec_2_bits = (ec_2_value << 13) | (mask_2_value << 10) | ec_data_2_value;
     const check_result_2 = check_format_ec(full_ec_2_bits);
 

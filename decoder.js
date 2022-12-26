@@ -49,7 +49,7 @@ class QRDecoder {
             7: function (i,j) { return ((i*j) % 3 +i+j) % 2 == 0; }
         };
 
-        var mask_value = this.static_areas.get("format_mask_1").check_function(this.static_areas.get("format_mask_1"))["value"];
+        var mask_value = this.static_areas.get("format_mask_1").value_details.value;
         const mask_bit_function = mask_types[mask_value];
 
         var mask_data = new PixelData(this.code_size);
@@ -163,7 +163,7 @@ function decode_inner (decoder) {
             return 16;
     }
 
-    const ec_level = decoder.static_areas.get("format_ec_1").check_function(decoder.static_areas.get("format_ec_1")).value;
+    const ec_level = decoder.static_areas.get("format_ec_1").value_details.value;
     const num_data_bits = calc_num_data_bytes(ec_level) * 8;
 
     const mode_names = new Map([

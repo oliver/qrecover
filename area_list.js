@@ -6,7 +6,6 @@ class Area {
     id;
     regions;
     color;
-    check_function;
 
     value_details = {
         "valid": false,
@@ -23,9 +22,6 @@ class Area {
         this.id = id;
         this.regions = region_list;
         this.color = color_values;
-        this.check_function = (area) => {
-            return this.value_details;
-        };
 
         for (const region of this.regions.regions) {
             this.num_pixels += region.w * region.h;

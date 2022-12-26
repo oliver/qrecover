@@ -21,7 +21,7 @@ function update_area_details_list (decoder) {
             highlighted_area = area;
         }
 
-        const result_obj = area.check_function(area);
+        const result_obj = area.value_details;
 
         function add_cell (obj, func) {
             var cell = new_row.insertCell();
@@ -33,21 +33,21 @@ function update_area_details_list (decoder) {
             return cell;
         }
 
-        add_cell(result_obj["offset"], (cell) => { cell.innerHTML = result_obj["offset"]; }).style.textAlign = "right";
+        add_cell(area.value_details.offset, (cell) => { cell.innerHTML = area.value_details.offset; }).style.textAlign = "right";
         add_cell(area.id, (cell) => { cell.innerHTML = area.id; });
 
-        add_cell(result_obj["value"], (cell) => { cell.innerHTML = result_obj["value"]; }).style.textAlign = "right";
-        var num_hex_digits = Math.ceil(result_obj["num_bits"] / 4);
-        add_cell(result_obj["value"], (cell) => { cell.innerHTML = "0x" + result_obj["value"].toString(16).padStart(num_hex_digits,"0"); }).style.textAlign = "right";
-        var num_bin_digits = result_obj["num_bits"];
-        add_cell(result_obj["value"], (cell) => { cell.innerHTML = result_obj["value"].toString(2).padStart(num_bin_digits,"0"); }).style.textAlign = "right";
+        add_cell(area.value_details.value, (cell) => { cell.innerHTML = area.value_details.value; }).style.textAlign = "right";
+        var num_hex_digits = Math.ceil(area.value_details.num_bits / 4);
+        add_cell(area.value_details.value, (cell) => { cell.innerHTML = "0x" + area.value_details.value.toString(16).padStart(num_hex_digits,"0"); }).style.textAlign = "right";
+        var num_bin_digits = area.value_details.num_bits;
+        add_cell(area.value_details.value, (cell) => { cell.innerHTML = area.value_details.value.toString(2).padStart(num_bin_digits,"0"); }).style.textAlign = "right";
 
-        add_cell(result_obj["valid"], (cell) => {
-            cell.innerHTML = (result_obj["valid"] ? "\u2713" : "\u2718");
+        add_cell(area.value_details.valid, (cell) => {
+            cell.innerHTML = (area.value_details.valid ? "\u2713" : "\u2718");
             cell.style.textAlign = "center";
-            cell.style.color = (result_obj["valid"] ? "green" : "white");
-            cell.style.backgroundColor = (result_obj["valid"] ? "" : "red");
+            cell.style.color = (area.value_details.valid ? "green" : "white");
+            cell.style.backgroundColor = (area.value_details.valid ? "" : "red");
         });
-        add_cell(result_obj["desc"], (cell) => { cell.innerHTML = result_obj["desc"] });
+        add_cell(area.value_details.desc, (cell) => { cell.innerHTML = area.value_details.desc });
     }
 }
