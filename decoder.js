@@ -122,7 +122,7 @@ function decode_inner (decoder) {
         return [result_int, offset+len];
     }
 
-    function read_int_and_add_row (bits, offset, len, row_prep_func, row_post_func) {
+    function read_int_and_add_row (bits, offset, len, name, color) {
         var orig_offset = offset;
         var [int_value, read_offset] = read_int(bits, offset, len);
 
@@ -132,21 +132,15 @@ function decode_inner (decoder) {
             region_coordinates.push([pos.x, pos.y, 1, 1]);
         }
 
-        var read_values = {
-            "offset":orig_offset,
+        const new_area = new Area(name + "_" + orig_offset, RegionList.from_nested_arrays(region_coordinates), color);
+        new_area.value_details = {
+            "offset": orig_offset,
             "num_bits": len,
-            "value":int_value
+            "value": int_value
         };
-
-        var [name, color] = row_prep_func(read_values);
-        const new_area = new Area(name + "_" + orig_offset, RegionList.from_nested_arrays(region_coordinates), color, () => { return read_values; });
         decoder.dynamic_areas.add_area(new_area);
 
-        if (row_post_func) {
-            row_post_func(read_values, new_area);
-        }
-
-        return [int_value, read_offset];
+        return [int_value, read_offset, new_area];
     }
 
     function calc_num_data_bytes (ec_level) {
@@ -179,74 +173,54 @@ function decode_inner (decoder) {
         var text_characters = [];
         var read_offset = 0;
         while (read_offset < bit_array.length) {
-            var [mode, read_offset] = read_int_and_add_row(bit_array, read_offset, 4, (read_result) => {
-                if (mode_names.get(read_result["value"])) {
-                    read_result["desc"] = mode_names.get(read_result["value"]);
-                    read_result["valid"] = true;
-                } else {
-                    read_result["desc"] = "Unsupported mode \"" + read_result["value"] + "\"; decoding aborted";
-                    read_result["valid"] = false;
-                }
-                return ["mode", [255, 0, 0]];
-            });
+            var [mode, read_offset, mode_area] = read_int_and_add_row(bit_array, read_offset, 4, "mode", [255, 0, 0]);
+            if (mode_names.get(mode)) {
+                mode_area.value_details.desc = mode_names.get(mode_area.value_details.value);
+                mode_area.value_details.valid = true;
+            } else {
+                mode_area.value_details.desc = "Unsupported mode \"" + mode_area.value_details.value + "\"; decoding aborted";
+                mode_area.value_details.valid = false;
+            }
 
             if (mode == 0b0010) {
                 // Alphanumeric encoding
-                var [payload_length, read_offset] = read_int_and_add_row(bit_array, read_offset, 9, (read_result) => {
-                    return ["payload_length", [255, 192, 255]];
-                });
+                var [payload_length, read_offset] = read_int_and_add_row(bit_array, read_offset, 9, "payload_length", [255, 192, 255]);
 
                 for (var j = 0; j < Math.floor(payload_length / 2); j++) {
-                    var [two_chars, read_offset] = read_int_and_add_row(bit_array, read_offset, 11, (read_result) => {
-                        var char2_code = read_result["value"] % 45;
-                        var char1_code = (read_result["value"] - char2_code) / 45;
-                        read_result["text_payload"] = alphanumeric_table.get(char1_code) + alphanumeric_table.get(char2_code);
-
-                        read_result["desc"] = char1_code + "=" + alphanumeric_table.get(char1_code) + "; " + char2_code + "=" + alphanumeric_table.get(char2_code);
-                        return ["two_chars", [255, 255, 192]];
-                    }, (read_result, area) => {
-                        text_characters.push({"chars": read_result["text_payload"], "area": area });
-                    });
+                    var [two_chars, read_offset, alphanum_area] = read_int_and_add_row(bit_array, read_offset, 11, "two_chars", [255, 255, 192]);
+                    var char2_code = alphanum_area.value_details.value % 45;
+                    var char1_code = (alphanum_area.value_details.value - char2_code) / 45;
+                    alphanum_area.value_details.desc = char1_code + "=" + alphanumeric_table.get(char1_code) + "; " + char2_code + "=" + alphanumeric_table.get(char2_code);
+                    text_characters.push({"chars": alphanumeric_table.get(char1_code) + alphanumeric_table.get(char2_code), "area": alphanum_area });
                 }
                 if (payload_length % 2 != 0) {
                     // read additional character
-                    var [final_char, read_offset] = read_int_and_add_row(bit_array, read_offset, 6, (read_result) => {
-                        read_result["text_payload"] = alphanumeric_table.get(read_result["value"]);
-
-                        read_result["desc"] = read_result["value"] + "=" + alphanumeric_table.get(read_result["value"]);
-                        return ["final_char", [255, 255, 192]];
-                    }, (read_result, area) => {
-                        text_characters.push({"chars": read_result["text_payload"], "area": area });
-                    });
+                    var [final_char, read_offset, alphanum_area] = read_int_and_add_row(bit_array, read_offset, 6, "final_char", [255, 255, 192]);
+                    alphanum_area.value_details.desc = alphanum_area.value_details.value + "=" + alphanumeric_table.get(alphanum_area.value_details.value);
+                    text_characters.push({"chars": alphanumeric_table.get(alphanum_area.value_details.value), "area": alphanum_area });
                 }
                 break;
             } else if (mode == 0b0100) {
                 // Byte encoding
-                var [payload_length, read_offset] = read_int_and_add_row(bit_array, read_offset, 8, (read_result) => {
-                    return ["payload_length", [255, 192, 255]];
-                });
+                var [payload_length, read_offset] = read_int_and_add_row(bit_array, read_offset, 8, "payload_length", [255, 192, 255]);
 
                 for (var j = 0; j < payload_length; j++) {
-                    var [byte, read_offset] = read_int_and_add_row(bit_array, read_offset, 8, (read_result) => {
-                        read_result["desc"] = "ASCII='" + String.fromCharCode(read_result["value"]) + "'";
-                        return ["byte", [255, 255, 192]];
-                    }, (read_result, area) => {
-                        text_characters.push({"chars": String.fromCharCode(read_result["value"]), "area": area });
-                    });
+                    var [byte, read_offset, byte_area] = read_int_and_add_row(bit_array, read_offset, 8, "byte", [255, 255, 192]);
+                    byte_area.value_details.desc = "ASCII='" + String.fromCharCode(byte_area.value_details.value) + "'";
+                    text_characters.push({"chars": String.fromCharCode(byte_area.value_details.value), "area": byte_area });
                 }
                 break;
             } else if (mode == 0b0111) {
                 // ECI marker
-                var [eci_marker, read_offset] = read_int_and_add_row(bit_array, read_offset, 8, (read_result) => {
-                    if (read_result["value"] == 26) {
-                        read_result["desc"] = "UTF-8 charset";
-                        read_result["valid"] = true;
-                    } else {
-                        read_result["desc"] = "Unsupported ECI marker \"" + read_result["value"] + "\"";
-                        read_result["valid"] = false;
-                    }
-                    return ["eci_marker", [192, 255, 255]];
-                });
+                var [eci_marker, read_offset, eci_area] = read_int_and_add_row(bit_array, read_offset, 8, "eci_marker", [192, 255, 255]);
+                if (eci_area.value_details.value == 26) {
+                    eci_area.value_details.desc = "UTF-8 charset";
+                    eci_area.value_details.valid = true;
+                } else {
+                    eci_area.value_details.desc = "Unsupported ECI marker \"" + eci_area.value_details.value + "\"";
+                    eci_area.value_details.valid = false;
+                }
+
             } else {
                 // Unsupported mode
                 break;
@@ -254,29 +228,25 @@ function decode_inner (decoder) {
         }
 
         if (read_offset < num_data_bits - 4) {
-            var [mode, read_offset] = read_int_and_add_row(bit_array, read_offset, 4, (read_result) => {
-                if (read_result["value"] == 0) {
-                    read_result["desc"] = mode_names.get(read_result["value"]);
-                    read_result["valid"] = true;
-                } else {
-                    read_result["desc"] = "Unsupported mode \"" + read_result["value"] + "\" (terminator expected)";
-                    read_result["valid"] = false;
-                }
-                return ["terminator", [255, 0, 0]];
-            });
+            var [mode, read_offset, terminator_area] = read_int_and_add_row(bit_array, read_offset, 4, "terminator", [255, 0, 0]);
+            if (terminator_area.value_details.value == 0) {
+                terminator_area.value_details.desc = mode_names.get(terminator_area.value_details.value);
+                terminator_area.value_details.valid = true;
+            } else {
+                terminator_area.value_details.desc = "Unsupported mode \"" + terminator_area.value_details.value + "\" (terminator expected)";
+                terminator_area.value_details.valid = false;
+            }
         }
         if (read_offset % 8 != 0) {
             const num_bits_missing_for_byte = 8 - (read_offset % 8);
-            var [mode, read_offset] = read_int_and_add_row(bit_array, read_offset, num_bits_missing_for_byte, (read_result) => {
-                read_result["desc"] = "Padding Bits"
-                if (read_result["value"] == 0) {
-                    read_result["valid"] = true;
-                } else {
-                    read_result["desc"] += " (invalid values; should be 0)";
-                    read_result["valid"] = false;
-                }
-                return ["padding", [255, 255, 192]];
-            });
+            var [mode, read_offset, padding_area] = read_int_and_add_row(bit_array, read_offset, num_bits_missing_for_byte, "padding", [255, 255, 192]);
+            padding_area.value_details.desc = "Padding Bits";
+            if (padding_area.value_details.value == 0) {
+                padding_area.value_details.valid = true;
+            } else {
+                padding_area.value_details.desc += " (invalid values; should be 0)";
+                padding_area.value_details.valid = false;
+            }
         }
         const valid_padding_values = [236, 17];
         var padding_value_index = 0;
@@ -285,16 +255,15 @@ function decode_inner (decoder) {
             padding_value_index++;
             padding_value_index %= 2;
             const pad_length = Math.min(num_data_bits - read_offset, 8);
-            var [mode, read_offset] = read_int_and_add_row(bit_array, read_offset, pad_length, (read_result) => {
-                read_result["desc"] = "Padding Byte"
-                if (read_result["value"] == expected_padding_value) {
-                    read_result["valid"] = true;
-                } else {
-                    read_result["desc"] += " (invalid value; should be " + expected_padding_value + ")";
-                    read_result["valid"] = false;
-                }
-                return ["padding", [255, 255, 192]];
-            });
+
+            var [mode, read_offset, padding_area] = read_int_and_add_row(bit_array, read_offset, pad_length, "padding", [255, 255, 192]);
+            padding_area.value_details.desc = "Padding Byte";
+            if (padding_area.value_details.value == expected_padding_value) {
+                padding_area.value_details.valid = true;
+            } else {
+                padding_area.value_details.desc += " (invalid value; should be " + expected_padding_value + ")";
+                padding_area.value_details.valid = false;
+            }
         }
     } catch (ex) {
         var list_element = document.createElement("li");
