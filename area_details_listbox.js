@@ -21,19 +21,7 @@ function update_area_details_list (decoder) {
             highlighted_area = area;
         }
 
-        var result_obj;
-        try {
-            result_obj = area.check_function(area);
-        } catch (ex) {
-            result_obj = {"valid": false, "desc": "Error: " + ex};
-            if (ex.hasOwnProperty("x")) {
-                result_obj.desc = "Invalid Pixel at (" + ex.x + "/" + ex.y + ")";
-            } else if (ex.desc) {
-                result_obj.desc = "Error</span> (" + ex.desc + ")";
-            } else {
-                result_obj.desc = "Invalid Pixels (" + ex + ")";
-            }
-        }
+        const result_obj = area.check_function(area);
 
         function add_cell (obj, func) {
             var cell = new_row.insertCell();

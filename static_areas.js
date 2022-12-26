@@ -15,19 +15,18 @@ function bits_to_int (bool_array) {
 function expect_pixels (decoder, region_list, expected_values) {
     const bool_array = decoder.pixel_data.get_pixels_from_regions_as_bools(region_list);
     if (expected_values.length != bool_array.length) {
-        throw {"desc":"internal error: bad expected size"};
+        return {"valid": false, "desc": "internal error: bad expected size"};
     }
+
     for (var i = 0; i < bool_array.length; i++) {
         const expected_value = (expected_values[i] == "x" ? true : false);
         if (bool_array[i] != expected_value) {
             const [x, y] = region_list.pixel_coords_at_bit_offset(i);
-            throw {
-                "x": x,
-                "y": y
-            };
-
+            return {"valid": false, "desc": "Invalid Pixel at (" + x + "/" + y + ")"};
         }
     }
+
+    return {"valid": true};
 }
 
 function add_static_areas (decoder) {
@@ -35,7 +34,7 @@ function add_static_areas (decoder) {
 
     // three position markers:
     decoder.static_areas.add_area(new Area("pos_ul", RegionList.from_nested_arrays([[0, 0, 7, 7]]), [0, 255, 0], function (area) {
-        expect_pixels(decoder, area.regions,
+        return expect_pixels(decoder, area.regions,
             "xxxxxxx" +
             "x.....x" +
             "x.xxx.x" +
@@ -44,35 +43,31 @@ function add_static_areas (decoder) {
             "x.....x" +
             "xxxxxxx"
         );
-        return {"valid": true};
     }));
     decoder.static_areas.add_area(new Area("pos_ur", RegionList.from_nested_arrays([[code_size-7, 0, 7, 7]]), [0, 255, 0], decoder.static_areas.get("pos_ul").check_function));
     decoder.static_areas.add_area(new Area("pos_bl", RegionList.from_nested_arrays([[0, code_size-7, 7, 7]]), [0, 255, 0], decoder.static_areas.get("pos_ul").check_function));
 
     // one orientation marker (bottom right):
     decoder.static_areas.add_area(new Area("orient", RegionList.from_nested_arrays([[16, 16, 5, 5]]), [0, 255, 0], function (area) {
-        expect_pixels(decoder, area.regions,
+        return expect_pixels(decoder, area.regions,
             "xxxxx" +
             "x...x" +
             "x.x.x" +
             "x...x" +
             "xxxxx"
         );
-        return {"valid": true};
     }));
 
     // spacers around all position markers:
     decoder.static_areas.add_area(new Area("spacing_ul_1", RegionList.from_nested_arrays([[0, 7, 8, 1], [7, 0, 1, 7]]), [192, 255, 128], function (area) {
-        expect_pixels(decoder, area.regions, "........" + ".......");
-        return {"valid": true};
+        return expect_pixels(decoder, area.regions, "........" + ".......");
     }));
     decoder.static_areas.add_area(new Area("spacing_ur_1", RegionList.from_nested_arrays([[code_size-8, 0, 1, 7], [code_size-8, 7, 8, 1]]), [192, 255, 128], decoder.static_areas.get("spacing_ul_1").check_function));
     decoder.static_areas.add_area(new Area("spacing_bl_1", RegionList.from_nested_arrays([[0, code_size-8, 8, 1], [7, code_size-7, 1, 7]]), [192, 255, 128], decoder.static_areas.get("spacing_ul_1").check_function));
 
     // two timing strips:
     decoder.static_areas.add_area(new Area("timing_top", RegionList.from_nested_arrays([[8, 6, 9, 1]]), [0, 0, 255], function (area) {
-        expect_pixels(decoder, area.regions, "x.x.x.x.x");
-        return {"valid": true};
+        return expect_pixels(decoder, area.regions, "x.x.x.x.x");
     }));
     decoder.static_areas.add_area(new Area("timing_left", RegionList.from_nested_arrays([[6, 8, 1, 9]]), [0, 0, 255], decoder.static_areas.get("timing_top").check_function));
 
@@ -168,7 +163,6 @@ function add_static_areas (decoder) {
     }));
 
     decoder.static_areas.add_area(new Area("dark_module", RegionList.from_nested_arrays([[8, code_size-8, 1, 1]]), [128, 128, 192], function(area) {
-        expect_pixels(decoder, area.regions, "x");
-        return {"valid": true};
+        return expect_pixels(decoder, area.regions, "x");
     }));
 }
