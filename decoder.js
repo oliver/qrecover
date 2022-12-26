@@ -51,6 +51,7 @@ class QRDecoder {
     pixel_data;
     static_areas;
     dynamic_areas;
+    error_list = new Array(); // array of strings
 
     constructor (code_size) {
         this.code_size = code_size;
@@ -113,8 +114,12 @@ class QRDecoder {
     }
 
     decode () {
+        this.error_list.length = 0;
         this.static_areas = add_static_areas(this);
-        this.dynamic_areas = add_dynamic_areas(this);
+
+        var errors_from_dynamic_areas;
+        [this.dynamic_areas, errors_from_dynamic_areas] = add_dynamic_areas(this);
+        this.error_list = this.error_list.concat(errors_from_dynamic_areas);
     }
 }
 
@@ -136,6 +141,7 @@ function add_dynamic_areas (decoder) {
     // decode data bits:
 
     var new_dynamic_areas = new AreaMap();
+    var error_list = new Array();
 
     function read_int_and_add_row (bits, len, name, color) {
         var orig_offset = bits.read_offset;
@@ -182,7 +188,6 @@ function add_dynamic_areas (decoder) {
         [0b0111, "ECI"]
     ]);
 
-    document.getElementById("error_list").innerHTML = "";
     try {
         var text_characters = [];
         while (bit_array.read_offset < bit_array.length) {
@@ -279,9 +284,7 @@ function add_dynamic_areas (decoder) {
             }
         }
     } catch (ex) {
-        var list_element = document.createElement("li");
-        list_element.appendChild(document.createTextNode("Note: decoding failed (\"" + ex + "\"); decoding was aborted."));
-        document.getElementById("error_list").appendChild(list_element);
+        error_list.push("Note: decoding failed (\"" + ex + "\"); decoding was aborted.");
     }
 
     var num_text_characters = 0;
@@ -309,7 +312,7 @@ function add_dynamic_areas (decoder) {
         pre_element.appendChild(span_element);
     }
 
-    return new_dynamic_areas;
+    return [new_dynamic_areas, error_list];
 }
 
 

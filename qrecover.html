@@ -64,6 +64,14 @@
 
     function decode () {
         global_decoder_obj.decode();
+
+        document.getElementById("error_list").innerHTML = "";
+        for (var error_string of global_decoder_obj.error_list) {
+            var list_element = document.createElement("li");
+            list_element.appendChild(document.createTextNode(error_string));
+            document.getElementById("error_list").appendChild(list_element);
+        }
+
         update_area_details_list(global_decoder_obj);
         perform_global_checks(global_decoder_obj);
 
