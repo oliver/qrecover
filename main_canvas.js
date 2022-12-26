@@ -79,7 +79,7 @@ function draw_code () {
         displayed_pixel_data = global_decoder_obj.get_masked_pixels();
     }
     else if (document.getElementById("rb_show_mask").checked) {
-        displayed_pixel_data = get_full_mask();
+        displayed_pixel_data = global_decoder_obj.get_full_mask();
     }
 
     for (var x = 0; x < code_size; x++) {

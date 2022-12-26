@@ -37,8 +37,46 @@ class QRDecoder {
         this.dynamic_areas = new AreaMap();
     }
 
+    get_full_mask () {
+        const mask_types = {
+            0: function (i,j) { return (i+j) % 2 == 0; },
+            1: function (i,j) { return i % 2 == 0; },
+            2: function (i,j) { return j % 3 == 0; },
+            3: function (i,j) { return (i + j) % 3 == 0; },
+            4: function (i,j) { return (Math.floor(i/2) + Math.floor(j/3)) % 2 == 0; },
+            5: function (i,j) { return (i*j)%2 + (i*j)%3 == 0; },
+            6: function (i,j) { return ((i*j)%3 + i*j) % 2 == 0; },
+            7: function (i,j) { return ((i*j) % 3 +i+j) % 2 == 0; }
+        };
+
+        var mask_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1"))["value"];
+        const mask_bit_function = mask_types[mask_value];
+
+        var mask_data = new PixelData(this.code_size);
+        for (var x = 0; x < this.code_size; x++) {
+            for (var y = 0; y < this.code_size; y++) {
+                // apply mask only for data areas:
+                if (!static_areas.is_inside(x, y)) {
+                    mask_data.set(x, y, mask_bit_function(y, x));
+                }
+            }
+        }
+
+        // 10 101 0000010010
+        mask_data.set_pixels_in_regions(static_areas.get("format_ec_1").regions, [true, false]);
+        mask_data.set_pixels_in_regions(static_areas.get("format_ec_2").regions, [true, false]);
+
+        mask_data.set_pixels_in_regions(static_areas.get("format_mask_1").regions, [true, false, true]);
+        mask_data.set_pixels_in_regions(static_areas.get("format_mask_2").regions, [true, false, true]);
+
+        mask_data.set_pixels_in_regions(static_areas.get("format_ec_data_1").regions, [false, false, false, false, false, true, false, false, true, false]);
+        mask_data.set_pixels_in_regions(static_areas.get("format_ec_data_2").regions, [false, false, false, false, false, true, false, false, true, false]);
+
+        return mask_data;
+    }
+
     get_masked_pixels () {
-        var mask_data = get_full_mask();
+        var mask_data = this.get_full_mask();
         var masked_pixel_data = new PixelData(this.code_size);
         for (var x = 0; x < this.code_size; x++) {
             for (var y = 0; y < this.code_size; y++) {
