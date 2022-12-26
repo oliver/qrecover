@@ -31,6 +31,8 @@ function expect_pixels (decoder, region_list, expected_values) {
 }
 
 function add_static_areas (decoder) {
+    decoder.static_areas = new AreaMap();
+
     // three position markers:
     decoder.static_areas.add_area(new Area("pos_ul", RegionList.from_nested_arrays([[0, 0, 7, 7]]), [0, 255, 0], function (area) {
         expect_pixels(decoder, area.regions,

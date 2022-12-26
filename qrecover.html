@@ -45,8 +45,6 @@
 
         update_load_button();
 
-        add_static_areas(global_decoder_obj);
-
         init_main_canvas(document.getElementById("can"), document.getElementById("mouse_pos"));
         init_preview_image(document.getElementById("preview_canvas"), document.getElementById("preview_image"));
 
@@ -65,6 +63,7 @@
     };
 
     function decode () {
+        add_static_areas(global_decoder_obj);
         decode_inner(global_decoder_obj);
         update_area_details_list(global_decoder_obj);
         perform_global_checks(global_decoder_obj);
