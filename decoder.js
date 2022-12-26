@@ -24,6 +24,28 @@ for (var i = 10; i <= 35; i++) {
 }
 
 
+/// Array of bits (boolean values), from which integer values can be read.
+class BitArray extends Array {
+    read_offset = 0;
+
+    read_next_int (num_bits) {
+        var result_int = 0;
+        for (var i = 0; i < num_bits; i++) {
+            if (this.read_offset >= this.length) {
+                throw "offset " + this.read_offset + " is out of bounds";
+            }
+
+            result_int <<= 1;
+            if (this[this.read_offset]) {
+                result_int |= 1;
+            }
+            this.read_offset++;
+        }
+        return result_int;
+    }
+}
+
+
 class QRDecoder {
     code_size;
     pixel_data;
@@ -97,7 +119,7 @@ function decode_inner (decoder) {
     var curr_x = code_size-1;
     var curr_y = code_size-1;
     var end_reached = false;
-    var bit_array = new Array();
+    var bit_array = new BitArray();
     var bit_offset_to_pixel_position = new Array();
     do {
         var bit_set = decoder.get_masked_pixels().get(curr_x, curr_y);
@@ -107,24 +129,10 @@ function decode_inner (decoder) {
     } while (!end_reached);
 
     // decode data bits:
-    function read_int (bits, offset, len) {
-        var result_int = 0;
-        for (var i = 0; i < len; i++) {
-            if (offset + i >= bits.length) {
-                throw "offset " + (offset + i) + " is out of bounds";
-            }
 
-            result_int <<= 1;
-            if (bits[offset+i]) {
-                result_int |= 1;
-            }
-        }
-        return [result_int, offset+len];
-    }
-
-    function read_int_and_add_row (bits, offset, len, name, color) {
-        var orig_offset = offset;
-        var [int_value, read_offset] = read_int(bits, offset, len);
+    function read_int_and_add_row (bits, len, name, color) {
+        var orig_offset = bits.read_offset;
+        const int_value = bits.read_next_int(len);
 
         var region_coordinates = [];
         for (var i = 0; i < len; i++) {
@@ -140,7 +148,7 @@ function decode_inner (decoder) {
         };
         decoder.dynamic_areas.add_area(new_area);
 
-        return [int_value, read_offset, new_area];
+        return [int_value, new_area];
     }
 
     function calc_num_data_bytes (ec_level) {
@@ -171,9 +179,8 @@ function decode_inner (decoder) {
     document.getElementById("error_list").innerHTML = "";
     try {
         var text_characters = [];
-        var read_offset = 0;
-        while (read_offset < bit_array.length) {
-            var [mode, read_offset, mode_area] = read_int_and_add_row(bit_array, read_offset, 4, "mode", [255, 0, 0]);
+        while (bit_array.read_offset < bit_array.length) {
+            var [mode, mode_area] = read_int_and_add_row(bit_array, 4, "mode", [255, 0, 0]);
             if (mode_names.get(mode)) {
                 mode_area.value_details.desc = mode_names.get(mode_area.value_details.value);
                 mode_area.value_details.valid = true;
@@ -184,10 +191,10 @@ function decode_inner (decoder) {
 
             if (mode == 0b0010) {
                 // Alphanumeric encoding
-                var [payload_length, read_offset] = read_int_and_add_row(bit_array, read_offset, 9, "payload_length", [255, 192, 255]);
+                var [payload_length] = read_int_and_add_row(bit_array, 9, "payload_length", [255, 192, 255]);
 
                 for (var j = 0; j < Math.floor(payload_length / 2); j++) {
-                    var [two_chars, read_offset, alphanum_area] = read_int_and_add_row(bit_array, read_offset, 11, "two_chars", [255, 255, 192]);
+                    var [two_chars, alphanum_area] = read_int_and_add_row(bit_array, 11, "two_chars", [255, 255, 192]);
                     var char2_code = alphanum_area.value_details.value % 45;
                     var char1_code = (alphanum_area.value_details.value - char2_code) / 45;
                     alphanum_area.value_details.desc = char1_code + "=" + alphanumeric_table.get(char1_code) + "; " + char2_code + "=" + alphanumeric_table.get(char2_code);
@@ -195,24 +202,24 @@ function decode_inner (decoder) {
                 }
                 if (payload_length % 2 != 0) {
                     // read additional character
-                    var [final_char, read_offset, alphanum_area] = read_int_and_add_row(bit_array, read_offset, 6, "final_char", [255, 255, 192]);
+                    var [final_char, alphanum_area] = read_int_and_add_row(bit_array, 6, "final_char", [255, 255, 192]);
                     alphanum_area.value_details.desc = alphanum_area.value_details.value + "=" + alphanumeric_table.get(alphanum_area.value_details.value);
                     text_characters.push({"chars": alphanumeric_table.get(alphanum_area.value_details.value), "area": alphanum_area });
                 }
                 break;
             } else if (mode == 0b0100) {
                 // Byte encoding
-                var [payload_length, read_offset] = read_int_and_add_row(bit_array, read_offset, 8, "payload_length", [255, 192, 255]);
+                var [payload_length] = read_int_and_add_row(bit_array, 8, "payload_length", [255, 192, 255]);
 
                 for (var j = 0; j < payload_length; j++) {
-                    var [byte, read_offset, byte_area] = read_int_and_add_row(bit_array, read_offset, 8, "byte", [255, 255, 192]);
+                    var [byte, byte_area] = read_int_and_add_row(bit_array, 8, "byte", [255, 255, 192]);
                     byte_area.value_details.desc = "ASCII='" + String.fromCharCode(byte_area.value_details.value) + "'";
                     text_characters.push({"chars": String.fromCharCode(byte_area.value_details.value), "area": byte_area });
                 }
                 break;
             } else if (mode == 0b0111) {
                 // ECI marker
-                var [eci_marker, read_offset, eci_area] = read_int_and_add_row(bit_array, read_offset, 8, "eci_marker", [192, 255, 255]);
+                var [eci_marker, eci_area] = read_int_and_add_row(bit_array, 8, "eci_marker", [192, 255, 255]);
                 if (eci_area.value_details.value == 26) {
                     eci_area.value_details.desc = "UTF-8 charset";
                     eci_area.value_details.valid = true;
@@ -227,8 +234,8 @@ function decode_inner (decoder) {
             }
         }
 
-        if (read_offset < num_data_bits - 4) {
-            var [mode, read_offset, terminator_area] = read_int_and_add_row(bit_array, read_offset, 4, "terminator", [255, 0, 0]);
+        if (bit_array.read_offset < num_data_bits - 4) {
+            var [mode, terminator_area] = read_int_and_add_row(bit_array, 4, "terminator", [255, 0, 0]);
             if (terminator_area.value_details.value == 0) {
                 terminator_area.value_details.desc = mode_names.get(terminator_area.value_details.value);
                 terminator_area.value_details.valid = true;
@@ -237,9 +244,9 @@ function decode_inner (decoder) {
                 terminator_area.value_details.valid = false;
             }
         }
-        if (read_offset % 8 != 0) {
-            const num_bits_missing_for_byte = 8 - (read_offset % 8);
-            var [mode, read_offset, padding_area] = read_int_and_add_row(bit_array, read_offset, num_bits_missing_for_byte, "padding", [255, 255, 192]);
+        if (bit_array.read_offset % 8 != 0) {
+            const num_bits_missing_for_byte = 8 - (bit_array.read_offset % 8);
+            var [mode, padding_area] = read_int_and_add_row(bit_array, num_bits_missing_for_byte, "padding", [255, 255, 192]);
             padding_area.value_details.desc = "Padding Bits";
             if (padding_area.value_details.value == 0) {
                 padding_area.value_details.valid = true;
@@ -250,13 +257,13 @@ function decode_inner (decoder) {
         }
         const valid_padding_values = [236, 17];
         var padding_value_index = 0;
-        while (read_offset < num_data_bits) {
+        while (bit_array.read_offset < num_data_bits) {
             let expected_padding_value = valid_padding_values[padding_value_index];
             padding_value_index++;
             padding_value_index %= 2;
-            const pad_length = Math.min(num_data_bits - read_offset, 8);
+            const pad_length = Math.min(num_data_bits - bit_array.read_offset, 8);
 
-            var [mode, read_offset, padding_area] = read_int_and_add_row(bit_array, read_offset, pad_length, "padding", [255, 255, 192]);
+            var [mode, padding_area] = read_int_and_add_row(bit_array, pad_length, "padding", [255, 255, 192]);
             padding_area.value_details.desc = "Padding Byte";
             if (padding_area.value_details.value == expected_padding_value) {
                 padding_area.value_details.valid = true;
