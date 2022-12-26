@@ -85,6 +85,10 @@ class QRDecoder {
         }
         return masked_pixel_data;
     }
+
+    get_all_area_objects () {
+        return new Map([... this.static_areas, ... this.dynamic_areas]).values();
+    }
 }
 
 

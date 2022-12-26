@@ -66,7 +66,7 @@
 
     function decode () {
         decode_inner(global_decoder_obj);
-        update_area_details_list();
+        update_area_details_list(global_decoder_obj);
         perform_global_checks(global_decoder_obj);
 
         // restore highlight in newly-populated area list:

@@ -77,10 +77,6 @@ class AreaMap extends Map {
 }
 
 
-function get_all_area_objects () {
-    return new Map([... global_decoder_obj.static_areas, ... global_decoder_obj.dynamic_areas]).values();
-}
-
 // @param region_list RegionList object
 // @returns A list of lines (start_x, start_y, end_x, end_y) that draw the outline of the regions
 function calc_outline (region_list) {

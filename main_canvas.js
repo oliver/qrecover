@@ -91,7 +91,7 @@ function draw_code () {
     ctx.strokeStyle = "black";
     ctx.lineWidth = 2.5;
     ctx.font = "11px monospace";
-    for (const area of get_all_area_objects()) {
+    for (const area of global_decoder_obj.get_all_area_objects()) {
         if (document.getElementById("cb_colors_enabled").checked) {
             ctx.fillStyle = "rgba(" + area.color[0] + ", " + area.color[1] + ", " + area.color[2] + ", 0.3)";
             for (region of area.regions.regions) {

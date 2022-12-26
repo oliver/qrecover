@@ -2,11 +2,11 @@
 // Functions for managing the HTML list which shows area details
 //
 
-function update_area_details_list () {
+function update_area_details_list (decoder) {
     var table_body = document.getElementById("area_table_body");
     table_body.innerHTML = "";
 
-    for (const area of get_all_area_objects()) {
+    for (const area of decoder.get_all_area_objects()) {
         var new_row = table_body.insertRow();
         area.dom_elements.set("area_table_div", new_row);
         new_row.addEventListener("mouseover", function (e) {
