@@ -27,7 +27,7 @@ function init_main_canvas (canvas_element, mouse_pos_element) {
             mouse_pos_element.innerHTML = "(" + (pix_x+0) + " / " + (pix_y+0) + ")";
         }
 
-        var hovered_area = static_areas.is_inside(pix_x, pix_y);
+        var hovered_area = global_decoder_obj.static_areas.is_inside(pix_x, pix_y);
         if (!hovered_area) {
             hovered_area = global_decoder_obj.dynamic_areas.is_inside(pix_x, pix_y);
         }
@@ -134,7 +134,7 @@ function draw_code () {
         do {
             ctx.fillStyle = displayed_pixel_data.get(curr_x, curr_y) ? "white" : "black";
             ctx.fillText(("" + i).padStart(3, " "), curr_x*pixel_size, (curr_y+1)*pixel_size - 5);
-            [curr_x, curr_y, end_reached] = next_data_pixel_pos(curr_x, curr_y);
+            [curr_x, curr_y, end_reached] = next_data_pixel_pos(global_decoder_obj, curr_x, curr_y);
             i++;
         } while (!end_reached);
     }

@@ -49,28 +49,28 @@ class QRDecoder {
             7: function (i,j) { return ((i*j) % 3 +i+j) % 2 == 0; }
         };
 
-        var mask_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1"))["value"];
+        var mask_value = this.static_areas.get("format_mask_1").check_function(this.static_areas.get("format_mask_1"))["value"];
         const mask_bit_function = mask_types[mask_value];
 
         var mask_data = new PixelData(this.code_size);
         for (var x = 0; x < this.code_size; x++) {
             for (var y = 0; y < this.code_size; y++) {
                 // apply mask only for data areas:
-                if (!static_areas.is_inside(x, y)) {
+                if (!this.static_areas.is_inside(x, y)) {
                     mask_data.set(x, y, mask_bit_function(y, x));
                 }
             }
         }
 
         // 10 101 0000010010
-        mask_data.set_pixels_in_regions(static_areas.get("format_ec_1").regions, [true, false]);
-        mask_data.set_pixels_in_regions(static_areas.get("format_ec_2").regions, [true, false]);
+        mask_data.set_pixels_in_regions(this.static_areas.get("format_ec_1").regions, [true, false]);
+        mask_data.set_pixels_in_regions(this.static_areas.get("format_ec_2").regions, [true, false]);
 
-        mask_data.set_pixels_in_regions(static_areas.get("format_mask_1").regions, [true, false, true]);
-        mask_data.set_pixels_in_regions(static_areas.get("format_mask_2").regions, [true, false, true]);
+        mask_data.set_pixels_in_regions(this.static_areas.get("format_mask_1").regions, [true, false, true]);
+        mask_data.set_pixels_in_regions(this.static_areas.get("format_mask_2").regions, [true, false, true]);
 
-        mask_data.set_pixels_in_regions(static_areas.get("format_ec_data_1").regions, [false, false, false, false, false, true, false, false, true, false]);
-        mask_data.set_pixels_in_regions(static_areas.get("format_ec_data_2").regions, [false, false, false, false, false, true, false, false, true, false]);
+        mask_data.set_pixels_in_regions(this.static_areas.get("format_ec_data_1").regions, [false, false, false, false, false, true, false, false, true, false]);
+        mask_data.set_pixels_in_regions(this.static_areas.get("format_ec_data_2").regions, [false, false, false, false, false, true, false, false, true, false]);
 
         return mask_data;
     }
@@ -99,7 +99,7 @@ function decode_inner (decoder) {
         var bit_set = decoder.get_masked_pixels().get(curr_x, curr_y);
         bit_array.push(bit_set);
         bit_offset_to_pixel_position.push({"x":curr_x, "y":curr_y});
-        [curr_x, curr_y, end_reached] = next_data_pixel_pos(curr_x, curr_y);
+        [curr_x, curr_y, end_reached] = next_data_pixel_pos(decoder, curr_x, curr_y);
     } while (!end_reached);
 
     // decode data bits:
@@ -159,7 +159,7 @@ function decode_inner (decoder) {
             return 16;
     }
 
-    const ec_level = static_areas.get("format_ec_1").check_function(static_areas.get("format_ec_1")).value;
+    const ec_level = decoder.static_areas.get("format_ec_1").check_function(decoder.static_areas.get("format_ec_1")).value;
     const num_data_bits = calc_num_data_bytes(ec_level) * 8;
 
     const mode_names = new Map([
@@ -326,14 +326,14 @@ function decode_inner (decoder) {
 
 
 // Returns the actual next data pixel position (taking static areas into account)
-function next_data_pixel_pos (x, y) {
+function next_data_pixel_pos (decoder, x, y) {
     // simply skip over positions that are inside an area:
     do {
         [x, y, end_reached] = next_position_in_grid(x, y);
         if (end_reached) {
             return [undefined, undefined, true];
         }
-    } while (static_areas.is_inside(x, y));
+    } while (decoder.static_areas.is_inside(x, y));
     return [x, y, false];
 }
 

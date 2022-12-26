@@ -2,16 +2,16 @@
 // Functions for checking correctness of the decoded data, taking all areas into account
 //
 
-function perform_global_checks () {
-    const ec_1_value = static_areas.get("format_ec_1").check_function(static_areas.get("format_ec_1")).value;
-    const mask_1_value = static_areas.get("format_mask_1").check_function(static_areas.get("format_mask_1")).value;
-    const ec_data_1_value = static_areas.get("format_ec_data_1").check_function(static_areas.get("format_ec_data_1")).value;
+function perform_global_checks (decoder) {
+    const ec_1_value = decoder.static_areas.get("format_ec_1").check_function(decoder.static_areas.get("format_ec_1")).value;
+    const mask_1_value = decoder.static_areas.get("format_mask_1").check_function(decoder.static_areas.get("format_mask_1")).value;
+    const ec_data_1_value = decoder.static_areas.get("format_ec_data_1").check_function(decoder.static_areas.get("format_ec_data_1")).value;
     const full_ec_1_bits = (ec_1_value << 13) | (mask_1_value << 10) | ec_data_1_value;
     const check_result_1 = check_format_ec(full_ec_1_bits);
 
-    const ec_2_value = static_areas.get("format_ec_2").check_function(static_areas.get("format_ec_2")).value;
-    const mask_2_value = static_areas.get("format_mask_2").check_function(static_areas.get("format_mask_2")).value;
-    const ec_data_2_value = static_areas.get("format_ec_data_2").check_function(static_areas.get("format_ec_data_2")).value;
+    const ec_2_value = decoder.static_areas.get("format_ec_2").check_function(decoder.static_areas.get("format_ec_2")).value;
+    const mask_2_value = decoder.static_areas.get("format_mask_2").check_function(decoder.static_areas.get("format_mask_2")).value;
+    const ec_data_2_value = decoder.static_areas.get("format_ec_data_2").check_function(decoder.static_areas.get("format_ec_data_2")).value;
     const full_ec_2_bits = (ec_2_value << 13) | (mask_2_value << 10) | ec_data_2_value;
     const check_result_2 = check_format_ec(full_ec_2_bits);
 
@@ -44,8 +44,12 @@ function perform_global_checks () {
             const replacement_code = code;
             let replacements = new Array();
 
-            const all_regions_1 = static_areas.get("format_ec_1").regions.concat(static_areas.get("format_mask_1").regions).concat(static_areas.get("format_ec_data_1").regions);
-            const all_regions_2 = static_areas.get("format_ec_2").regions.concat(static_areas.get("format_mask_2").regions).concat(static_areas.get("format_ec_data_2").regions);
+            const all_regions_1 = decoder.static_areas.get("format_ec_1").regions.concat(
+                    decoder.static_areas.get("format_mask_1").regions).concat(
+                    decoder.static_areas.get("format_ec_data_1").regions);
+            const all_regions_2 = decoder.static_areas.get("format_ec_2").regions.concat(
+                decoder.static_areas.get("format_mask_2").regions).concat(
+                decoder.static_areas.get("format_ec_data_2").regions);
             const num_bits = 15;
             const replacement_code_masked = replacement_code ^ 0b101010000010010;
             for (var i = 0; i < num_bits; i++) {
