@@ -2,9 +2,6 @@
 // Functions for working with the per-pixel data
 //
 
-/// The global PixelData object which holds the currently displayed pixel data.
-var pixel_data;
-
 
 /// Represents a rectangular region in a pixel grid, consisting of an x/y coordinate and a width and height.
 class Region {
@@ -110,13 +107,13 @@ class PixelData {
 
 
 function save_state () {
-    sessionStorage.setItem("pixel_data", JSON.stringify(pixel_data.data_array));
+    sessionStorage.setItem("pixel_data", JSON.stringify(global_decoder_obj.pixel_data.data_array));
 }
 
 function restore_state () {
     try {
         if (sessionStorage.getItem("pixel_data")) {
-            pixel_data.data_array = JSON.parse(sessionStorage.getItem("pixel_data"));
+            global_decoder_obj.pixel_data.data_array = JSON.parse(sessionStorage.getItem("pixel_data"));
             return true;
         }
     } catch (ex) {

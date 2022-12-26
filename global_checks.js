@@ -93,7 +93,7 @@ function show_correction (replacements) {
 
 function apply_correction (replacements) {
     for ({x, y, value} of replacements) {
-        pixel_data.set(x, y, value);
+        global_decoder_obj.pixel_data.set(x, y, value);
     }
     decode();
     draw_code();

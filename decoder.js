@@ -80,7 +80,7 @@ class QRDecoder {
         var masked_pixel_data = new PixelData(this.code_size);
         for (var x = 0; x < this.code_size; x++) {
             for (var y = 0; y < this.code_size; y++) {
-                masked_pixel_data.set(x, y, pixel_data.get(x, y) ^ mask_data.get(x, y));
+                masked_pixel_data.set(x, y, this.pixel_data.get(x, y) ^ mask_data.get(x, y));
             }
         }
         return masked_pixel_data;

@@ -43,7 +43,6 @@
     function init() {
         global_decoder_obj = new QRDecoder(code_size);
 
-        pixel_data = new PixelData(code_size);
         update_load_button();
 
         add_static_areas(global_decoder_obj);
@@ -96,7 +95,7 @@
         for (var x = 0; x < Math.min(img_obj.width, code_size); x++) {
             for (var y = 0; y < Math.min(img_obj.height, code_size); y++) {
                 const red_value = image_pixel_data[(y*img_obj.width + x) * 4];
-                pixel_data.set(x, y, (red_value < 128) ? true : false);
+                global_decoder_obj.pixel_data.set(x, y, (red_value < 128) ? true : false);
             }
         }
         save_state();

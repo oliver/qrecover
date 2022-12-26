@@ -13,8 +13,8 @@ function init_main_canvas (canvas_element, mouse_pos_element) {
 
     canvas.addEventListener("click", function (e) {
         var [pix_x, pix_y] = event_to_pixel(e);
-        var new_value = !(pixel_data.get(pix_x, pix_y));
-        pixel_data.set(pix_x, pix_y, new_value);
+        var new_value = !(global_decoder_obj.pixel_data.get(pix_x, pix_y));
+        global_decoder_obj.pixel_data.set(pix_x, pix_y, new_value);
 
         decode();
         draw_code();
@@ -74,7 +74,7 @@ function draw_code () {
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, code_size*pixel_size, code_size*pixel_size);
 
-    var displayed_pixel_data = pixel_data;
+    var displayed_pixel_data = global_decoder_obj.pixel_data;
     if (document.getElementById("rb_show_unmasked").checked) {
         displayed_pixel_data = global_decoder_obj.get_masked_pixels();
     }
@@ -143,7 +143,7 @@ function draw_code () {
         const inset_pixels = pixel_size * 0.3;
         ctx.fillStyle = "red";
         for ({x, y, value} of highlighted_differences) {
-            if (value != pixel_data.get(x, y)) {
+            if (value != global_decoder_obj.pixel_data.get(x, y)) {
                 ctx.fillRect(x * pixel_size + inset_pixels, y * pixel_size + inset_pixels, pixel_size - (2*inset_pixels), pixel_size - (2*inset_pixels));
             }
         }

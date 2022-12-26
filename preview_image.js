@@ -20,7 +20,7 @@ function draw_preview_image () {
     var image_data = preview_context.getImageData(0, 0, code_size, code_size);
     for (var x = 0; x < code_size; x++) {
         for (var y = 0; y < code_size; y++) {
-            if (pixel_data.get(x, y)) {
+            if (global_decoder_obj.pixel_data.get(x, y)) {
                 const offset = y * (code_size * 4) + x * 4;
                 image_data.data[offset+0] = 0;
                 image_data.data[offset+1] = 0;
