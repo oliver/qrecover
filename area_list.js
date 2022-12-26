@@ -2,29 +2,41 @@
 // Functions for working with areas and lists of areas
 //
 
-var static_areas = new Map();
-var dynamic_areas  = new Map();
-var static_area_grid = null;
+class Area {
+    id;
+    regions;
+    color;
+    check_function;
 
-function add_area (id, region_list, color_values, check_function, target_map = static_areas) {
-    target_map.set(id, {
-        "id":id,
-        "regions":region_list,
-        "color":color_values,
-        "outline:":null,
-        "dom_elements": new Map(),
-        "check_function":check_function
-    });
+    num_pixels = 0;
+    outline;
+    dom_elements = new Map();
 
-    var num_pixels = 0;
-    for (region of region_list.regions) {
-        num_pixels += region.w * region.h;
+    constructor (id, region_list, color_values, check_function) {
+        this.id = id;
+        this.regions = region_list;
+        this.color = color_values;
+        this.check_function = check_function;
+
+        for (const region of this.regions.regions) {
+            this.num_pixels += region.w * region.h;
+        }
+
+        this.outline = calc_outline(this.regions);
     }
-    target_map.get(id).num_pixels = num_pixels;
-
-    target_map.get(id).outline = calc_outline(target_map.get(id).regions);
-    return target_map.get(id);
 }
+
+
+class AreaMap extends Map {
+    add_area (new_area) {
+        this.set(new_area.id, new_area);
+    }
+}
+
+
+var static_areas = new AreaMap();
+var dynamic_areas  = new AreaMap();
+var static_area_grid = null;
 
 function get_all_areas () {
     return new Map([...static_areas, ...dynamic_areas]);
