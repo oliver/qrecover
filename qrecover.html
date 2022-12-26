@@ -62,12 +62,54 @@
         1: "L / Low"
     };
 
+    function show_correction (replacements) {
+        highlighted_differences = replacements;
+        draw_code();
+    }
+
+    function apply_correction (replacements) {
+        for ({x, y, value} of replacements) {
+            global_decoder_obj.pixel_data.set(x, y, value);
+        }
+        decode();
+        draw_code();
+        save_state();
+    }
+
     function display_errors (error_list) {
         document.getElementById("error_list").innerHTML = "";
-        for (var error_string of error_list) {
+        for (var error_entry of error_list) {
             var list_element = document.createElement("li");
-            list_element.appendChild(document.createTextNode(error_string));
+            list_element.innerHTML = error_entry.desc;
             document.getElementById("error_list").appendChild(list_element);
+
+            if (error_entry.potential_corrections) {
+                list_element.innerHTML += ". Possible corrections:"
+                var new_sub_list = document.createElement("ul");
+                list_element.appendChild(new_sub_list);
+
+                for (let correction of error_entry.potential_corrections) {
+                    var item_text = "<span style='text-decoration: underline dashed;'>" + correction.desc + " <button>Apply</button></span>";
+
+                    var new_sub_item = document.createElement("li");
+                    new_sub_item.innerHTML = item_text;
+                    new_sub_list.appendChild(new_sub_item);
+
+                    const span = new_sub_item.querySelector("span");
+                    span.addEventListener("mouseover", function (e) {
+                        show_correction(correction.replacements);
+                    }, false);
+                    span.addEventListener("mouseout", function (e) {
+                        show_correction(null);
+                    }, false);
+
+                    const button = new_sub_item.querySelector("button");
+                    button.addEventListener("click", function (e) {
+                        apply_correction(correction.replacements);
+                        show_correction(null);
+                    }, false);
+                }
+            }
         }
     }
 
@@ -102,7 +144,6 @@
         display_errors(global_decoder_obj.error_list);
 
         update_area_details_list(global_decoder_obj);
-        perform_global_checks(global_decoder_obj);
 
         // restore highlight in newly-populated area list:
         highlight_area(highlighted_area);

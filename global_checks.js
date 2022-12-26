@@ -3,6 +3,8 @@
 //
 
 function perform_global_checks (decoder) {
+    var error_list = new Array();
+
     const ec_1_value = decoder.static_areas.get("format_ec_1").value_details.value;
     const mask_1_value = decoder.static_areas.get("format_mask_1").value_details.value;
     const ec_data_1_value = decoder.static_areas.get("format_ec_data_1").value_details.value;
@@ -16,6 +18,11 @@ function perform_global_checks (decoder) {
     const check_result_2 = check_format_ec(full_ec_2_bits);
 
     if (check_result_1 != 0 || check_result_2 != 0) {
+        var error_entry = {
+            "desc": "Format data has invalid checksum",
+            "potential_corrections": []
+        };
+
         const potential_corrections_1 = get_corrections(full_ec_1_bits);
         const potential_corrections_2 = get_corrections(full_ec_2_bits);
 
@@ -33,12 +40,6 @@ function perform_global_checks (decoder) {
                 return a.code - b.code;
             }
         });
-
-        var new_list_element = document.createElement("li");
-        new_list_element.innerHTML = "Format data has invalid checksum. Possible corrections:";
-        document.getElementById("error_list").appendChild(new_list_element);
-        var new_sub_list = document.createElement("ul");
-        new_list_element.appendChild(new_sub_list);
 
         for (var {code, distance_sum} of combined_corrections) {
             const replacement_code = code;
@@ -64,42 +65,17 @@ function perform_global_checks (decoder) {
             const mask_value = (replacement_code >> 10) & 0b111;
             const payload_bits = (replacement_code >> 10) & 0b11111;
 
-            var item_text = "<span style='text-decoration: underline dashed;'>"
-                + payload_bits.toString(2).padStart(5,"0")
-                + " = EC: " + error_correction_levels[ec_value] + ", mask: " + mask_value
-                + " (" + distance_sum + " bit(s) differ) <button>Apply</button></span>";
-
-            var new_sub_item = document.createElement("li");
-            new_sub_item.innerHTML = item_text;
-            new_sub_list.appendChild(new_sub_item);
-
-            const span = new_sub_item.querySelector("span");
-            span.addEventListener("mouseover", function (e) {
-                show_correction(replacements);
-            }, false);
-            span.addEventListener("mouseout", function (e) {
-                show_correction(null);
-            }, false);
-
-            const button = new_sub_item.querySelector("button");
-            button.addEventListener("click", function (e) {
-                apply_correction(replacements);
-                show_correction(null);
-            }, false);
+            var correction_entry = {
+                "desc": payload_bits.toString(2).padStart(5,"0")
+                    + " = EC: " + error_correction_levels[ec_value] + ", mask: " + mask_value
+                    + " (" + distance_sum + " bit(s) differ)",
+                "replacements": replacements
+            };
+            error_entry.potential_corrections.push(correction_entry);
         }
-    }
-}
 
-function show_correction (replacements) {
-    highlighted_differences = replacements;
-    draw_code();
-}
-
-function apply_correction (replacements) {
-    for ({x, y, value} of replacements) {
-        global_decoder_obj.pixel_data.set(x, y, value);
+        error_list.push(error_entry);
     }
-    decode();
-    draw_code();
-    save_state();
+
+    return error_list;
 }

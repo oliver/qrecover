@@ -51,7 +51,7 @@ class QRDecoder {
     pixel_data;
     static_areas;
     dynamic_areas;
-    error_list = new Array(); // array of strings
+    error_list = new Array();
 
     constructor (code_size) {
         this.code_size = code_size;
@@ -120,6 +120,9 @@ class QRDecoder {
         var errors_from_dynamic_areas;
         [this.dynamic_areas, errors_from_dynamic_areas] = add_dynamic_areas(this);
         this.error_list = this.error_list.concat(errors_from_dynamic_areas);
+
+        const errors_from_global_checks = perform_global_checks(this);
+        this.error_list = this.error_list.concat(errors_from_global_checks);
     }
 }
 
@@ -283,7 +286,7 @@ function add_dynamic_areas (decoder) {
             }
         }
     } catch (ex) {
-        error_list.push("Note: decoding failed (\"" + ex + "\"); decoding was aborted.");
+        error_list.push({"desc": "Note: decoding failed (\"" + ex + "\"); decoding was aborted."});
     }
 
     return [new_dynamic_areas, error_list];
