@@ -162,14 +162,3 @@ function get_full_mask () {
 
     return mask_data;
 }
-
-function get_masked_pixels () {
-    var mask_data = get_full_mask();
-    var masked_pixel_data = new PixelData(code_size);
-    for (var x = 0; x < code_size; x++) {
-        for (var y = 0; y < code_size; y++) {
-            masked_pixel_data.set(x, y, pixel_data.get(x, y) ^ mask_data.get(x, y));
-        }
-    }
-    return masked_pixel_data;
-}

@@ -76,7 +76,7 @@ function draw_code () {
 
     var displayed_pixel_data = pixel_data;
     if (document.getElementById("rb_show_unmasked").checked) {
-        displayed_pixel_data = get_masked_pixels();
+        displayed_pixel_data = global_decoder_obj.get_masked_pixels();
     }
     else if (document.getElementById("rb_show_mask").checked) {
         displayed_pixel_data = get_full_mask();

@@ -46,7 +46,7 @@
         pixel_data = new PixelData(code_size);
         update_load_button();
 
-        add_static_areas();
+        add_static_areas(global_decoder_obj);
 
         init_main_canvas(document.getElementById("can"), document.getElementById("mouse_pos"));
         init_preview_image(document.getElementById("preview_canvas"), document.getElementById("preview_image"));
@@ -66,7 +66,7 @@
     };
 
     function decode () {
-        decode_inner();
+        decode_inner(global_decoder_obj);
         update_area_details_list();
         perform_global_checks();
 

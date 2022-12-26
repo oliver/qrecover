@@ -30,7 +30,7 @@ function expect_pixels (region_list, expected_values) {
     }
 }
 
-function add_static_areas () {
+function add_static_areas (decoder) {
     // three position markers:
     static_areas.add_area(new Area("pos_ul", RegionList.from_nested_arrays([[0, 0, 7, 7]]), [0, 255, 0], function (area) {
         expect_pixels(area.regions,
@@ -130,7 +130,7 @@ function add_static_areas () {
     }));
 
     function do_complete_format_ec_check (area, format_ec_area_id, format_mask_area_id) {
-        const value = bits_to_int(get_masked_pixels().get_pixels_from_regions_as_bools(area.regions));
+        const value = bits_to_int(decoder.get_masked_pixels().get_pixels_from_regions_as_bools(area.regions));
 
         var result = {
             "num_bits": area.num_pixels,

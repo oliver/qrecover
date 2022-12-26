@@ -25,19 +25,32 @@ for (var i = 10; i <= 35; i++) {
 
 
 class QRDecoder {
+    code_size;
     pixel_data;
     static_areas;
     dynamic_areas;
 
     constructor (code_size) {
-        this.pixel_data = new PixelData(code_size);
+        this.code_size = code_size;
+        this.pixel_data = new PixelData(this.code_size);
         this.static_areas = new AreaMap();
         this.dynamic_areas = new AreaMap();
+    }
+
+    get_masked_pixels () {
+        var mask_data = get_full_mask();
+        var masked_pixel_data = new PixelData(this.code_size);
+        for (var x = 0; x < this.code_size; x++) {
+            for (var y = 0; y < this.code_size; y++) {
+                masked_pixel_data.set(x, y, pixel_data.get(x, y) ^ mask_data.get(x, y));
+            }
+        }
+        return masked_pixel_data;
     }
 }
 
 
-function decode_inner () {
+function decode_inner (decoder) {
     // read data bits (into an array of bools):
     var curr_x = code_size-1;
     var curr_y = code_size-1;
@@ -45,7 +58,7 @@ function decode_inner () {
     var bit_array = new Array();
     var bit_offset_to_pixel_position = new Array();
     do {
-        var bit_set = get_masked_pixels().get(curr_x, curr_y);
+        var bit_set = decoder.get_masked_pixels().get(curr_x, curr_y);
         bit_array.push(bit_set);
         bit_offset_to_pixel_position.push({"x":curr_x, "y":curr_y});
         [curr_x, curr_y, end_reached] = next_data_pixel_pos(curr_x, curr_y);
