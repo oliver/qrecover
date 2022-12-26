@@ -33,8 +33,13 @@ function add_static_areas (decoder) {
     decoder.static_areas = new AreaMap();
 
     // three position markers:
-    decoder.static_areas.add_area(new Area("pos_ul", RegionList.from_nested_arrays([[0, 0, 7, 7]]), [0, 255, 0], function (area) {
-        return expect_pixels(decoder, area.regions,
+    decoder.static_areas.add_area(new Area("pos_ul", RegionList.from_nested_arrays([[0, 0, 7, 7]]), [0, 255, 0]));
+    decoder.static_areas.add_area(new Area("pos_ur", RegionList.from_nested_arrays([[code_size-7, 0, 7, 7]]), [0, 255, 0]));
+    decoder.static_areas.add_area(new Area("pos_bl", RegionList.from_nested_arrays([[0, code_size-7, 7, 7]]), [0, 255, 0]));
+
+    for (const area_id of ["pos_ul", "pos_ur", "pos_bl"]) {
+        const area = decoder.static_areas.get(area_id);
+        area.value_details = expect_pixels(decoder, area.regions,
             "xxxxxxx" +
             "x.....x" +
             "x.xxx.x" +
@@ -43,33 +48,35 @@ function add_static_areas (decoder) {
             "x.....x" +
             "xxxxxxx"
         );
-    }));
-    decoder.static_areas.add_area(new Area("pos_ur", RegionList.from_nested_arrays([[code_size-7, 0, 7, 7]]), [0, 255, 0], decoder.static_areas.get("pos_ul").check_function));
-    decoder.static_areas.add_area(new Area("pos_bl", RegionList.from_nested_arrays([[0, code_size-7, 7, 7]]), [0, 255, 0], decoder.static_areas.get("pos_ul").check_function));
+    }
 
     // one orientation marker (bottom right):
-    decoder.static_areas.add_area(new Area("orient", RegionList.from_nested_arrays([[16, 16, 5, 5]]), [0, 255, 0], function (area) {
-        return expect_pixels(decoder, area.regions,
-            "xxxxx" +
-            "x...x" +
-            "x.x.x" +
-            "x...x" +
-            "xxxxx"
-        );
-    }));
+    decoder.static_areas.add_area(new Area("orient", RegionList.from_nested_arrays([[16, 16, 5, 5]]), [0, 255, 0]));
+    decoder.static_areas.get("orient").value_details = expect_pixels(decoder, decoder.static_areas.get("orient").regions,
+        "xxxxx" +
+        "x...x" +
+        "x.x.x" +
+        "x...x" +
+        "xxxxx"
+    );
 
     // spacers around all position markers:
-    decoder.static_areas.add_area(new Area("spacing_ul_1", RegionList.from_nested_arrays([[0, 7, 8, 1], [7, 0, 1, 7]]), [192, 255, 128], function (area) {
-        return expect_pixels(decoder, area.regions, "........" + ".......");
-    }));
-    decoder.static_areas.add_area(new Area("spacing_ur_1", RegionList.from_nested_arrays([[code_size-8, 0, 1, 7], [code_size-8, 7, 8, 1]]), [192, 255, 128], decoder.static_areas.get("spacing_ul_1").check_function));
-    decoder.static_areas.add_area(new Area("spacing_bl_1", RegionList.from_nested_arrays([[0, code_size-8, 8, 1], [7, code_size-7, 1, 7]]), [192, 255, 128], decoder.static_areas.get("spacing_ul_1").check_function));
+    decoder.static_areas.add_area(new Area("spacing_ul_1", RegionList.from_nested_arrays([[0, 7, 8, 1], [7, 0, 1, 7]]), [192, 255, 128]));
+    decoder.static_areas.add_area(new Area("spacing_ur_1", RegionList.from_nested_arrays([[code_size-8, 0, 1, 7], [code_size-8, 7, 8, 1]]), [192, 255, 128]));
+    decoder.static_areas.add_area(new Area("spacing_bl_1", RegionList.from_nested_arrays([[0, code_size-8, 8, 1], [7, code_size-7, 1, 7]]), [192, 255, 128]));
+
+    for (const area_id of ["spacing_ul_1", "spacing_ur_1", "spacing_bl_1"]) {
+        const area = decoder.static_areas.get(area_id);
+        area.value_details = expect_pixels(decoder, area.regions, "........" + ".......");
+    }
 
     // two timing strips:
     decoder.static_areas.add_area(new Area("timing_top", RegionList.from_nested_arrays([[8, 6, 9, 1]]), [0, 0, 255], function (area) {
         return expect_pixels(decoder, area.regions, "x.x.x.x.x");
     }));
-    decoder.static_areas.add_area(new Area("timing_left", RegionList.from_nested_arrays([[6, 8, 1, 9]]), [0, 0, 255], decoder.static_areas.get("timing_top").check_function));
+    const timing_left_area = new Area("timing_left", RegionList.from_nested_arrays([[6, 8, 1, 9]]), [0, 0, 255])
+    timing_left_area.value_details = expect_pixels(decoder, timing_left_area.regions, "x.x.x.x.x");
+    decoder.static_areas.add_area(timing_left_area);
 
     // error correction level (redundantly):
     decoder.static_areas.add_area(new Area("format_ec_1", RegionList.from_nested_arrays([[0, 8, 2, 1]]), [255, 128, 0], function (area) {
@@ -81,7 +88,7 @@ function add_static_areas (decoder) {
         const bits = decoder.pixel_data.get_pixels_from_regions_as_bools(area.regions);
         const ec_level = bits_to_int(bits) ^ 0b10;
 
-        const ec_1_value = decoder.static_areas.get("format_ec_1").check_function(decoder.static_areas.get("format_ec_1")).value;
+        const ec_1_value = decoder.static_areas.get("format_ec_1").value_details.value;
         var valid = true;
         var desc_text = "EC Level: " + ec_level + " (" + error_correction_levels[ec_level] + ")";
         if (ec_1_value != ec_level) {
@@ -109,7 +116,7 @@ function add_static_areas (decoder) {
         const bits = decoder.pixel_data.get_pixels_from_regions_as_bools(area.regions);
         const mask_value = bits_to_int(bits) ^ 0b101;
 
-        const mask_1_value = decoder.static_areas.get("format_mask_1").check_function(decoder.static_areas.get("format_mask_1")).value;
+        const mask_1_value = decoder.static_areas.get("format_mask_1").value_details.value;
         var valid = true;
         var desc_text = "Mask: " + mask_value + " (0b" + mask_value.toString(2) + ")";
         if (mask_1_value != mask_value) {
@@ -127,15 +134,15 @@ function add_static_areas (decoder) {
     }));
 
     function do_complete_format_ec_check (area, format_ec_area_id, format_mask_area_id) {
-        const value = bits_to_int(decoder.get_masked_pixels().get_pixels_from_regions_as_bools(area.regions));
+        const value = bits_to_int(decoder.pixel_data.get_pixels_from_regions_as_bools(area.regions)) ^ 0b0000010010;
 
         var result = {
             "num_bits": area.num_pixels,
             "value": value
         };
 
-        const ec_value = decoder.static_areas.get(format_ec_area_id).check_function(decoder.static_areas.get(format_ec_area_id)).value;
-        const mask_value = decoder.static_areas.get(format_mask_area_id).check_function(decoder.static_areas.get(format_mask_area_id)).value;
+        const ec_value = decoder.static_areas.get(format_ec_area_id).value_details.value;
+        const mask_value = decoder.static_areas.get(format_mask_area_id).value_details.value;
         const full_ec_bits = (ec_value << 13) | (mask_value << 10) | value;
 
         const check_result = check_format_ec(full_ec_bits);

@@ -8,21 +8,41 @@ class Area {
     color;
     check_function;
 
+    value_details = {
+        "valid": false,
+        "desc": "internal error (value_details were not set)",
+        "value": null,
+        "num_bits": null,
+        "offset": null
+    };
     num_pixels = 0;
     outline;
     dom_elements = new Map();
 
-    constructor (id, region_list, color_values, check_function) {
+    constructor (id, region_list, color_values, orig_check_function) {
         this.id = id;
         this.regions = region_list;
         this.color = color_values;
-        this.check_function = check_function;
+        this.check_function = (area) => {
+            return this.value_details;
+        };
 
         for (const region of this.regions.regions) {
             this.num_pixels += region.w * region.h;
         }
 
         this.outline = calc_outline(this.regions);
+
+        if (orig_check_function) {
+            const check_result = orig_check_function(this);
+            this.value_details = {
+                "valid": check_result.valid,
+                "desc": check_result.desc,
+                "value": check_result.value,
+                "num_bits": check_result.num_bits,
+                "offset": check_result.offset
+            };
+        }
     }
 
     is_inside (x, y) {
