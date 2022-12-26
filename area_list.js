@@ -12,7 +12,8 @@ class Area {
         "desc": "internal error (value_details were not set)",
         "value": null,
         "num_bits": null,
-        "offset": null
+        "offset": null,
+        "text_payload": null
     };
     num_pixels = 0;
     outline;
@@ -36,7 +37,8 @@ class Area {
                 "desc": check_result.desc,
                 "value": check_result.value,
                 "num_bits": check_result.num_bits,
-                "offset": check_result.offset
+                "offset": check_result.offset,
+                "text_payload": check_result.text_payload
             };
         }
     }

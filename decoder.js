@@ -189,7 +189,6 @@ function add_dynamic_areas (decoder) {
     ]);
 
     try {
-        var text_characters = [];
         while (bit_array.read_offset < bit_array.length) {
             var [mode, mode_area] = read_int_and_add_row(bit_array, 4, "mode", [255, 0, 0]);
             if (mode_names.get(mode)) {
@@ -209,13 +208,13 @@ function add_dynamic_areas (decoder) {
                     var char2_code = alphanum_area.value_details.value % 45;
                     var char1_code = (alphanum_area.value_details.value - char2_code) / 45;
                     alphanum_area.value_details.desc = char1_code + "=" + alphanumeric_table.get(char1_code) + "; " + char2_code + "=" + alphanumeric_table.get(char2_code);
-                    text_characters.push({"chars": alphanumeric_table.get(char1_code) + alphanumeric_table.get(char2_code), "area": alphanum_area });
+                    alphanum_area.value_details.text_payload = alphanumeric_table.get(char1_code) + alphanumeric_table.get(char2_code);
                 }
                 if (payload_length % 2 != 0) {
                     // read additional character
                     var [final_char, alphanum_area] = read_int_and_add_row(bit_array, 6, "final_char", [255, 255, 192]);
                     alphanum_area.value_details.desc = alphanum_area.value_details.value + "=" + alphanumeric_table.get(alphanum_area.value_details.value);
-                    text_characters.push({"chars": alphanumeric_table.get(alphanum_area.value_details.value), "area": alphanum_area });
+                    alphanum_area.value_details.text_payload = alphanumeric_table.get(alphanum_area.value_details.value);
                 }
                 break;
             } else if (mode == 0b0100) {
@@ -225,7 +224,7 @@ function add_dynamic_areas (decoder) {
                 for (var j = 0; j < payload_length; j++) {
                     var [byte, byte_area] = read_int_and_add_row(bit_array, 8, "byte", [255, 255, 192]);
                     byte_area.value_details.desc = "ASCII='" + String.fromCharCode(byte_area.value_details.value) + "'";
-                    text_characters.push({"chars": String.fromCharCode(byte_area.value_details.value), "area": byte_area });
+                    byte_area.value_details.text_payload = String.fromCharCode(byte_area.value_details.value);
                 }
                 break;
             } else if (mode == 0b0111) {
@@ -285,31 +284,6 @@ function add_dynamic_areas (decoder) {
         }
     } catch (ex) {
         error_list.push("Note: decoding failed (\"" + ex + "\"); decoding was aborted.");
-    }
-
-    var num_text_characters = 0;
-    for (const entry of text_characters) {
-        num_text_characters += entry.chars.length;
-    }
-    document.getElementById("text_payload").innerHTML = "Decoded " + bit_array.length + " data bits; found " + num_text_characters + " characters:<br>";
-
-    const pre_element = document.createElement("pre");
-    document.getElementById("text_payload").appendChild(pre_element);
-
-    for (let entry of text_characters) {
-        const span_element = document.createElement("span");
-        var displayed_chars = entry.chars;
-        // TODO: also replace any other characters that would result in a zero-width span:
-        displayed_chars = displayed_chars.replace(/\n/, "\u23ce\n");
-        span_element.appendChild(document.createTextNode(displayed_chars));
-        span_element.addEventListener("mouseover", function (e) {
-            highlight_area(entry.area);
-        });
-        span_element.addEventListener("mouseout", function (e) {
-            highlight_area(null);
-        });
-        entry.area.dom_elements.set("text_payload_span", span_element);
-        pre_element.appendChild(span_element);
     }
 
     return [new_dynamic_areas, error_list];
