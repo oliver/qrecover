@@ -62,23 +62,21 @@
         1: "L / Low"
     };
 
-    function decode () {
-        global_decoder_obj.decode();
-
-        // show errors:
+    function display_errors (error_list) {
         document.getElementById("error_list").innerHTML = "";
-        for (var error_string of global_decoder_obj.error_list) {
+        for (var error_string of error_list) {
             var list_element = document.createElement("li");
             list_element.appendChild(document.createTextNode(error_string));
             document.getElementById("error_list").appendChild(list_element);
         }
+    }
 
-        // show decoded characters:
+    function display_decoded_text (decoder) {
         document.getElementById("text_payload").innerHTML = "Decoded characters:<br>";
         const pre_element = document.createElement("pre");
         document.getElementById("text_payload").appendChild(pre_element);
 
-        for (const area of global_decoder_obj.get_all_area_objects()) {
+        for (const area of decoder.get_all_area_objects()) {
             if (area.value_details.text_payload) {
                 const span_element = document.createElement("span");
                 var displayed_chars = area.value_details.text_payload;
@@ -95,6 +93,13 @@
                 pre_element.appendChild(span_element);
             }
         }
+    }
+
+    function decode () {
+        global_decoder_obj.decode();
+
+        display_decoded_text(global_decoder_obj);
+        display_errors(global_decoder_obj.error_list);
 
         update_area_details_list(global_decoder_obj);
         perform_global_checks(global_decoder_obj);
