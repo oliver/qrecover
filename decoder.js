@@ -183,6 +183,9 @@ function add_dynamic_areas (decoder) {
 
     const ec_level = decoder.static_areas.get("format_ec_1").value_details.value;
     const num_data_bits = calc_num_data_bytes(ec_level) * 8;
+    if (num_data_bits > bit_array.length) {
+        error_list.push({"desc": "Code does not have enough pixels for the expected number of data bits (internal error?)"});
+    }
 
     const mode_names = new Map([
         [0b0000, "End of Message"],
