@@ -48,6 +48,26 @@ function update_area_details_list (decoder) {
             cell.style.color = (area.value_details.valid ? "green" : "white");
             cell.style.backgroundColor = (area.value_details.valid ? "" : "red");
         });
-        add_cell(area.value_details.desc, (cell) => { cell.innerHTML = area.value_details.desc });
+        add_cell(area.value_details.desc, (cell) => {
+            if (area.value_details.replacements && area.value_details.replacements.length > 0) {
+                cell.innerHTML += "<span style='text-decoration: underline dashed;'>" + area.value_details.desc + " <button>Fix</button></span>";
+
+                const span = cell.querySelector("span");
+                span.addEventListener("mouseover", function (e) {
+                    show_correction(area.value_details.replacements);
+                }, false);
+                span.addEventListener("mouseout", function (e) {
+                    show_correction(null);
+                }, false);
+
+                const button = cell.querySelector("button");
+                button.addEventListener("click", function (e) {
+                    apply_correction(area.value_details.replacements);
+                    show_correction(null);
+                }, false);
+            } else {
+                cell.innerHTML = area.value_details.desc;
+            }
+        });
     }
 }

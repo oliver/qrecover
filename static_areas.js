@@ -18,15 +18,22 @@ function expect_pixels (decoder, region_list, expected_values) {
         return {"valid": false, "desc": "internal error: bad expected size"};
     }
 
+    var details = {
+        "valid": true,
+        "desc": "",
+        "replacements": []
+    };
     for (var i = 0; i < bool_array.length; i++) {
         const expected_value = (expected_values[i] == "x" ? true : false);
         if (bool_array[i] != expected_value) {
             const [x, y] = region_list.pixel_coords_at_bit_offset(i);
-            return {"valid": false, "desc": "Invalid Pixel at (" + x + "/" + y + ")"};
+            details.valid = false;
+            details.desc = "Invalid Pixel(s)";
+            details.replacements.push({"x": x, "y": y, "value": expected_value});
         }
     }
 
-    return {"valid": true};
+    return details
 }
 
 function add_static_areas (decoder) {
