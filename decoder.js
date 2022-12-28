@@ -204,7 +204,12 @@ function add_dynamic_areas (decoder) {
 
             if (mode == 0b0010) {
                 // Alphanumeric encoding
-                var [payload_length] = read_int_and_add_row(bit_array, 9, "payload_length", [255, 192, 255]);
+                var [payload_length, length_area] = read_int_and_add_row(bit_array, 9, "payload_length", [255, 192, 255]);
+                const max_payload_length = Math.floor(((num_data_bits - bit_array.read_offset) / 11) * 2);
+                if (payload_length > max_payload_length) {
+                    length_area.value_details.desc = "payload length is too large (max allowed: " + max_payload_length + ")";
+                    length_area.value_details.valid = false;
+                }
 
                 for (var j = 0; j < Math.floor(payload_length / 2); j++) {
                     var [two_chars, alphanum_area] = read_int_and_add_row(bit_array, 11, "two_chars", [255, 255, 192]);
@@ -222,7 +227,12 @@ function add_dynamic_areas (decoder) {
                 break;
             } else if (mode == 0b0100) {
                 // Byte encoding
-                var [payload_length] = read_int_and_add_row(bit_array, 8, "payload_length", [255, 192, 255]);
+                var [payload_length, length_area] = read_int_and_add_row(bit_array, 8, "payload_length", [255, 192, 255]);
+                const max_payload_length = Math.floor((num_data_bits - bit_array.read_offset) / 8);
+                if (payload_length > max_payload_length) {
+                    length_area.value_details.desc = "payload length is too large (max allowed: " + max_payload_length + ")";
+                    length_area.value_details.valid = false;
+                }
 
                 for (var j = 0; j < payload_length; j++) {
                     var [byte, byte_area] = read_int_and_add_row(bit_array, 8, "byte", [255, 255, 192]);
