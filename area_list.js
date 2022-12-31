@@ -19,7 +19,7 @@ class Area {
     outline;
     dom_elements = new Map();
 
-    constructor (id, region_list, color_values, orig_check_function) {
+    constructor (id, region_list, color_values) {
         this.id = id;
         this.regions = region_list;
         this.color = color_values;
@@ -29,18 +29,6 @@ class Area {
         }
 
         this.outline = calc_outline(this.regions);
-
-        if (orig_check_function) {
-            const check_result = orig_check_function(this);
-            this.value_details = {
-                "valid": check_result.valid,
-                "desc": check_result.desc,
-                "value": check_result.value,
-                "num_bits": check_result.num_bits,
-                "offset": check_result.offset,
-                "text_payload": check_result.text_payload
-            };
-        }
     }
 
     is_inside (x, y) {
