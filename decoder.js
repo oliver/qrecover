@@ -268,6 +268,15 @@ function add_dynamic_areas (decoder) {
             } else {
                 terminator_area.value_details.desc = "Unsupported mode \"" + terminator_area.value_details.value + "\" (terminator expected)";
                 terminator_area.value_details.valid = false;
+                terminator_area.value_details.replacements = [];
+                for (var i = 0; i < 4; i++) {
+                    const mask = 1 << (3 - i);
+                    if (terminator_area.value_details.value & mask) {
+                        const [x, y] = terminator_area.regions.pixel_coords_at_bit_offset(i);
+                        const current_value = decoder.pixel_data.get(x, y);
+                        terminator_area.value_details.replacements.push({"x": x, "y": y, "value": !current_value});
+                    }
+                }
             }
         }
         if (bit_array.read_offset % 8 != 0) {
@@ -279,6 +288,15 @@ function add_dynamic_areas (decoder) {
             } else {
                 padding_area.value_details.desc += " (invalid values; should be 0)";
                 padding_area.value_details.valid = false;
+                padding_area.value_details.replacements = [];
+                for (var i = 0; i < num_bits_missing_for_byte; i++) {
+                    const mask = 1 << (num_bits_missing_for_byte - i - 1);
+                    if (padding_area.value_details.value & mask) {
+                        const [x, y] = padding_area.regions.pixel_coords_at_bit_offset(i);
+                        const current_value = decoder.pixel_data.get(x, y);
+                        padding_area.value_details.replacements.push({"x": x, "y": y, "value": !current_value});
+                    }
+                }
             }
         }
         const valid_padding_values = [236, 17];
@@ -296,6 +314,15 @@ function add_dynamic_areas (decoder) {
             } else {
                 padding_area.value_details.desc += " (invalid value; should be " + expected_padding_value + ")";
                 padding_area.value_details.valid = false;
+                padding_area.value_details.replacements = [];
+                for (var i = 0; i < pad_length; i++) {
+                    const mask = 1 << (pad_length - i - 1);
+                    if ((padding_area.value_details.value & mask) != (expected_padding_value & mask)) {
+                        const [x, y] = padding_area.regions.pixel_coords_at_bit_offset(i);
+                        const current_value = decoder.pixel_data.get(x, y);
+                        padding_area.value_details.replacements.push({"x": x, "y": y, "value": !current_value});
+                    }
+                }
             }
         }
     } catch (ex) {
