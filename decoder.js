@@ -129,6 +129,22 @@ class QRDecoder {
         return new Map([... this.static_areas, ... this.dynamic_areas]).values();
     }
 
+    #get_ec_data() {
+        const pixel_decoder = new PixelDecoder(code_size, this.get_masked_pixels(), this.static_areas);
+        const bit_array = pixel_decoder.get_bit_array();
+        const ec_level = this.static_areas.get("format_ec_1").value_details.value;
+        const ec_level_details = FormatSpecifications.get_ec_level_details(ec_level);
+        var data_bytes = new Array();
+        var ec_bytes = new Array();
+        for (var i = 0; i < ec_level_details.data_bytes; i++) {
+            data_bytes.push(bit_array.read_next_int(8));
+        }
+        for (var i = 0; i < ec_level_details.ec_bytes; i++) {
+            ec_bytes.push(bit_array.read_next_int(8));
+        }
+        return [data_bytes, ec_bytes];
+    }
+
     decode () {
         this.error_list.length = 0;
         this.static_areas = add_static_areas(this);
@@ -139,8 +155,11 @@ class QRDecoder {
 
         const errors_from_global_checks = perform_global_checks(this);
         this.error_list = this.error_list.concat(errors_from_global_checks);
+
+        return this.#get_ec_data();
     }
 }
+
 
 function add_dynamic_areas (decoder) {
     const pixel_decoder = new PixelDecoder(code_size, decoder.get_masked_pixels(), decoder.static_areas);
@@ -322,7 +341,6 @@ function add_dynamic_areas (decoder) {
         while (bit_array.read_offset < (num_data_bits + num_ec_bits)) {
             const [value, ec_area] = read_int_and_add_row(bit_array, 8, "ec_data", [0, 255, 192]);
             ec_area.value_details.desc = "Error correction byte";
-            ec_area.value_details.ec_data = value;
         }
 
         // final padding bits
