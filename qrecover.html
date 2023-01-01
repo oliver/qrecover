@@ -143,6 +143,20 @@
         display_decoded_text(global_decoder_obj);
         display_errors(global_decoder_obj.error_list);
 
+        var data_bytes = new Array();
+        var ec_bytes = new Array();
+        for (const area of global_decoder_obj.get_all_area_objects()) {
+            if (area.value_details.offset != null) {
+                if (area.value_details.ec_data != null) {
+                    ec_bytes.push(area.value_details.ec_data);
+                } else {
+                    data_bytes.push(area.value_details.value);
+                }
+            }
+        }
+        // TODO: treat all data_bytes as a long bit-stream, regardless of their separation into areas
+        console.log("data_bytes: ", data_bytes, "; ec_bytes: ", ec_bytes);
+
         update_area_details_list(global_decoder_obj);
 
         // restore highlight in newly-populated area list:

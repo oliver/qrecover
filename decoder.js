@@ -167,22 +167,25 @@ function add_dynamic_areas (decoder) {
         return [int_value, new_area];
     }
 
+    /// Returns the total number of data bytes, and the number of error correction bytes of that
     function calc_num_data_bytes (ec_level) {
         // TODO: this result should also take the size of the QR code into account.
         // Currently this value is only correct for a version-2 code (25x25 pixels)!
         const ec_level_name = error_correction_levels[ec_level][0];
         if (ec_level_name == "L")
-            return 34;
+            return [34, 10];
         if (ec_level_name == "M")
-            return 28;
+            return [28, 16];
         if (ec_level_name == "Q")
-            return 22;
+            return [22, 22];
         if (ec_level_name == "H")
-            return 16;
+            return [16, 28];
     }
 
     const ec_level = decoder.static_areas.get("format_ec_1").value_details.value;
-    const num_data_bits = calc_num_data_bytes(ec_level) * 8;
+    const [num_data_bytes, num_ec_bytes] = calc_num_data_bytes(ec_level);
+    const num_data_bits = num_data_bytes * 8;
+    const num_ec_bits = num_ec_bytes * 8;
     if (num_data_bits > bit_array.length) {
         error_list.push({"desc": "Code does not have enough pixels for the expected number of data bits (internal error?)"});
     }
@@ -324,6 +327,30 @@ function add_dynamic_areas (decoder) {
                     }
                 }
             }
+        }
+
+        // EC data
+        while (bit_array.read_offset < (num_data_bits + num_ec_bits)) {
+            const [value, ec_area] = read_int_and_add_row(bit_array, 8, "ec_data", [0, 255, 192]);
+            ec_area.value_details.desc = "Error correction byte";
+            ec_area.value_details.ec_data = value;
+        }
+
+        // final padding bits
+        if (bit_array.read_offset < bit_array.length) {
+            const pad_length = bit_array.length - bit_array.read_offset;
+            const [value, padding_area] = read_int_and_add_row(bit_array, pad_length, "padding", [255, 255, 192]);
+            padding_area.value_details.desc = "Final Padding Bits";
+            if (padding_area.value_details.value == 0) {
+                padding_area.value_details.valid = true;
+            } else {
+                padding_area.value_details.desc += " (invalid values; should be 0)";
+                padding_area.value_details.valid = false;
+            }
+        }
+
+        if (bit_array.length != bit_array.read_offset) {
+            throw "internal error: there are unprocessed bits at the end of decoding (total length: " + bit_array.length + "; processed: " + bit_array.read_offset + ")";
         }
     } catch (ex) {
         error_list.push({"desc": "Note: decoding failed (\"" + ex + "\"); decoding was aborted."});
