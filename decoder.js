@@ -129,7 +129,7 @@ class QRDecoder {
         return new Map([... this.static_areas, ... this.dynamic_areas]).values();
     }
 
-    #get_ec_data() {
+    get_ec_data() {
         const pixel_decoder = new PixelDecoder(code_size, this.get_masked_pixels(), this.static_areas);
         const bit_array = pixel_decoder.get_bit_array();
         const ec_level = this.static_areas.get("format_ec_1").value_details.value;
@@ -156,7 +156,7 @@ class QRDecoder {
         const errors_from_global_checks = perform_global_checks(this);
         this.error_list = this.error_list.concat(errors_from_global_checks);
 
-        return this.#get_ec_data();
+        return this.get_ec_data();
     }
 }
 

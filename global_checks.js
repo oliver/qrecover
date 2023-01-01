@@ -4,6 +4,13 @@
 
 function perform_global_checks (decoder) {
     var error_list = new Array();
+    error_list = error_list.concat(perform_format_ec_check(decoder));
+    error_list = error_list.concat(perform_data_ec_check(decoder));
+    return error_list;
+}
+
+function perform_format_ec_check (decoder) {
+    var error_list = new Array();
 
     const ec_1_value = decoder.static_areas.get("format_ec_1").value_details.value;
     const mask_1_value = decoder.static_areas.get("format_mask_1").value_details.value;
@@ -74,6 +81,53 @@ function perform_global_checks (decoder) {
             error_entry.potential_corrections.push(correction_entry);
         }
 
+        error_list.push(error_entry);
+    }
+
+    return error_list;
+}
+
+function perform_data_ec_check (decoder) {
+    var error_list = new Array();
+
+    const [data_bytes, ec_bytes] = decoder.get_ec_data();
+
+    var rs_decoder = new ReedSolomonDecoder(GF256.QR_CODE_FIELD);
+    var original_bytes = data_bytes.concat(ec_bytes);
+    var corrected_bytes = data_bytes.concat(ec_bytes);
+    const ec_level = global_decoder_obj.static_areas.get("format_ec_1").value_details.value;
+    const ec_level_details = FormatSpecifications.get_ec_level_details(ec_level);
+
+    try {
+        rs_decoder.decode(corrected_bytes, ec_level_details.ec_bytes);
+    } catch (ex) {
+        error_list.push({"desc": "error correction for data bytes failed: " + ex});
+    }
+
+    if (JSON.stringify(original_bytes) != JSON.stringify(corrected_bytes)) {
+        const pixel_decoder = new PixelDecoder(code_size, decoder.pixel_data, decoder.static_areas);
+        var replacements = new Array();
+        for (var i = 0; i < original_bytes.length; i++) {
+            if (original_bytes[i] != corrected_bytes[i]) {
+                for (var j = 0; j < 8; j++) {
+                    const mask = 1 << (7 - j);
+                    if ((original_bytes[i] & mask) != (corrected_bytes[i] & mask)) {
+                        const pos = pixel_decoder.get_coordinates_for_bit_offset(i * 8 + j);
+                        const current_value = pixel_decoder.get_bit_array()[i * 8 + j];
+                        replacements.push({"x": pos.x, "y": pos.y, "value": !current_value});
+                    }
+                }
+            }
+        }
+
+        var error_entry = {
+            "desc": "Data bytes have incorrect checksum",
+            "potential_corrections": [{
+                    "desc": "Error correction result",
+                    "replacements": replacements
+                }
+            ]
+        };
         error_list.push(error_entry);
     }
 
