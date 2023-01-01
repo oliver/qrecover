@@ -25,15 +25,15 @@ function init_main_canvas (canvas_element, mouse_pos_element) {
         var [pix_x, pix_y] = event_to_pixel(e);
         if (pix_x < code_size && pix_y < code_size) {
             mouse_pos_element.innerHTML = "(" + (pix_x+0) + " / " + (pix_y+0) + ")";
-        }
 
-        var hovered_area = global_decoder_obj.static_areas.is_inside(pix_x, pix_y);
-        if (!hovered_area) {
-            hovered_area = global_decoder_obj.dynamic_areas.is_inside(pix_x, pix_y);
-        }
+            var hovered_area = global_decoder_obj.static_areas.is_inside(pix_x, pix_y);
+            if (!hovered_area) {
+                hovered_area = global_decoder_obj.dynamic_areas.is_inside(pix_x, pix_y);
+            }
 
-        if (highlighted_area != hovered_area) {
-            highlight_area(hovered_area);
+            if (highlighted_area != hovered_area) {
+                highlight_area(hovered_area);
+            }
         }
     }, false);
 
