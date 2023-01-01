@@ -134,7 +134,7 @@ function draw_code () {
         do {
             ctx.fillStyle = displayed_pixel_data.get(curr_x, curr_y) ? "white" : "black";
             ctx.fillText(("" + i).padStart(3, " "), curr_x*pixel_size, (curr_y+1)*pixel_size - 5);
-            [curr_x, curr_y, end_reached] = next_data_pixel_pos(global_decoder_obj, curr_x, curr_y);
+            [curr_x, curr_y, end_reached] = next_data_pixel_pos(global_decoder_obj.static_areas, curr_x, curr_y);
             i++;
         } while (!end_reached);
     }

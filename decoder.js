@@ -127,22 +127,41 @@ class QRDecoder {
 }
 
 
+/// Decodes pixel data into a BitArray.
+class PixelDecoder {
+    bit_array = null;
+    bit_offset_to_pixel_position = null;
+
+    constructor (code_size, pixel_data, static_areas) {
+        var curr_x = code_size-1;
+        var curr_y = code_size-1;
+        var end_reached = false;
+        this.bit_array = new BitArray();
+        this.bit_offset_to_pixel_position = new Array();
+        do {
+            var bit_set = pixel_data.get(curr_x, curr_y);
+            this.bit_array.push(bit_set);
+            this.bit_offset_to_pixel_position.push({"x":curr_x, "y":curr_y});
+            [curr_x, curr_y, end_reached] = next_data_pixel_pos(static_areas, curr_x, curr_y);
+        } while (!end_reached);
+    }
+
+    get_bit_array () {
+        return this.bit_array;
+    }
+
+    /// Returns the x/y coordinates of the pixel for the specified offset in the bit array.
+    get_coordinates_for_bit_offset (offset) {
+        return this.bit_offset_to_pixel_position[offset];
+    }
+}
+
+
 function add_dynamic_areas (decoder) {
-    // read data bits (into an array of bools):
-    var curr_x = code_size-1;
-    var curr_y = code_size-1;
-    var end_reached = false;
-    var bit_array = new BitArray();
-    var bit_offset_to_pixel_position = new Array();
-    do {
-        var bit_set = decoder.get_masked_pixels().get(curr_x, curr_y);
-        bit_array.push(bit_set);
-        bit_offset_to_pixel_position.push({"x":curr_x, "y":curr_y});
-        [curr_x, curr_y, end_reached] = next_data_pixel_pos(decoder, curr_x, curr_y);
-    } while (!end_reached);
+    const pixel_decoder = new PixelDecoder(code_size, decoder.get_masked_pixels(), decoder.static_areas);
+    const bit_array = pixel_decoder.get_bit_array();
 
     // decode data bits:
-
     var new_dynamic_areas = new AreaMap();
     var error_list = new Array();
 
@@ -152,7 +171,7 @@ function add_dynamic_areas (decoder) {
 
         var region_coordinates = [];
         for (var i = 0; i < len; i++) {
-            const pos = bit_offset_to_pixel_position[orig_offset+i];
+            const pos = pixel_decoder.get_coordinates_for_bit_offset(orig_offset+i);
             region_coordinates.push([pos.x, pos.y, 1, 1]);
         }
 
@@ -361,14 +380,14 @@ function add_dynamic_areas (decoder) {
 
 
 // Returns the actual next data pixel position (taking static areas into account)
-function next_data_pixel_pos (decoder, x, y) {
+function next_data_pixel_pos (static_areas, x, y) {
     // simply skip over positions that are inside an area:
     do {
         [x, y, end_reached] = next_position_in_grid(x, y);
         if (end_reached) {
             return [undefined, undefined, true];
         }
-    } while (decoder.static_areas.is_inside(x, y));
+    } while (static_areas.is_inside(x, y));
     return [x, y, false];
 }
 
