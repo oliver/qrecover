@@ -128,15 +128,12 @@ function draw_code () {
 
     if (document.getElementById("rb_numbers_data_bits").checked) {
         // draw data pixel numbers:
-        var curr_x = code_size-1;
-        var curr_y = code_size-1;
-        var i = 0;
-        do {
-            ctx.fillStyle = displayed_pixel_data.get(curr_x, curr_y) ? "white" : "black";
-            ctx.fillText(("" + i).padStart(3, " "), curr_x*pixel_size, (curr_y+1)*pixel_size - 5);
-            [curr_x, curr_y, end_reached] = next_data_pixel_pos(global_decoder_obj.static_areas, curr_x, curr_y);
-            i++;
-        } while (!end_reached);
+        const pixel_decoder = new PixelDecoder(code_size, displayed_pixel_data, global_decoder_obj.static_areas);
+        for (var i = 0; i < pixel_decoder.get_bit_array().length; i++) {
+            const pos = pixel_decoder.get_coordinates_for_bit_offset(i);
+            ctx.fillStyle = displayed_pixel_data.get(pos.x, pos.y) ? "white" : "black";
+            ctx.fillText(("" + i).padStart(3, " "), pos.x*pixel_size, (pos.y+1)*pixel_size - 5);
+        }
     }
 
     if (highlighted_differences) {
