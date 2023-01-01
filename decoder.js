@@ -3,6 +3,22 @@
 //
 
 
+class FormatSpecifications {
+    static #error_correction_levels = {
+        // TODO: this table should also take the size of the QR code into account.
+        // Currently this value is only correct for a version-2 code (25x25 pixels)!
+        2: { "data_bytes": 16, "ec_bytes": 28, "desc": "H / High" },
+        3: { "data_bytes": 22, "ec_bytes": 22, "desc": "Q / Quartile" },
+        0: { "data_bytes": 28, "ec_bytes": 16, "desc": "M / Medium" },
+        1: { "data_bytes": 34, "ec_bytes": 10, "desc": "L / Low" }
+    };
+
+    static get_ec_level_details (ec_level) {
+        return this.#error_correction_levels[ec_level];
+    }
+}
+
+
 // character table for Alphanumeric encoding
 var alphanumeric_table = new Map([
     [36, " "],
@@ -155,25 +171,10 @@ function add_dynamic_areas (decoder) {
         return [int_value, new_area];
     }
 
-    /// Returns the total number of data bytes, and the number of error correction bytes of that
-    function calc_num_data_bytes (ec_level) {
-        // TODO: this result should also take the size of the QR code into account.
-        // Currently this value is only correct for a version-2 code (25x25 pixels)!
-        const ec_level_name = error_correction_levels[ec_level][0];
-        if (ec_level_name == "L")
-            return [34, 10];
-        if (ec_level_name == "M")
-            return [28, 16];
-        if (ec_level_name == "Q")
-            return [22, 22];
-        if (ec_level_name == "H")
-            return [16, 28];
-    }
-
     const ec_level = decoder.static_areas.get("format_ec_1").value_details.value;
-    const [num_data_bytes, num_ec_bytes] = calc_num_data_bytes(ec_level);
-    const num_data_bits = num_data_bytes * 8;
-    const num_ec_bits = num_ec_bytes * 8;
+    const ec_level_details = FormatSpecifications.get_ec_level_details(ec_level);
+    const num_data_bits = ec_level_details.data_bytes * 8;
+    const num_ec_bits = ec_level_details.ec_bytes * 8;
     if (num_data_bits > bit_array.length) {
         error_list.push({"desc": "Code does not have enough pixels for the expected number of data bits (internal error?)"});
     }

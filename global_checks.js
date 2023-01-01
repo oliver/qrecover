@@ -67,7 +67,7 @@ function perform_global_checks (decoder) {
 
             var correction_entry = {
                 "desc": payload_bits.toString(2).padStart(5,"0")
-                    + " = EC: " + error_correction_levels[ec_value] + ", mask: " + mask_value
+                    + " = EC: " + FormatSpecifications.get_ec_level_details(ec_value).desc + ", mask: " + mask_value
                     + " (" + distance_sum + " bit(s) differ)",
                 "replacements": replacements
             };

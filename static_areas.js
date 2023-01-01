@@ -90,7 +90,7 @@ function add_static_areas (decoder) {
     const format_ec_1_area = new Area("format_ec_1", RegionList.from_nested_arrays([[0, 8, 2, 1]]), [255, 128, 0]);
     new_static_areas.add_area(format_ec_1_area);
     const format_ec_1_level = bits_to_int(decoder.pixel_data.get_pixels_from_regions_as_bools(format_ec_1_area.regions)) ^ 0b10;
-    format_ec_1_area.value_details = {"value": format_ec_1_level, "num_bits": 2, "desc": "EC Level: " + format_ec_1_level + " (" + error_correction_levels[format_ec_1_level] + ")"};
+    format_ec_1_area.value_details = {"value": format_ec_1_level, "num_bits": 2, "desc": "EC Level: " + format_ec_1_level + " (" + FormatSpecifications.get_ec_level_details(format_ec_1_level).desc + ")"};
 
     const format_ec_2_area = new Area("format_ec_2", RegionList.from_nested_arrays([[8, code_size-1, 1, 1], [8, code_size-2, 1, 1]]), [255, 128, 0]);
     new_static_areas.add_area(format_ec_2_area);
@@ -98,7 +98,7 @@ function add_static_areas (decoder) {
     format_ec_2_area.value_details = {
         "value": format_ec_2_level,
         "num_bits": 2,
-        "desc": "EC Level: " + format_ec_2_level + " (" + error_correction_levels[format_ec_2_level] + ")",
+        "desc": "EC Level: " + format_ec_2_level + " (" + FormatSpecifications.get_ec_level_details(format_ec_2_level).desc + ")",
         "valid": true
     };
     if (format_ec_1_level != format_ec_2_level) {
