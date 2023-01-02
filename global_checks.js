@@ -92,17 +92,22 @@ function perform_data_ec_check (decoder) {
 
     const [data_bytes, ec_bytes] = decoder.get_ec_data();
 
-    var rs_decoder = new ReedSolomonDecoder(GF256.QR_CODE_FIELD);
-    var original_bytes = data_bytes.concat(ec_bytes);
-    var corrected_bytes = data_bytes.concat(ec_bytes);
+
     const ec_level = global_decoder_obj.static_areas.get("format_ec_1").value_details.value;
     const ec_level_details = FormatSpecifications.get_ec_level_details(ec_level);
+    var rs = new ReedSolomon(ec_level_details.ec_bytes);
+    const original_bytes = data_bytes.concat(ec_bytes);
 
+    var corrected_bytes = "";
     try {
-        rs_decoder.decode(corrected_bytes, ec_level_details.ec_bytes);
+        corrected_bytes = rs.decode(original_bytes);
     } catch (ex) {
         error_list.push({"desc": "error correction for data bytes failed: " + ex});
+        return error_list;
     }
+
+    console.log("original_bytes: ", original_bytes);
+    console.log("corrected_bytes: ", corrected_bytes);
 
     if (JSON.stringify(original_bytes) != JSON.stringify(corrected_bytes)) {
         const pixel_decoder = new PixelDecoder(code_size, decoder.pixel_data, decoder.static_areas);

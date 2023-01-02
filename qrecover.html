@@ -13,9 +13,8 @@
     <script src="global_checks.js"></script>
     <script src="area_details_listbox.js"></script>
     <script src="pixel_decoder.js"></script>
-    <script src="gf256poly.js"></script>
-    <script src="gf256.js"></script>
-    <script src="rsdecoder.js"></script>
+    <script src="class.js"></script>
+    <script src="ReedSolomon.js"></script>
 
     <script type="text/javascript">
     var code_size = 25;
@@ -137,6 +136,11 @@
     function decode () {
         const [data_bytes, ec_bytes] = global_decoder_obj.decode();
         console.log("data_bytes: ", data_bytes, "; ec_bytes: ", ec_bytes);
+        var out_string = "";
+        for (var b of data_bytes.concat(ec_bytes)) {
+            out_string += "\\x" + b.toString(16).padStart(2, "0");
+        }
+        console.log("out_string: ", out_string);
 
         display_decoded_text(global_decoder_obj);
         display_errors(global_decoder_obj.error_list);
