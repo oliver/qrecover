@@ -66,6 +66,7 @@
     function apply_correction (replacements) {
         for ({x, y, value} of replacements) {
             global_decoder_obj.pixel_data.set(x, y, value);
+            global_decoder_obj.unknown_pixels.set(x, y, false);
         }
         decode();
         draw_code();

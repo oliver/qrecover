@@ -120,15 +120,17 @@ function perform_data_ec_check (decoder) {
         const pixel_decoder = new PixelDecoder(code_size, decoder.pixel_data, decoder.static_areas);
         var replacements = new Array();
         for (var i = 0; i < original_bytes.length; i++) {
-            if (original_bytes[i] != corrected_bytes[i]) {
-                for (var j = 0; j < 8; j++) {
-                    const mask = 1 << (7 - j);
-                    if ((original_bytes[i] & mask) != (corrected_bytes[i] & mask)) {
-                        const pos = pixel_decoder.get_coordinates_for_bit_offset(i * 8 + j);
-                        const current_value = pixel_decoder.get_bit_array()[i * 8 + j];
-                        replacements.push({"x": pos.x, "y": pos.y, "value": !current_value});
-                    }
+            for (var j = 0; j < 8; j++) {
+                const pos = pixel_decoder.get_coordinates_for_bit_offset(i * 8 + j);
+                const current_value = pixel_decoder.get_bit_array()[i * 8 + j];
+                const mask = 1 << (7 - j);
+                var correct_value;
+                if ((original_bytes[i] & mask) != (corrected_bytes[i] & mask)) {
+                    correct_value = !current_value;
+                } else {
+                    correct_value = current_value;
                 }
+                replacements.push({"x": pos.x, "y": pos.y, "value": correct_value});
             }
         }
 

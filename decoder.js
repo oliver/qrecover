@@ -338,12 +338,16 @@ function add_dynamic_areas (decoder) {
                 padding_area.value_details.valid = false;
                 padding_area.value_details.replacements = [];
                 for (var i = 0; i < pad_length; i++) {
+                    const [x, y] = padding_area.regions.pixel_coords_at_bit_offset(i);
+                    const current_value = decoder.pixel_data.get(x, y);
                     const mask = 1 << (pad_length - i - 1);
+                    var correct_value;
                     if ((padding_area.value_details.value & mask) != (expected_padding_value & mask)) {
-                        const [x, y] = padding_area.regions.pixel_coords_at_bit_offset(i);
-                        const current_value = decoder.pixel_data.get(x, y);
-                        padding_area.value_details.replacements.push({"x": x, "y": y, "value": !current_value});
+                        correct_value = !current_value;
+                    } else {
+                        correct_value = current_value;
                     }
+                    padding_area.value_details.replacements.push({"x": x, "y": y, "value": correct_value});
                 }
             }
         }

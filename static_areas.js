@@ -25,12 +25,15 @@ function expect_pixels (decoder, region_list, expected_values) {
     };
     for (var i = 0; i < bool_array.length; i++) {
         const expected_value = (expected_values[i] == "x" ? true : false);
+        const [x, y] = region_list.pixel_coords_at_bit_offset(i);
+        details.replacements.push({"x": x, "y": y, "value": expected_value});
         if (bool_array[i] != expected_value) {
-            const [x, y] = region_list.pixel_coords_at_bit_offset(i);
             details.valid = false;
             details.desc = "Invalid Pixel(s)";
-            details.replacements.push({"x": x, "y": y, "value": expected_value});
         }
+    }
+    if (details.valid) {
+        details.replacements = [];
     }
 
     return details
