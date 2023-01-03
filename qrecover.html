@@ -134,7 +134,7 @@
     }
 
     function decode () {
-        const [data_bytes, ec_bytes] = global_decoder_obj.decode();
+        const [data_bytes, ec_bytes, unknown_bytes_flags] = global_decoder_obj.decode();
         console.log("data_bytes: ", data_bytes, "; ec_bytes: ", ec_bytes);
         var out_string = "";
         for (var b of data_bytes.concat(ec_bytes)) {

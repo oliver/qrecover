@@ -90,7 +90,7 @@ function perform_format_ec_check (decoder) {
 function perform_data_ec_check (decoder) {
     var error_list = new Array();
 
-    const [data_bytes, ec_bytes] = decoder.get_ec_data();
+    const [data_bytes, ec_bytes, unknown_bytes_flags] = decoder.get_ec_data();
 
 
     const ec_level = global_decoder_obj.static_areas.get("format_ec_1").value_details.value;
@@ -98,9 +98,16 @@ function perform_data_ec_check (decoder) {
     var rs = new ReedSolomon(ec_level_details.ec_bytes);
     const original_bytes = data_bytes.concat(ec_bytes);
 
+    var original_bytes_with_erasures = original_bytes.slice(0);
+    for (var i = 0; i < unknown_bytes_flags.length; i++) {
+        if (unknown_bytes_flags[i]) {
+            original_bytes_with_erasures[i] = -1; // negative values are treated as "erasures" (ie. bytes which are expected to be wrong)
+        }
+    }
+
     var corrected_bytes = "";
     try {
-        corrected_bytes = rs.decode(original_bytes);
+        corrected_bytes = rs.decode(original_bytes_with_erasures);
     } catch (ex) {
         error_list.push({"desc": "error correction for data bytes failed: " + ex});
         return error_list;

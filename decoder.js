@@ -144,7 +144,16 @@ class QRDecoder {
         for (var i = 0; i < ec_level_details.ec_bytes; i++) {
             ec_bytes.push(bit_array.read_next_int(8));
         }
-        return [data_bytes, ec_bytes];
+
+        var unknown_bytes_flags = new Array();
+        const unknown_pixels_decoder = new PixelDecoder(code_size, this.unknown_pixels, this.static_areas);
+        const unknown_bit_array = unknown_pixels_decoder.get_bit_array();
+        for (var i = 0; i < ec_level_details.data_bytes + ec_level_details.ec_bytes; i++) {
+            const byte_has_unknown_pixels = (unknown_bit_array.read_next_int(8) != 0);
+            unknown_bytes_flags.push(byte_has_unknown_pixels);
+        }
+
+        return [data_bytes, ec_bytes, unknown_bytes_flags];
     }
 
     decode () {
