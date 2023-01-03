@@ -126,6 +126,19 @@ function draw_code () {
         draw_grid();
     }
 
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "gray";
+    for (var x = 0; x < code_size; x++) {
+        for (var y = 0; y < code_size; y++) {
+            if (global_decoder_obj.unknown_pixels.get(x, y)) {
+                ctx.beginPath();
+                ctx.arc((x+0.5)*pixel_size, (y+0.5)*pixel_size, pixel_size/2 -2, 0, 2 * Math.PI, false);
+                ctx.stroke();
+                ctx.closePath();
+            }
+        }
+    }
+
     if (document.getElementById("rb_numbers_data_bits").checked) {
         // draw data pixel numbers:
         const pixel_decoder = new PixelDecoder(code_size, displayed_pixel_data, global_decoder_obj.static_areas);

@@ -108,10 +108,14 @@ class PixelData {
 
 function save_state () {
     sessionStorage.setItem("pixel_data", JSON.stringify(global_decoder_obj.pixel_data.data_array));
+    sessionStorage.setItem("unknown_pixels", JSON.stringify(global_decoder_obj.unknown_pixels.data_array));
 }
 
 function restore_state () {
     try {
+        if (sessionStorage.getItem("unknown_pixels")) {
+            global_decoder_obj.unknown_pixels.data_array = JSON.parse(sessionStorage.getItem("unknown_pixels"));
+        }
         if (sessionStorage.getItem("pixel_data")) {
             global_decoder_obj.pixel_data.data_array = JSON.parse(sessionStorage.getItem("pixel_data"));
             return true;

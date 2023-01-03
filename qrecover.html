@@ -174,6 +174,7 @@
             for (var y = 0; y < Math.min(img_obj.height, code_size); y++) {
                 const red_value = image_pixel_data[(y*img_obj.width + x) * 4];
                 global_decoder_obj.pixel_data.set(x, y, (red_value < 128) ? true : false);
+                global_decoder_obj.unknown_pixels.set(x, y, (red_value > 64 && red_value < 192) ? true : false);
             }
         }
         save_state();

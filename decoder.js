@@ -65,6 +65,7 @@ class BitArray extends Array {
 class QRDecoder {
     code_size;
     pixel_data;
+    unknown_pixels; /// stores which pixels are marked as "unknown" by the user
     static_areas;
     dynamic_areas;
     error_list = new Array();
@@ -72,6 +73,7 @@ class QRDecoder {
     constructor (code_size) {
         this.code_size = code_size;
         this.pixel_data = new PixelData(this.code_size);
+        this.unknown_pixels = new PixelData(this.code_size);
         this.static_areas = new AreaMap();
         this.dynamic_areas = new AreaMap();
     }
