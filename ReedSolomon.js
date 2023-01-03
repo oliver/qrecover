@@ -30,7 +30,7 @@ var ReedSolomon = Class.extend({
       dec = dec.concat(this.codec.correctMsg(chunk, this.nSym));
     }
     
-    return ReedSolomon.Utils.pack(dec);
+    return dec;
     
   }
   
@@ -351,7 +351,7 @@ ReedSolomon.Codec = Class.extend({
     var synd = this.calcSyndromes(msgOut, nSym);
 
     if (Math.max.apply(null, synd) == 0) {
-      return msgOut.slice(0, msgOut.length-nSym);
+      return msgOut;
     }
 
     var fsynd = this.forneySyndromes(synd, erasePos, msgOut.length);
@@ -369,7 +369,7 @@ ReedSolomon.Codec = Class.extend({
     if (Math.max.apply(null, synd) > 0)
       throw 'Could not correct message';
 
-    return msgOut.slice(0, -nSym);
+    return msgOut;
 
   }
 
