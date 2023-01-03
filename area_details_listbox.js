@@ -65,6 +65,29 @@ function update_area_details_list (decoder) {
                     apply_correction(area.value_details.replacements);
                     show_correction(null);
                 }, false);
+            } else if (area.value_details.replacement_candidates && area.value_details.replacement_candidates.length > 0) {
+                cell.innerHTML += area.value_details.desc + "<ul></ul>";
+
+                var list_element = cell.querySelector("ul");
+                for (let replacement_candidate of area.value_details.replacement_candidates) {
+                    const new_sub_item = document.createElement("li");
+                    new_sub_item.innerHTML = "<span style='text-decoration: underline dashed;'>" + replacement_candidate.desc + " <button>Apply</button></span>";
+                    list_element.appendChild(new_sub_item);
+
+                    const span = new_sub_item.querySelector("span");
+                    span.addEventListener("mouseover", function (e) {
+                        show_correction(replacement_candidate.replacements);
+                    }, false);
+                    span.addEventListener("mouseout", function (e) {
+                        show_correction(null);
+                    }, false);
+
+                    const button = new_sub_item.querySelector("button");
+                    button.addEventListener("click", function (e) {
+                        apply_correction(replacement_candidate.replacements);
+                        show_correction(null);
+                    }, false);
+                }
             } else {
                 cell.innerHTML = area.value_details.desc;
             }

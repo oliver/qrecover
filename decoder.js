@@ -172,6 +172,44 @@ class QRDecoder {
 }
 
 
+function generate_replacements (decoder, area, num_bits, valid_values, current_value) {
+    var replacement_candidates = [];
+    for (const [replacement_value, replacement_desc] of valid_values) {
+        const distance = hamming_weight(replacement_value ^ current_value);
+        var replacement_entry = {
+            "value": replacement_value,
+            "distance": distance,
+            "desc": replacement_desc + " (" + distance + " bit(s) changed)",
+            "replacements": []
+        }
+
+        for (var i = 0; i < num_bits; i++) {
+            const [x, y] = area.regions.pixel_coords_at_bit_offset(i);
+            const current_pixel_value = decoder.pixel_data.get(x, y);
+            const mask = 1 << (num_bits - i - 1);
+            var correct_pixel_value;
+            if ((current_value & mask) != (replacement_value & mask)) {
+                correct_pixel_value = !current_pixel_value;
+            } else {
+                correct_pixel_value = current_pixel_value;
+            }
+            replacement_entry["replacements"].push({"x": x, "y": y, "value": correct_pixel_value});
+        }
+
+        replacement_candidates.push(replacement_entry);
+    }
+
+    replacement_candidates.sort( (a,b) => {
+        if (a.distance != b.distance) {
+            return a.distance - b.distance;
+        } else {
+            return a.value - b.value;
+        }
+    });
+
+    return replacement_candidates;
+}
+
 function add_dynamic_areas (decoder) {
     const pixel_decoder = new PixelDecoder(code_size, decoder.get_masked_pixels(), decoder.static_areas);
     const bit_array = pixel_decoder.get_bit_array();
@@ -225,6 +263,8 @@ function add_dynamic_areas (decoder) {
             } else {
                 mode_area.value_details.desc = "Unsupported mode \"" + mode_area.value_details.value + "\"; decoding aborted";
                 mode_area.value_details.valid = false;
+
+                mode_area.value_details.replacement_candidates = generate_replacements(decoder, mode_area, mode_area.value_details.num_bits, mode_names, mode_area.value_details.value);
             }
 
             if (mode == 0b0010) {
@@ -234,6 +274,12 @@ function add_dynamic_areas (decoder) {
                 if (payload_length > max_payload_length) {
                     length_area.value_details.desc = "payload length is too large (max allowed: " + max_payload_length + ")";
                     length_area.value_details.valid = false;
+
+                    var valid_values = new Map();
+                    for (var i = 0; i < max_payload_length; i++) {
+                        valid_values.set(i, "" + i);
+                    }
+                    length_area.value_details.replacement_candidates = generate_replacements(decoder, length_area, length_area.value_details.num_bits, valid_values, payload_length);
                 }
 
                 for (var j = 0; j < Math.floor(payload_length / 2); j++) {
@@ -257,6 +303,12 @@ function add_dynamic_areas (decoder) {
                 if (payload_length > max_payload_length) {
                     length_area.value_details.desc = "payload length is too large (max allowed: " + max_payload_length + ")";
                     length_area.value_details.valid = false;
+
+                    var valid_values = new Map();
+                    for (var i = 0; i < max_payload_length; i++) {
+                        valid_values.set(i, "" + i);
+                    }
+                    length_area.value_details.replacement_candidates = generate_replacements(decoder, length_area, length_area.value_details.num_bits, valid_values, payload_length);
                 }
 
                 for (var j = 0; j < payload_length; j++) {
