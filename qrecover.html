@@ -186,15 +186,23 @@
     function update_load_button () {
         document.getElementById("btn_load_image").disabled = (document.getElementById("imgInp").files.length != 1);
     }
+
+    var mark_mode_enabled = false;
+    function toggle_mark_mode () {
+        mark_mode_enabled = !mark_mode_enabled;
+        draw_code();
+    }
     </script>
 
     <body onload="init()">
         <div style="display: flex; align-items: flex-start; justify-content: space-between;">
-        <div>
-        <form>
-            <input accept="image/*" type="file" id="imgInp" onchange="update_load_button();" />
-            <input type="button" id="btn_load_image" value="Load Selected File" onclick="load_from_file(this.form.imgInp)">
-        </form>
+        <div style="width: 80%">
+        <input accept="image/*" type="file" id="imgInp" onchange="update_load_button();" />
+        <input type="button" id="btn_load_image" value="Load Selected File" onclick="load_from_file(document.getElementById('imgInp'))">
+
+        <input type="button" id="btn_toggle_mark_mode" value="Mark unknown pixels" style="float: right" onclick="toggle_mark_mode()">
+        <br>
+
         Mask Display:
         <input type="radio" name="mask_mode" id="rb_show_masked" onchange="draw_code()" checked><label for="rb_show_masked">Masked</label>
         <input type="radio" name="mask_mode" id="rb_show_unmasked" onchange="draw_code()"><label for="rb_show_unmasked">Unmasked</label>

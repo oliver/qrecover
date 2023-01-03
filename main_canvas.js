@@ -3,6 +3,7 @@
 //
 
 var canvas, ctx;
+var hovered_pixel = null;
 
 function init_main_canvas (canvas_element, mouse_pos_element) {
     canvas = canvas_element;
@@ -13,8 +14,14 @@ function init_main_canvas (canvas_element, mouse_pos_element) {
 
     canvas.addEventListener("click", function (e) {
         var [pix_x, pix_y] = event_to_pixel(e);
-        var new_value = !(global_decoder_obj.pixel_data.get(pix_x, pix_y));
-        global_decoder_obj.pixel_data.set(pix_x, pix_y, new_value);
+
+        if (mark_mode_enabled) {
+            const new_value = !(global_decoder_obj.unknown_pixels.get(pix_x, pix_y));
+            global_decoder_obj.unknown_pixels.set(pix_x, pix_y, new_value);
+        } else {
+            var new_value = !(global_decoder_obj.pixel_data.get(pix_x, pix_y));
+            global_decoder_obj.pixel_data.set(pix_x, pix_y, new_value);
+        }
 
         decode();
         draw_code();
@@ -24,21 +31,28 @@ function init_main_canvas (canvas_element, mouse_pos_element) {
     canvas.addEventListener("mousemove", function (e) {
         var [pix_x, pix_y] = event_to_pixel(e);
         if (pix_x < code_size && pix_y < code_size) {
-            mouse_pos_element.innerHTML = "(" + (pix_x+0) + " / " + (pix_y+0) + ")";
+            if (!hovered_pixel || pix_x != hovered_pixel.x || pix_y != hovered_pixel.y) {
+                hovered_pixel = {"x": pix_x, "y": pix_y};
+                mouse_pos_element.innerHTML = "(" + (pix_x+0) + " / " + (pix_y+0) + ")";
 
-            var hovered_area = global_decoder_obj.static_areas.is_inside(pix_x, pix_y);
-            if (!hovered_area) {
-                hovered_area = global_decoder_obj.dynamic_areas.is_inside(pix_x, pix_y);
-            }
+                var hovered_area = global_decoder_obj.static_areas.is_inside(pix_x, pix_y);
+                if (!hovered_area) {
+                    hovered_area = global_decoder_obj.dynamic_areas.is_inside(pix_x, pix_y);
+                }
 
-            if (highlighted_area != hovered_area) {
-                highlight_area(hovered_area);
+                if (highlighted_area != hovered_area) {
+                    highlight_area(hovered_area);
+                }
+
+                draw_code();
             }
         }
     }, false);
 
     canvas.addEventListener("mouseout", function (e) {
         highlight_area(null);
+        hovered_pixel = null;
+        draw_code();
     }, false);
 }
 
@@ -167,6 +181,25 @@ function draw_code () {
             ctx.moveTo(line.x * pixel_size, line.y * pixel_size);
             ctx.lineTo((line.x+line.w) * pixel_size, (line.y+line.h) * pixel_size);
             ctx.stroke();
+        }
+    }
+
+    if (mark_mode_enabled) {
+        ctx.beginPath();
+        ctx.fillStyle = "rgba(0, 255, 0, 0.3)";
+        ctx.fillRect(0, 0, code_size*pixel_size, code_size*pixel_size);
+        ctx.closePath();
+
+        if (hovered_pixel) {
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 3;
+            ctx.setLineDash([2, 4]);
+
+            ctx.beginPath();
+            ctx.arc((hovered_pixel.x+0.5)*pixel_size, (hovered_pixel.y+0.5)*pixel_size, pixel_size/2 -2, 0, 2 * Math.PI, false);
+            ctx.stroke();
+            ctx.closePath();
+            ctx.setLineDash([]);
         }
     }
 
