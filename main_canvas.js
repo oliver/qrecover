@@ -4,6 +4,7 @@
 
 var canvas, ctx;
 var hovered_pixel = null;
+var hatch_pattern;
 
 function init_main_canvas (canvas_element, mouse_pos_element) {
     canvas = canvas_element;
@@ -11,6 +12,7 @@ function init_main_canvas (canvas_element, mouse_pos_element) {
     canvas.height = code_size*pixel_size;
     canvas.parentElement.style.width = "" + (code_size*pixel_size) + "px";
     ctx = canvas.getContext("2d");
+    hatch_pattern = ctx.createPattern(create_hatch_pattern_canvas("red", [2, 4]), "repeat");
 
     canvas.addEventListener("click", function (e) {
         var [pix_x, pix_y] = event_to_pixel(e);
@@ -54,6 +56,24 @@ function init_main_canvas (canvas_element, mouse_pos_element) {
         hovered_pixel = null;
         draw_code();
     }, false);
+}
+
+/// Returns a canvas filled with a hatch pattern.
+function create_hatch_pattern_canvas (color, hatch_pattern_array) {
+    const pattern_canvas = document.createElement("canvas");
+    pattern_canvas.width = pixel_size;
+    pattern_canvas.height = pixel_size;
+    const pattern_context = pattern_canvas.getContext("2d");
+    pattern_context.setLineDash(hatch_pattern_array);
+    pattern_context.strokeStyle = color;
+    pattern_context.lineWidth = pixel_size * 2;
+
+    pattern_context.beginPath();
+    pattern_context.moveTo(0, 0);
+    pattern_context.lineTo(pattern_canvas.width, pattern_canvas.height);
+    pattern_context.stroke();
+
+    return pattern_canvas;
 }
 
 function event_to_pixel (e) {
@@ -200,6 +220,11 @@ function draw_code () {
             ctx.stroke();
             ctx.closePath();
             ctx.setLineDash([]);
+        }
+    } else {
+        if (hovered_pixel) {
+            ctx.fillStyle = hatch_pattern;
+            draw_rect(hovered_pixel.x, hovered_pixel.y, 1, 1, "fillRect");
         }
     }
 
