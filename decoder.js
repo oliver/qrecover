@@ -276,7 +276,7 @@ function add_dynamic_areas (decoder) {
                     length_area.value_details.valid = false;
                 }
                 var valid_values = new Map();
-                for (var i = 0; i < max_payload_length; i++) {
+                for (var i = 0; i < max_payload_length+1; i++) {
                     valid_values.set(i, "" + i);
                 }
                 length_area.value_details.replacement_candidates = generate_replacements(decoder, length_area, length_area.value_details.num_bits, valid_values, payload_length);
@@ -305,7 +305,7 @@ function add_dynamic_areas (decoder) {
                     length_area.value_details.valid = false;
                 }
                 var valid_values = new Map();
-                for (var i = 0; i < max_payload_length; i++) {
+                for (var i = 0; i < max_payload_length+1; i++) {
                     valid_values.set(i, "" + i);
                 }
                 length_area.value_details.replacement_candidates = generate_replacements(decoder, length_area, length_area.value_details.num_bits, valid_values, payload_length);
