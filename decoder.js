@@ -314,6 +314,18 @@ function add_dynamic_areas (decoder) {
                     var [byte, byte_area] = read_int_and_add_row(bit_array, 8, "byte", [255, 255, 192]);
                     byte_area.value_details.desc = "ASCII='" + String.fromCharCode(byte_area.value_details.value) + "'";
                     byte_area.value_details.text_payload = String.fromCharCode(byte_area.value_details.value);
+
+                    var valid_values = new Map();
+                    for (var i = 0; i < 256; i++) {
+                        var printable_char;
+                        if (i < 32) {
+                            printable_char = "&#" + (0x2400+i) + ";";
+                        } else {
+                            printable_char = String.fromCharCode(i);
+                        }
+                        valid_values.set(i, "" + i + " (" + printable_char + ")");
+                    }
+                    byte_area.value_details.replacement_candidates = generate_replacements(decoder, byte_area, byte_area.value_details.num_bits, valid_values, byte_area.value_details.value);
                 }
                 break;
             } else if (mode == 0b0111) {
