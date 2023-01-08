@@ -111,17 +111,21 @@
     }
 
     function display_decoded_text (decoder) {
-        document.getElementById("text_payload").innerHTML = "Decoded characters:<br>";
+        document.getElementById("text_payload").innerHTML = "Decoded <span id='num_decoded_characters_span'></span> characters:<br>";
         const pre_element = document.createElement("pre");
         document.getElementById("text_payload").appendChild(pre_element);
 
+        var num_decoded_characters = 0;
         for (const area of decoder.get_all_area_objects()) {
             if (area.value_details.text_payload) {
                 const span_element = document.createElement("span");
                 var displayed_chars = area.value_details.text_payload;
+                const character_offset = num_decoded_characters;
+                num_decoded_characters += displayed_chars.length;
                 // TODO: also replace any other characters that would result in a zero-width span:
                 displayed_chars = displayed_chars.replace(/\n/, "\u23ce\n");
                 span_element.appendChild(document.createTextNode(displayed_chars));
+                span_element.title = "Position: " + (character_offset+1);
                 span_element.addEventListener("mouseover", function (e) {
                     highlight_area(area);
                 });
@@ -132,6 +136,7 @@
                 pre_element.appendChild(span_element);
             }
         }
+        document.getElementById("text_payload").querySelector("#num_decoded_characters_span").innerHTML = "" + num_decoded_characters;
     }
 
     function decode () {
