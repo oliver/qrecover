@@ -263,24 +263,23 @@ function add_dynamic_areas (decoder) {
             } else {
                 mode_area.value_details.desc = "Unsupported mode \"" + mode_area.value_details.value + "\"; decoding aborted";
                 mode_area.value_details.valid = false;
-
-                mode_area.value_details.replacement_candidates = generate_replacements(decoder, mode_area, mode_area.value_details.num_bits, mode_names, mode_area.value_details.value);
             }
+            mode_area.value_details.replacement_candidates = generate_replacements(decoder, mode_area, mode_area.value_details.num_bits, mode_names, mode_area.value_details.value);
 
             if (mode == 0b0010) {
                 // Alphanumeric encoding
                 var [payload_length, length_area] = read_int_and_add_row(bit_array, 9, "payload_length", [255, 192, 255]);
+                length_area.value_details.desc = payload_length + " characters";
                 const max_payload_length = Math.floor(((num_data_bits - bit_array.read_offset) / 11) * 2);
                 if (payload_length > max_payload_length) {
                     length_area.value_details.desc = "payload length is too large (max allowed: " + max_payload_length + ")";
                     length_area.value_details.valid = false;
-
-                    var valid_values = new Map();
-                    for (var i = 0; i < max_payload_length; i++) {
-                        valid_values.set(i, "" + i);
-                    }
-                    length_area.value_details.replacement_candidates = generate_replacements(decoder, length_area, length_area.value_details.num_bits, valid_values, payload_length);
                 }
+                var valid_values = new Map();
+                for (var i = 0; i < max_payload_length; i++) {
+                    valid_values.set(i, "" + i);
+                }
+                length_area.value_details.replacement_candidates = generate_replacements(decoder, length_area, length_area.value_details.num_bits, valid_values, payload_length);
 
                 for (var j = 0; j < Math.floor(payload_length / 2); j++) {
                     var [two_chars, alphanum_area] = read_int_and_add_row(bit_array, 11, "two_chars", [255, 255, 192]);
@@ -299,17 +298,17 @@ function add_dynamic_areas (decoder) {
             } else if (mode == 0b0100) {
                 // Byte encoding
                 var [payload_length, length_area] = read_int_and_add_row(bit_array, 8, "payload_length", [255, 192, 255]);
+                length_area.value_details.desc = payload_length + " bytes";
                 const max_payload_length = Math.floor((num_data_bits - bit_array.read_offset) / 8);
                 if (payload_length > max_payload_length) {
                     length_area.value_details.desc = "payload length is too large (max allowed: " + max_payload_length + ")";
                     length_area.value_details.valid = false;
-
-                    var valid_values = new Map();
-                    for (var i = 0; i < max_payload_length; i++) {
-                        valid_values.set(i, "" + i);
-                    }
-                    length_area.value_details.replacement_candidates = generate_replacements(decoder, length_area, length_area.value_details.num_bits, valid_values, payload_length);
                 }
+                var valid_values = new Map();
+                for (var i = 0; i < max_payload_length; i++) {
+                    valid_values.set(i, "" + i);
+                }
+                length_area.value_details.replacement_candidates = generate_replacements(decoder, length_area, length_area.value_details.num_bits, valid_values, payload_length);
 
                 for (var j = 0; j < payload_length; j++) {
                     var [byte, byte_area] = read_int_and_add_row(bit_array, 8, "byte", [255, 255, 192]);

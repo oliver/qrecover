@@ -81,7 +81,7 @@ function update_area_details_list (decoder) {
             } else if (area.value_details.replacement_candidates && area.value_details.replacement_candidates.length > 0) {
                 const popup_div = document.createElement("div");
 
-                cell.innerHTML += area.value_details.desc + " <button>Show Fixes...</button>";
+                cell.innerHTML += area.value_details.desc + " <button>Show Values...</button>";
                 const button = cell.querySelector("button");
                 button.addEventListener("click", function (e) {
                     document.querySelector("#area_table_div").appendChild(popup_div);
@@ -90,7 +90,7 @@ function update_area_details_list (decoder) {
                     popup_div.style.left = (button_offset.left - popup_div.clientWidth - 20) + "px";
                 }, false);
 
-                popup_div.innerHTML = "<button style='float:right'>X</button><h3>Valid Replacements:</h3>" + area.value_details.desc + "<ul></ul>";
+                popup_div.innerHTML = "<button style='float:right'>X</button><h3>Possible Values</h3>Current: " + area.value_details.desc + "<ul></ul>";
                 popup_div.style.position = "absolute";
                 popup_div.style.backgroundColor = "white";
                 popup_div.style.borderRadius = "10px";
