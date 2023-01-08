@@ -66,9 +66,29 @@ function update_area_details_list (decoder) {
                     show_correction(null);
                 }, false);
             } else if (area.value_details.replacement_candidates && area.value_details.replacement_candidates.length > 0) {
-                cell.innerHTML += area.value_details.desc + "<ul></ul>";
+                const popup_div = document.createElement("div");
 
-                var list_element = cell.querySelector("ul");
+                cell.innerHTML += area.value_details.desc + " <button>Show Fixes...</button>";
+                const button = cell.querySelector("button");
+                button.addEventListener("click", function (e) {
+                    document.querySelector("body").appendChild(popup_div);
+                }, false);
+
+                popup_div.innerHTML = "<button style='float:right'>X</button><h3>Valid Replacements:</h3>" + area.value_details.desc + "<ul></ul>";
+                popup_div.style.position = "absolute";
+                popup_div.style.top = "5%";
+                popup_div.style.left = "50%";
+                popup_div.style.backgroundColor = "white";
+                popup_div.style.borderRadius = "10px";
+                popup_div.style.boxShadow = "0px 0px 10px 0px black"
+                popup_div.style.padding = "1em";
+
+                const close_button = popup_div.querySelector("button");
+                close_button.addEventListener("click", function (e) {
+                    document.querySelector("body").removeChild(popup_div);
+                }, false);
+
+                var list_element = popup_div.querySelector("ul");
                 for (let replacement_candidate of area.value_details.replacement_candidates) {
                     const new_sub_item = document.createElement("li");
                     new_sub_item.innerHTML = "<span style='text-decoration: underline dashed;'>" + replacement_candidate.desc + " <button>Apply</button></span>";
@@ -86,6 +106,7 @@ function update_area_details_list (decoder) {
                     button.addEventListener("click", function (e) {
                         apply_correction(replacement_candidate.replacements);
                         show_correction(null);
+                        document.querySelector("body").removeChild(popup_div);
                     }, false);
                 }
             } else {
