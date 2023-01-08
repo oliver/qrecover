@@ -2,6 +2,19 @@
 // Functions for managing the HTML list which shows area details
 //
 
+/// Helper function to recursively get the top and left offset between a start_element and the target_element (which must be in start_element's parent hierarchy).
+function get_offset_relative_to (start_element, target_element) {
+    if (start_element == target_element) {
+        return {"top": 0, "left": 0}
+    }
+    const parent_values = get_offset_relative_to(start_element.offsetParent, target_element);
+    return {
+        "top": parent_values["top"] + start_element.offsetTop,
+        "left": parent_values["left"] + start_element.offsetLeft
+    };
+}
+
+
 function update_area_details_list (decoder) {
     var table_body = document.getElementById("area_table_body");
     table_body.innerHTML = "";
@@ -71,21 +84,24 @@ function update_area_details_list (decoder) {
                 cell.innerHTML += area.value_details.desc + " <button>Show Fixes...</button>";
                 const button = cell.querySelector("button");
                 button.addEventListener("click", function (e) {
-                    document.querySelector("body").appendChild(popup_div);
+                    document.querySelector("#area_table_div").appendChild(popup_div);
+                    const button_offset = get_offset_relative_to(button, document.querySelector("#area_table_div"));
+                    popup_div.style.top = (button_offset.top - ((popup_div.clientHeight - button.clientHeight) / 2)) + "px";
+                    popup_div.style.left = (button_offset.left - popup_div.clientWidth - 20) + "px";
                 }, false);
 
                 popup_div.innerHTML = "<button style='float:right'>X</button><h3>Valid Replacements:</h3>" + area.value_details.desc + "<ul></ul>";
                 popup_div.style.position = "absolute";
-                popup_div.style.top = "5%";
-                popup_div.style.left = "50%";
                 popup_div.style.backgroundColor = "white";
                 popup_div.style.borderRadius = "10px";
                 popup_div.style.boxShadow = "0px 0px 10px 0px black"
                 popup_div.style.padding = "1em";
+                popup_div.style.maxHeight = "80%";
+                popup_div.style.overflowY = "scroll";
 
                 const close_button = popup_div.querySelector("button");
                 close_button.addEventListener("click", function (e) {
-                    document.querySelector("body").removeChild(popup_div);
+                    document.querySelector("#area_table_div").removeChild(popup_div);
                 }, false);
 
                 var list_element = popup_div.querySelector("ul");
@@ -106,7 +122,7 @@ function update_area_details_list (decoder) {
                     button.addEventListener("click", function (e) {
                         apply_correction(replacement_candidate.replacements);
                         show_correction(null);
-                        document.querySelector("body").removeChild(popup_div);
+                        document.querySelector("#area_table_div").removeChild(popup_div);
                     }, false);
                 }
             } else {
