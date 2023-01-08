@@ -187,9 +187,12 @@ function draw_code () {
     if (highlighted_differences) {
         const inset_pixels = pixel_size * 0.3;
         ctx.fillStyle = "red";
+        ctx.strokeStyle = "rgba(255,0,0,0.3)";
         for ({x, y, value} of highlighted_differences) {
             if (value != global_decoder_obj.pixel_data.get(x, y)) {
                 ctx.fillRect(x * pixel_size + inset_pixels, y * pixel_size + inset_pixels, pixel_size - (2*inset_pixels), pixel_size - (2*inset_pixels));
+            } else {
+                ctx.strokeRect(x * pixel_size + inset_pixels, y * pixel_size + inset_pixels, pixel_size - (2*inset_pixels), pixel_size - (2*inset_pixels));
             }
         }
     }
