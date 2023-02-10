@@ -288,13 +288,13 @@ function add_dynamic_areas (decoder) {
                     alphanum_area.value_details.desc = char1_code + "=" + alphanumeric_table.get(char1_code) + "; " + char2_code + "=" + alphanumeric_table.get(char2_code);
                     alphanum_area.value_details.text_payload = alphanumeric_table.get(char1_code) + alphanumeric_table.get(char2_code);
 
-                    var valid_values = new Map();
+                    /*var valid_values = new Map();
                     for (var i = 0; i < 2**11; i++) {
                         const char2_code = i % 45;
                         const char1_code = (i - char2_code) / 45;
                         valid_values.set(i, "" + i + " (" + alphanumeric_table.get(char1_code) + " / " + alphanumeric_table.get(char2_code) + ")");
                     }
-                    alphanum_area.value_details.replacement_candidates = generate_replacements(decoder, alphanum_area, alphanum_area.value_details.num_bits, valid_values, alphanum_area.value_details.value);
+                    alphanum_area.value_details.replacement_candidates = generate_replacements(decoder, alphanum_area, alphanum_area.value_details.num_bits, valid_values, alphanum_area.value_details.value);*/
                 }
                 if (payload_length % 2 != 0) {
                     // read additional character
