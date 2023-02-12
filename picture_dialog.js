@@ -68,6 +68,9 @@ class PictureDialog {
         for (var i = 0; i < 4; i++) {
             const circle = svg_add_circle(this.svg, this.corners[i][0], this.corners[i][1], 10);
             circle.style.fill = "rgba(0,0,0,0.5)";
+            circle.style.stroke = "red";
+            circle.style.strokeWidth = "2px";
+            circle.style.strokeDasharray = "3 3";
             circle.addEventListener("pointerover", (evt) => {
                 evt.target.style.fill = "rgba(255,0,0,0.5)";
             });
