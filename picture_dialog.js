@@ -13,7 +13,7 @@ class PictureDialog {
             <input type="file" id="picture_file_input" accept="image/*" />\
             <input type="button" id="picture_load_button" value="Load Selected File">\
             <br>\
-            <svg id="picture_svg" width="50%" height="50%" style="border: solid 1px black"></svg><br> \
+            <svg id="picture_svg" width="100%" height="50%" style="border: solid 1px black"></svg><br> \
             <div id="picture_transform_preview" style="background-color: silver"></div> \
             <div id="canvas_wrapper" style="background-color: silver; position: relative; width: 200px; height: 200px; overflow: hidden; outline: solid 1px black"> \
                 <canvas id="picture_canvas" style="width: 100%; height: 100%; background-color: antiquewhite"></canvas>\
@@ -21,7 +21,7 @@ class PictureDialog {
             ');
         this.canvas = this.popup.querySelector("#picture_canvas");
 
-        this.popup.style.left = "10ex";
+        this.popup.style.left = "50%";
         this.popup.style.right = "10ex";
         this.popup.style.top = "10ex";
         this.popup.style.bottom = "10ex";
@@ -41,12 +41,14 @@ class PictureDialog {
         this.svg = this.popup.querySelector("#picture_svg");
         this.svg_image = svg_add_element(this.svg, "image");
 
+        this.main_canvas_bg_img = document.getElementById("main_canvas_background_img");
+
         function event_parent_coords (evt) {
             const parent_bounds = evt.target.parentElement.getBoundingClientRect();
             return [evt.clientX - parent_bounds.left, evt.clientY - parent_bounds.top];
         }
 
-        this.original_corners = [ [0,0], [200,0], [200,200], [0,200] ];
+        this.original_corners = [ [0,0], [500,0], [500,500], [0,500] ];
         this.corners = [ [100,100], [200,100], [200,200], [100,200] ];
 
         if (sessionStorage.getItem("picture_corners")) {
@@ -94,6 +96,7 @@ class PictureDialog {
                     this.corners[evt.target.corner_index] = [x, y];
                     sessionStorage.setItem("picture_corners", JSON.stringify(this.corners));
                     applyTransform(this.canvas, this.corners, this.original_corners, null);
+                    applyTransform(this.main_canvas_bg_img, this.corners, this.original_corners, null);
                 }
             });
         }
@@ -112,6 +115,9 @@ class PictureDialog {
         this.canvas.height = img_obj.height;
         this.canvas.getContext("2d").drawImage(img_obj, 0, 0, img_obj.width, img_obj.height);
         this.draw();
+
+        this.main_canvas_bg_img.src = img_obj.src;
+        applyTransform(this.main_canvas_bg_img, this.corners, this.original_corners, null);
     }
 
     draw () {

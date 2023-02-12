@@ -260,8 +260,11 @@
 
         <div style="display: flex; align-items: flex-start;">
             <div>
-                <canvas id="can"></canvas>
-                <br>
+                <div style="position: relative; width: 500px; height: 500px">
+                    <div id="main_canvas_background_div" style="position: absolute; width: 500px; height: 500px; overflow: hidden"><img id="main_canvas_background_img" style=""></div>
+                    <canvas id="can" style="position: absolute"></canvas>
+                </div>
+
                 <div id="mouse_pos">&nbsp;</div>
                 <br>
                 <div id="text_payload"></div>
