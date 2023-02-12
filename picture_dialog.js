@@ -14,7 +14,10 @@ class PictureDialog {
             <input type="button" id="picture_load_button" value="Load Selected File">\
             <br>\
             <svg id="picture_svg" width="50%" height="50%" style="border: solid 1px black"></svg><br> \
-            <canvas id="picture_canvas" style="width: 30%; height: 30%; background-color: antiquewhite; position: absolute; right: 0px"></canvas>\
+            <div id="picture_transform_preview" style="background-color: silver"></div> \
+            <div id="canvas_wrapper" style="background-color: silver; position: relative; width: 200px; height: 200px; overflow: hidden; outline: solid 1px black"> \
+                <canvas id="picture_canvas" style="width: 100%; height: 100%; background-color: antiquewhite"></canvas>\
+            </div> \
             ');
         this.canvas = this.popup.querySelector("#picture_canvas");
 
@@ -49,7 +52,7 @@ class PictureDialog {
             return [evt.clientX - parent_bounds.left, evt.clientY - parent_bounds.top];
         }
 
-        this.original_corners = [ [0,0], [100,0], [100,100], [0,100] ];
+        this.original_corners = [ [0,0], [200,0], [200,200], [0,200] ];
         this.corners = [ [100,100], [200,100], [200,200], [100,200] ];
 
         if (sessionStorage.getItem("picture_corners")) {
