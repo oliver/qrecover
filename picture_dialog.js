@@ -82,8 +82,10 @@ class PictureDialog {
 
             circle.drag_active = false;
             circle.addEventListener("pointerdown", (evt) => {
-                evt.target.setPointerCapture(evt.pointerId);
-                evt.target.drag_active = true;
+                if (evt.button == 0) {
+                    evt.target.setPointerCapture(evt.pointerId);
+                    evt.target.drag_active = true;
+                }
             });
             circle.addEventListener("pointerup", (evt) => {
                 evt.target.releasePointerCapture(evt.pointerId);
