@@ -95,6 +95,8 @@ class PictureDialog {
                 if (evt.button == 0) {
                     evt.target.setPointerCapture(evt.pointerId);
                     evt.target.drag_active = true;
+                    const [x, y] = event_parent_coords(evt);
+                    evt.target.drag_offset = [x - evt.target.getAttribute("cx"), y - evt.target.getAttribute("cy")];
                 }
             });
             circle.addEventListener("pointerup", (evt) => {
@@ -104,10 +106,13 @@ class PictureDialog {
             circle.addEventListener("pointermove", (evt) => {
                 if (evt.target.drag_active) {
                     const [x, y] = event_parent_coords(evt);
-                    evt.target.setAttribute("cx", x);
-                    evt.target.setAttribute("cy", y);
 
-                    this.corners[evt.target.corner_index] = [x, y];
+                    const center_x = x - evt.target.drag_offset[0];
+                    const center_y = y - evt.target.drag_offset[1];
+                    evt.target.setAttribute("cx", center_x);
+                    evt.target.setAttribute("cy", center_y);
+
+                    this.corners[evt.target.corner_index] = [center_x, center_y];
                     sessionStorage.setItem("picture_corners", JSON.stringify(this.corners));
                     applyTransform(this.canvas, this.corners, this.original_corners, null);
                     applyTransform(this.main_canvas_bg_img, this.corners, this.original_corners, null);
