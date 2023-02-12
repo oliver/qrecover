@@ -80,24 +80,12 @@ function update_area_details_list (decoder) {
                 }, false);
             } else if (area.value_details.replacement_candidates && area.value_details.replacement_candidates.length > 0) {
                 cell.innerHTML += area.value_details.desc + " <button>Show Values...</button>";
+
                 const button = cell.querySelector("button");
                 button.addEventListener("click", function (e) {
-                    const popup_div = document.createElement("div");
-                    document.querySelector("#area_table_div").appendChild(popup_div);
-
-                    popup_div.innerHTML = "<button style='float:right'>X</button><h3>Possible Values</h3>Current: " + area.value_details.desc + "<ul></ul>";
-                    popup_div.style.position = "absolute";
-                    popup_div.style.backgroundColor = "white";
-                    popup_div.style.borderRadius = "10px";
-                    popup_div.style.boxShadow = "0px 0px 10px 0px black"
-                    popup_div.style.padding = "1em";
+                    const popup_div = create_popup_dialog(document.querySelector("#area_table_div"));
+                    popup_div.insertAdjacentHTML("beforeend", "<h3>Possible Values</h3>Current: " + area.value_details.desc + "<ul></ul>");
                     popup_div.style.maxHeight = "80%";
-                    popup_div.style.overflowY = "scroll";
-
-                    const close_button = popup_div.querySelector("button");
-                    close_button.addEventListener("click", function (e) {
-                        document.querySelector("#area_table_div").removeChild(popup_div);
-                    }, false);
 
                     var list_element = popup_div.querySelector("ul");
                     for (let replacement_candidate of area.value_details.replacement_candidates) {
@@ -117,7 +105,7 @@ function update_area_details_list (decoder) {
                         button.addEventListener("click", function (e) {
                             apply_correction(replacement_candidate.replacements);
                             show_correction(null);
-                            document.querySelector("#area_table_div").removeChild(popup_div);
+                            popup_div.destroy();
                         }, false);
                     }
 

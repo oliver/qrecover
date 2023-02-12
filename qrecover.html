@@ -197,6 +197,30 @@
         mark_mode_enabled = !mark_mode_enabled;
         draw_code();
     }
+
+    function create_popup_dialog (parent_element) {
+        const popup_div = document.createElement("div");
+        parent_element.appendChild(popup_div);
+
+        popup_div.destroy = function () {
+            parent_element.removeChild(popup_div);
+        }
+
+        popup_div.innerHTML = "<button style='float:right'>X</button>";
+        popup_div.style.position = "absolute";
+        popup_div.style.backgroundColor = "white";
+        popup_div.style.borderRadius = "10px";
+        popup_div.style.boxShadow = "0px 0px 10px 0px black"
+        popup_div.style.padding = "1em";
+        popup_div.style.overflowY = "scroll";
+
+        const close_button = popup_div.querySelector("button");
+        close_button.addEventListener("click", function (e) {
+            popup_div.destroy();
+        }, false);
+
+        return popup_div;
+    }
     </script>
 
     <body onload="init()">
