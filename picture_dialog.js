@@ -75,8 +75,10 @@ class PictureDialog {
             svg_add_line(this.svg, this.corners[i][0], this.corners[i][1], this.corners[next_i][0], this.corners[next_i][1], "black");
         }
 
+        let corner_circles = [];
         for (var i = 0; i < 4; i++) {
             const circle = svg_add_circle(this.svg, this.corners[i][0], this.corners[i][1], 10);
+            corner_circles.push(circle);
             circle.style.fill = "rgba(0,0,0,0.5)";
             circle.style.stroke = "red";
             circle.style.strokeWidth = "2px";
@@ -89,30 +91,43 @@ class PictureDialog {
             });
 
             circle.corner_index = i;
-
             circle.drag_active = false;
             circle.addEventListener("pointerdown", (evt) => {
                 if (evt.button == 0) {
                     evt.target.setPointerCapture(evt.pointerId);
                     evt.target.drag_active = true;
                     const [x, y] = event_parent_coords(evt);
-                    evt.target.drag_offset = [x - evt.target.getAttribute("cx"), y - evt.target.getAttribute("cy")];
+
+                    if (evt.shiftKey) {
+                        for (const c of corner_circles) {
+                            c.drag_offset = [x - c.getAttribute("cx"), y - c.getAttribute("cy")];
+                        }
+                    } else {
+                        evt.target.drag_offset = [x - evt.target.getAttribute("cx"), y - evt.target.getAttribute("cy")];
+                    }
                 }
             });
             circle.addEventListener("pointerup", (evt) => {
                 evt.target.releasePointerCapture(evt.pointerId);
                 evt.target.drag_active = false;
+                for (const c of corner_circles) {
+                    c.drag_offset = null;
+                }
             });
             circle.addEventListener("pointermove", (evt) => {
                 if (evt.target.drag_active) {
                     const [x, y] = event_parent_coords(evt);
 
-                    const center_x = x - evt.target.drag_offset[0];
-                    const center_y = y - evt.target.drag_offset[1];
-                    evt.target.setAttribute("cx", center_x);
-                    evt.target.setAttribute("cy", center_y);
+                    for (const c of corner_circles) {
+                        if (c.drag_offset != null) {
+                            const center_x = x - c.drag_offset[0];
+                            const center_y = y - c.drag_offset[1];
+                            c.setAttribute("cx", center_x);
+                            c.setAttribute("cy", center_y);
+                            this.corners[c.corner_index] = [center_x, center_y];
+                        }
+                    }
 
-                    this.corners[evt.target.corner_index] = [center_x, center_y];
                     sessionStorage.setItem("picture_corners", JSON.stringify(this.corners));
                     applyTransform(this.canvas, this.corners, this.original_corners, null);
                     applyTransform(this.main_canvas_bg_img, this.corners, this.original_corners, null);
