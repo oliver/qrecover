@@ -35,8 +35,22 @@ class PictureDialog {
                 img_obj.onload = function () {
                     picture_dialog.load_picture(img_obj);
                 }
+
+                const file_reader = new FileReader();
+                file_reader.addEventListener("load", () => {
+                    sessionStorage.setItem("picture_data", file_reader.result);
+                });
+                file_reader.readAsDataURL(file);
             }
         });
+
+        if (sessionStorage.getItem("picture_data")) {
+            const img_obj = new Image();
+            img_obj.src = sessionStorage.getItem("picture_data");
+            img_obj.onload = function () {
+                picture_dialog.load_picture(img_obj);
+            }
+        }
 
         this.svg = this.popup.querySelector("#picture_svg");
         this.svg_image = svg_add_element(this.svg, "image");
