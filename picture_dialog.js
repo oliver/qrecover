@@ -41,26 +41,8 @@ class PictureDialog {
         this.canvas.height = canvas_rect.height;
 
 
-        const svg = this.popup.querySelector("#picture_svg");
-
-        function svg_add_circle (svg, cx, cy, r) {
-            const elem = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            elem.setAttribute("cx", cx);
-            elem.setAttribute("cy", cy);
-            elem.setAttribute("r", r);
-            svg.append(elem);
-            return elem;
-        }
-        function svg_add_line (svg, x1, y1, x2, y2, stroke) {
-            const elem = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            elem.setAttribute("x1", x1);
-            elem.setAttribute("y1", y1);
-            elem.setAttribute("x2", x2);
-            elem.setAttribute("y2", y2);
-            elem.setAttribute("stroke", stroke);
-            svg.append(elem);
-            return elem;
-        }
+        this.svg = this.popup.querySelector("#picture_svg");
+        this.svg_image = svg_add_element(this.svg, "image");
 
         function event_parent_coords (evt) {
             const parent_bounds = evt.target.parentElement.getBoundingClientRect();
@@ -71,11 +53,11 @@ class PictureDialog {
 
         for (var i = 0; i < 4; i++) {
             const next_i = (i+1) % 4;
-            svg_add_line(svg, corners[i][0], corners[i][1], corners[next_i][0], corners[next_i][1], "black");
+            svg_add_line(this.svg, corners[i][0], corners[i][1], corners[next_i][0], corners[next_i][1], "black");
         }
 
         for (var i = 0; i < 4; i++) {
-            const circle = svg_add_circle(svg, corners[i][0], corners[i][1], 10);
+            const circle = svg_add_circle(this.svg, corners[i][0], corners[i][1], 10);
             circle.addEventListener("pointerover", (evt) => {
                 evt.target.style.fill = "red";
             });
@@ -107,6 +89,8 @@ class PictureDialog {
     load_picture(img_obj) {
         console.log("load_picture; img_obj:", img_obj);
 
+        set_attributes(this.svg_image, {"width": img_obj.width, "height": img_obj.height, "href": img_obj.src});
+
         this.canvas.getContext("2d").drawImage(img_obj, 0, 0, img_obj.width, img_obj.height);
         this.draw();
     }
@@ -126,4 +110,26 @@ class PictureDialog {
         }
         ctx.stroke();
     }
+}
+
+
+function set_attributes (element, attributes) {
+    for (const [key, value] of Object.entries(attributes)) {
+        element.setAttribute(key, value);
+    }
+}
+
+function svg_add_element (svg, element_name, attributes = {}) {
+    const elem = document.createElementNS("http://www.w3.org/2000/svg", element_name);
+    set_attributes(elem, attributes);
+    svg.appendChild(elem);
+    return elem;
+}
+
+function svg_add_circle (svg, cx, cy, r) {
+    return svg_add_element(svg, "circle", {"cx": cx, "cy": cy, "r": r});
+}
+
+function svg_add_line (svg, x1, y1, x2, y2, stroke) {
+    return svg_add_element(svg, "line", {"x1": x1, "y1": y1, "x2": x2, "y2": y2, "stroke": stroke});
 }
