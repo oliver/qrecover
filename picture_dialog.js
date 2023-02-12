@@ -38,12 +38,6 @@ class PictureDialog {
             }
         });
 
-        // adjust canvas pixel size to its DOM element size:
-        const canvas_rect = this.canvas.getBoundingClientRect();
-        this.canvas.width = canvas_rect.width;
-        this.canvas.height = canvas_rect.height;
-
-
         this.svg = this.popup.querySelector("#picture_svg");
         this.svg_image = svg_add_element(this.svg, "image");
 
@@ -112,6 +106,10 @@ class PictureDialog {
 
         set_attributes(this.svg_image, {"width": img_obj.width, "height": img_obj.height, "href": img_obj.src});
 
+        this.canvas.style.width = img_obj.width + "px";
+        this.canvas.style.height = img_obj.height + "px";
+        this.canvas.width = img_obj.width;
+        this.canvas.height = img_obj.height;
         this.canvas.getContext("2d").drawImage(img_obj, 0, 0, img_obj.width, img_obj.height);
         this.draw();
     }
