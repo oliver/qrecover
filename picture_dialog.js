@@ -12,6 +12,8 @@ class PictureDialog {
         this.popup.insertAdjacentHTML("beforeend", '<h3>Load Picture</h3>\
             <input type="file" id="picture_file_input" accept="image/*" />\
             <input type="button" id="picture_load_button" value="Load Selected File">\
+            <input type="button" id="zoom_in_btn" value=" + " style="width: 6ex"> \
+            <input type="button" id="zoom_out_btn" value=" - " style="width: 6ex"> \
             <br>\
             <svg id="picture_svg" width="100%" height="50%" style="border: solid 1px black"></svg><br> \
             <div id="picture_transform_preview" style="background-color: silver"></div> \
@@ -57,6 +59,18 @@ class PictureDialog {
 
         this.main_canvas_bg_img = document.getElementById("main_canvas_background_img");
 
+        this.loaded_image_size = [0, 0];
+        this.zoom_factor = 1.0;
+
+        this.popup.querySelector("#zoom_in_btn").addEventListener("click", () => {
+            this.zoom_factor *= 2;
+            this.redraw_svg_after_zoom();
+        });
+        this.popup.querySelector("#zoom_out_btn").addEventListener("click", () => {
+            this.zoom_factor /= 2;
+            this.redraw_svg_after_zoom();
+        });
+
         function event_parent_coords (evt) {
             const parent_bounds = evt.target.parentElement.getBoundingClientRect();
             return [evt.clientX - parent_bounds.left, evt.clientY - parent_bounds.top];
@@ -75,10 +89,10 @@ class PictureDialog {
             svg_add_line(this.svg, this.corners[i][0], this.corners[i][1], this.corners[next_i][0], this.corners[next_i][1], "black");
         }
 
-        let corner_circles = [];
+        this.corner_circles = [];
         for (var i = 0; i < 4; i++) {
-            const circle = svg_add_circle(this.svg, this.corners[i][0], this.corners[i][1], 10);
-            corner_circles.push(circle);
+            const circle = svg_add_circle(this.svg, this.corners[i][0] * this.zoom_factor, this.corners[i][1] * this.zoom_factor, 10);
+            this.corner_circles.push(circle);
             circle.style.fill = "rgba(0,0,0,0.5)";
             circle.style.stroke = "red";
             circle.style.strokeWidth = "2px";
@@ -99,7 +113,7 @@ class PictureDialog {
                     const [x, y] = event_parent_coords(evt);
 
                     if (evt.shiftKey) {
-                        for (const c of corner_circles) {
+                        for (const c of this.corner_circles) {
                             c.drag_offset = [x - c.getAttribute("cx"), y - c.getAttribute("cy")];
                         }
                     } else {
@@ -110,7 +124,7 @@ class PictureDialog {
             circle.addEventListener("pointerup", (evt) => {
                 evt.target.releasePointerCapture(evt.pointerId);
                 evt.target.drag_active = false;
-                for (const c of corner_circles) {
+                for (const c of this.corner_circles) {
                     c.drag_offset = null;
                 }
             });
@@ -118,13 +132,13 @@ class PictureDialog {
                 if (evt.target.drag_active) {
                     const [x, y] = event_parent_coords(evt);
 
-                    for (const c of corner_circles) {
+                    for (const c of this.corner_circles) {
                         if (c.drag_offset != null) {
                             const center_x = x - c.drag_offset[0];
                             const center_y = y - c.drag_offset[1];
                             c.setAttribute("cx", center_x);
                             c.setAttribute("cy", center_y);
-                            this.corners[c.corner_index] = [center_x, center_y];
+                            this.corners[c.corner_index] = [center_x / this.zoom_factor, center_y / this.zoom_factor];
                         }
                     }
 
@@ -141,7 +155,9 @@ class PictureDialog {
     load_picture(img_obj) {
         console.log("load_picture; img_obj:", img_obj);
 
-        set_attributes(this.svg_image, {"width": img_obj.width, "height": img_obj.height, "href": img_obj.src});
+        this.loaded_image_size = [img_obj.width, img_obj.height];
+
+        set_attributes(this.svg_image, {"width": this.loaded_image_size[0] * this.zoom_factor, "height": this.loaded_image_size[1] * this.zoom_factor, "href": img_obj.src});
 
         this.canvas.style.width = img_obj.width + "px";
         this.canvas.style.height = img_obj.height + "px";
@@ -169,6 +185,15 @@ class PictureDialog {
         }
         ctx.stroke();
     }
+
+    redraw_svg_after_zoom () {
+        set_attributes(this.svg_image, {"width": this.loaded_image_size[0] * this.zoom_factor, "height": this.loaded_image_size[1] * this.zoom_factor});
+
+        for (const c of this.corner_circles) {
+            c.setAttribute("cx", this.corners[c.corner_index][0] * this.zoom_factor);
+            c.setAttribute("cy", this.corners[c.corner_index][1] * this.zoom_factor);
+        }
+    };
 }
 
 
