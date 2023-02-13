@@ -15,7 +15,7 @@ class PictureDialog {
             <input type="button" id="zoom_in_btn" value=" + " style="width: 6ex"> \
             <input type="button" id="zoom_out_btn" value=" - " style="width: 6ex"> \
             <br>\
-            <svg id="picture_svg" width="100%" height="50%" style="border: solid 1px black"></svg><br> \
+            <div id="svg_wrapper_div" style="width: 100%; height: 80%; border: solid 1px black; overflow: scroll"><svg id="picture_svg" width="100%" height="80%"></svg></div><br> \
             <div id="picture_transform_preview" style="background-color: silver"></div> \
             <div id="canvas_wrapper" style="background-color: silver; position: relative; width: 200px; height: 200px; overflow: hidden; outline: solid 1px black"> \
                 <canvas id="picture_canvas" style="width: 100%; height: 100%; background-color: antiquewhite"></canvas>\
@@ -187,6 +187,7 @@ class PictureDialog {
     }
 
     redraw_svg_after_zoom () {
+        set_attributes(this.svg, {"width": this.loaded_image_size[0] * this.zoom_factor, "height": this.loaded_image_size[1] * this.zoom_factor});
         set_attributes(this.svg_image, {"width": this.loaded_image_size[0] * this.zoom_factor, "height": this.loaded_image_size[1] * this.zoom_factor});
 
         for (const c of this.corner_circles) {
