@@ -2,8 +2,16 @@
 // Popup dialog for loading and tracing a QR code from a picture
 //
 
+var picture_dialog = null;
+
 function open_picture_dialog () {
-    new PictureDialog();
+    if (!picture_dialog) {
+        picture_dialog = new PictureDialog();
+        picture_dialog.popup.destroy = function () {
+            picture_dialog.popup.style.display = "none";
+        }
+    }
+    picture_dialog.popup.style.display = null;
 }
 
 class PictureDialog {
