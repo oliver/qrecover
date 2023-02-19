@@ -92,10 +92,15 @@ class PictureDialog {
         }
         applyTransform(this.canvas, this.corners, this.original_corners, null);
 
+        this.line_group_outer = svg_add_element(this.svg, "g");
+        this.line_group_outer.style.transform = "scale(" + this.zoom_factor + ")";
+
+        const line_group_inner = svg_add_element(this.line_group_outer, "g");
         for (var i = 0; i < 4; i++) {
             const next_i = (i+1) % 4;
-            svg_add_line(this.svg, this.corners[i][0], this.corners[i][1], this.corners[next_i][0], this.corners[next_i][1], "black");
+            svg_add_line(line_group_inner, this.original_corners[i][0], this.original_corners[i][1], this.original_corners[next_i][0], this.original_corners[next_i][1], "black");
         }
+        applyTransform(line_group_inner, this.original_corners, this.corners, null);
 
         this.corner_circles = [];
         for (var i = 0; i < 4; i++) {
@@ -153,6 +158,7 @@ class PictureDialog {
                     sessionStorage.setItem("picture_corners", JSON.stringify(this.corners));
                     applyTransform(this.canvas, this.corners, this.original_corners, null);
                     applyTransform(this.main_canvas_bg_img, this.corners, this.original_corners, null);
+                    applyTransform(line_group_inner, this.original_corners, this.corners, null);
                 }
             });
         }
@@ -203,6 +209,8 @@ class PictureDialog {
             c.setAttribute("cx", this.corners[c.corner_index][0] * this.zoom_factor);
             c.setAttribute("cy", this.corners[c.corner_index][1] * this.zoom_factor);
         }
+
+        this.line_group_outer.style.transform = "scale(" + this.zoom_factor + ")";
     };
 }
 
