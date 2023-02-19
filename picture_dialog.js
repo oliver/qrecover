@@ -94,7 +94,7 @@ class PictureDialog {
 
         this.line_group_outer = svg_add_element(this.svg, "g");
         this.line_group_outer.style.transform = "scale(" + this.zoom_factor + ")";
-        this.line_group_outer.style.stroke = "white";
+        this.line_group_outer.style.stroke = "rgba(255,255,255,0.3)";
         this.line_group_outer.style.strokeWidth = 2;
         this.line_group_outer.style.fill = "none";
 
