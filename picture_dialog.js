@@ -94,12 +94,30 @@ class PictureDialog {
 
         this.line_group_outer = svg_add_element(this.svg, "g");
         this.line_group_outer.style.transform = "scale(" + this.zoom_factor + ")";
+        this.line_group_outer.style.stroke = "gray";
+        this.line_group_outer.style.strokeWidth = 2;
+        this.line_group_outer.style.strokeDasharray = "4";
+        this.line_group_outer.style.fill = "none";
 
         const line_group_inner = svg_add_element(this.line_group_outer, "g");
-        for (var i = 0; i < 4; i++) {
-            const next_i = (i+1) % 4;
-            svg_add_line(line_group_inner, this.original_corners[i][0], this.original_corners[i][1], this.original_corners[next_i][0], this.original_corners[next_i][1], "black");
+        const units_per_pixel = (500 / 25);
+        svg_add_rect(line_group_inner, 0, 0, 25*units_per_pixel, 25*units_per_pixel);
+        for (const [sx,sy] of [[0,0], [18,0], [0,18]]) {
+            svg_add_rect(line_group_inner, sx*units_per_pixel, sy*units_per_pixel, 7*units_per_pixel, 7*units_per_pixel);
+            svg_add_rect(line_group_inner, (sx+1)*units_per_pixel, (sy+1)*units_per_pixel, 5*units_per_pixel, 5*units_per_pixel);
+            svg_add_rect(line_group_inner, (sx+2)*units_per_pixel, (sy+2)*units_per_pixel, 3*units_per_pixel, 3*units_per_pixel);
         }
+        svg_add_rect(line_group_inner, 16*units_per_pixel, 16*units_per_pixel, 5*units_per_pixel, 5*units_per_pixel);
+        svg_add_rect(line_group_inner, 17*units_per_pixel, 17*units_per_pixel, 3*units_per_pixel, 3*units_per_pixel);
+        svg_add_rect(line_group_inner, 18*units_per_pixel, 18*units_per_pixel, 1*units_per_pixel, 1*units_per_pixel);
+
+        for (var x = 8; x <= 16; x+=2) {
+            svg_add_rect(line_group_inner, x*units_per_pixel, 6*units_per_pixel, 1*units_per_pixel, 1*units_per_pixel);
+        }
+        for (var y = 8; y <= 16; y+=2) {
+            svg_add_rect(line_group_inner, 6*units_per_pixel, y*units_per_pixel, 1*units_per_pixel, 1*units_per_pixel);
+        }
+
         applyTransform(line_group_inner, this.original_corners, this.corners, null);
 
         this.corner_circles = [];
@@ -234,6 +252,10 @@ function svg_add_circle (svg, cx, cy, r) {
 
 function svg_add_line (svg, x1, y1, x2, y2, stroke) {
     return svg_add_element(svg, "line", {"x1": x1, "y1": y1, "x2": x2, "y2": y2, "stroke": stroke});
+}
+
+function svg_add_rect (svg, x, y, width, height, stroke) {
+    return svg_add_element(svg, "rect", {"x": x, "y": y, "width": width, "height": height, "stroke": stroke});
 }
 
 
