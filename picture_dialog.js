@@ -166,6 +166,7 @@ class PictureDialog {
         this.loaded_image_size = [img_obj.width, img_obj.height];
 
         set_attributes(this.svg_image, {"width": this.loaded_image_size[0] * this.zoom_factor, "height": this.loaded_image_size[1] * this.zoom_factor, "href": img_obj.src});
+        this.svg_image.style.imageRendering = "crisp-edges";
 
         this.canvas.style.width = img_obj.width + "px";
         this.canvas.style.height = img_obj.height + "px";
