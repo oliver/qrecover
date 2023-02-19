@@ -316,13 +316,22 @@ getTransform = function(from, to) {
     b.push(to[i].y);
   }
   h = numeric.solve(A, b);
+
   H = [[h[0], h[1], 0, h[2]], [h[3], h[4], 0, h[5]], [0, 0, 1, 0], [h[6], h[7], 0, 1]];
+
+  // this is a hack (I don't really understand why this works):
+  if (numeric.dot(H, [from[0].x, from[0].y, 0, 1])[3] < 0) {
+    // console.log("negating H");
+    H = H.map((arr) => arr.map((e) => e*-1));
+  }
+
   for (i = _k = 0; _k < 4; i = ++_k) {
     lhs = numeric.dot(H, [from[i].x, from[i].y, 0, 1]);
     k_i = lhs[3];
     rhs = numeric.dot(k_i, [to[i].x, to[i].y, 0, 1]);
     console.assert(numeric.norm2(numeric.sub(lhs, rhs)) < 1e-9, "Not equal:", lhs, rhs);
   }
+
   return H;
 };
 
