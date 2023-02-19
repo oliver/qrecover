@@ -23,7 +23,7 @@ class PictureDialog {
             <input type="button" id="zoom_in_btn" value=" + " style="width: 6ex"> \
             <input type="button" id="zoom_out_btn" value=" - " style="width: 6ex"> \
             <br>\
-            <div id="svg_wrapper_div" style="width: 100%; height: 80%; border: solid 1px black; overflow: scroll"><svg id="picture_svg" width="100%" height="80%"></svg></div><br> \
+            <div id="svg_wrapper_div" style="width: 100%; height: 80%; border: solid 1px black; overflow: scroll"><svg id="picture_svg" width="100%" height="80%" tabindex="0"></svg></div><br> \
             <div id="picture_transform_preview" style="background-color: silver"></div> \
             <div id="canvas_wrapper" style="background-color: silver; position: relative; width: 200px; height: 200px; overflow: hidden; outline: solid 1px black"> \
                 <canvas id="picture_canvas" style="width: 100%; height: 100%; background-color: antiquewhite"></canvas>\
@@ -98,8 +98,8 @@ class PictureDialog {
         this.line_group_outer.style.strokeWidth = 2;
         this.line_group_outer.style.fill = "none";
 
-        const line_group_inner = svg_add_element(this.line_group_outer, "g");
-        const line_group_dash1 = svg_add_element(line_group_inner, "g", {"id": "line_group_dash1"});
+        this.line_group_inner = svg_add_element(this.line_group_outer, "g");
+        const line_group_dash1 = svg_add_element(this.line_group_inner, "g", {"id": "line_group_dash1"});
         const units_per_pixel = (500 / 25);
         svg_add_rect(line_group_dash1, 0, 0, 25*units_per_pixel, 25*units_per_pixel);
         for (const [sx,sy] of [[0,0], [18,0], [0,18]]) {
@@ -118,14 +118,15 @@ class PictureDialog {
             svg_add_rect(line_group_dash1, 6*units_per_pixel, y*units_per_pixel, 1*units_per_pixel, 1*units_per_pixel);
         }
 
-        const line_group_dash2 = svg_add_element(line_group_inner, "g");
+        const line_group_dash2 = svg_add_element(this.line_group_inner, "g");
         svg_add_element(line_group_dash2, "use", {"href": "#line_group_dash1"});
         line_group_dash2.style.stroke = "red";
         line_group_dash2.style.strokeDasharray = "4";
 
-        applyTransform(line_group_inner, this.original_corners, this.corners, null);
+        applyTransform(this.line_group_inner, this.original_corners, this.corners, null);
 
         this.corner_circles = [];
+        var last_corner = null;
         for (var i = 0; i < 4; i++) {
             const circle = svg_add_circle(this.svg, this.corners[i][0] * this.zoom_factor, this.corners[i][1] * this.zoom_factor, 10);
             this.corner_circles.push(circle);
@@ -146,6 +147,7 @@ class PictureDialog {
                 if (evt.button == 0) {
                     evt.target.setPointerCapture(evt.pointerId);
                     evt.target.drag_active = true;
+                    last_corner = evt.target;
                     const [x, y] = event_parent_coords(evt);
 
                     if (evt.shiftKey) {
@@ -178,15 +180,51 @@ class PictureDialog {
                         }
                     }
 
-                    sessionStorage.setItem("picture_corners", JSON.stringify(this.corners));
-                    applyTransform(this.canvas, this.corners, this.original_corners, null);
-                    applyTransform(this.main_canvas_bg_img, this.corners, this.original_corners, null);
-                    applyTransform(line_group_inner, this.original_corners, this.corners, null);
+                    this.apply_corner_coordinates();
                 }
             });
         }
 
+        this.svg.addEventListener("keydown", (evt) => {
+            if (last_corner) {
+                const [orig_cx, orig_cy] = [parseFloat(last_corner.getAttribute("cx")), parseFloat(last_corner.getAttribute("cy"))];
+                var [cx, cy] = [orig_cx, orig_cy];
+                const step_width = 0.1;
+                switch (evt.key) {
+                    case "ArrowLeft":
+                        cx -= step_width;
+                        break;
+                    case "ArrowRight":
+                        cx += step_width;
+                        break;
+                    case "ArrowUp":
+                        cy -= step_width;
+                        break;
+                    case "ArrowDown":
+                        cy += step_width;
+                        break;
+                }
+
+                if (cx != orig_cx || cy != orig_cy) {
+                    last_corner.setAttribute("cx", cx);
+                    last_corner.setAttribute("cy", cy);
+                    this.corners[last_corner.corner_index] = [cx / this.zoom_factor, cy / this.zoom_factor];
+                    this.apply_corner_coordinates();
+
+                    evt.preventDefault();
+                }
+            }
+        });
+
         this.draw();
+    }
+
+    apply_corner_coordinates() {
+        sessionStorage.setItem("picture_corners", JSON.stringify(this.corners));
+        console.log("corners:", this.corners);
+        applyTransform(this.canvas, this.corners, this.original_corners, null);
+        applyTransform(this.main_canvas_bg_img, this.corners, this.original_corners, null);
+        applyTransform(this.line_group_inner, this.original_corners, this.corners, null);
     }
 
     load_picture(img_obj) {
