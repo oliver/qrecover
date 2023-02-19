@@ -309,21 +309,47 @@ getTransform = function(from, to) {
   for (i = _i = 0; _i < 4; i = ++_i) {
     A.push([from[i].x, from[i].y, 1, 0, 0, 0, -from[i].x * to[i].x, -from[i].y * to[i].x]);
     A.push([0, 0, 0, from[i].x, from[i].y, 1, -from[i].x * to[i].y, -from[i].y * to[i].y]);
+//     A.push([-from[i].x, -from[i].y, -1, 0, 0, 0, from[i].x * to[i].x, from[i].y * to[i].x]);
+//     A.push([0, 0, 0, -from[i].x, -from[i].y, -1, from[i].x * to[i].y, from[i].y * to[i].y]);
   }
+//   var ANeg = A.map((arr) => arr.map((e) => e*-1));
+//   console.log("A:",A);
+//   console.log("ANeg:",ANeg);
   b = [];
   for (i = _j = 0; _j < 4; i = ++_j) {
     b.push(to[i].x);
     b.push(to[i].y);
   }
   h = numeric.solve(A, b);
+//   hNeg = numeric.solve(ANeg, b);
+  console.log("solved; h:", h, "; A:", JSON.stringify(A), "; b:", b);
+//   console.log("solved; hNeg:", hNeg, "; ANeg:", JSON.stringify(ANeg), "; b:", b);
+
+//   if (h[0] < 0) {
+//     h = h.map((e) => e*-1);
+//   }
+
   H = [[h[0], h[1], 0, h[2]], [h[3], h[4], 0, h[5]], [0, 0, 1, 0], [h[6], h[7], 0, 1]];
+//   HNeg = [[hNeg[0], hNeg[1], 0, hNeg[2]], [hNeg[3], hNeg[4], 0, hNeg[5]], [0, 0, 1, 0], [hNeg[6], hNeg[7], 0, -1]];
+
+  //if (H[0][0] < 0) {
+  //if (h[0] < 0) {
+  if (numeric.dot(H, [from[0].x, from[0].y, 0, 1])[3] < 0) {
+    console.log("negating H");
+    H = H.map((arr) => arr.map((e) => e*-1));
+  }
+
   for (i = _k = 0; _k < 4; i = ++_k) {
     lhs = numeric.dot(H, [from[i].x, from[i].y, 0, 1]);
     k_i = lhs[3];
+    console.log("k_[" + i + "]:", k_i);
     rhs = numeric.dot(k_i, [to[i].x, to[i].y, 0, 1]);
     console.assert(numeric.norm2(numeric.sub(lhs, rhs)) < 1e-9, "Not equal:", lhs, rhs);
   }
+
+//   H = [[h[0], h[1], h[2]], [h[3], h[4], h[5]], [h[6], h[7], 1]];
   return H;
+//   return HNeg;
 };
 
 
