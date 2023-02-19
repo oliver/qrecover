@@ -94,29 +94,34 @@ class PictureDialog {
 
         this.line_group_outer = svg_add_element(this.svg, "g");
         this.line_group_outer.style.transform = "scale(" + this.zoom_factor + ")";
-        this.line_group_outer.style.stroke = "gray";
+        this.line_group_outer.style.stroke = "white";
         this.line_group_outer.style.strokeWidth = 2;
-        this.line_group_outer.style.strokeDasharray = "4";
         this.line_group_outer.style.fill = "none";
 
         const line_group_inner = svg_add_element(this.line_group_outer, "g");
+        const line_group_dash1 = svg_add_element(line_group_inner, "g", {"id": "line_group_dash1"});
         const units_per_pixel = (500 / 25);
-        svg_add_rect(line_group_inner, 0, 0, 25*units_per_pixel, 25*units_per_pixel);
+        svg_add_rect(line_group_dash1, 0, 0, 25*units_per_pixel, 25*units_per_pixel);
         for (const [sx,sy] of [[0,0], [18,0], [0,18]]) {
-            svg_add_rect(line_group_inner, sx*units_per_pixel, sy*units_per_pixel, 7*units_per_pixel, 7*units_per_pixel);
-            svg_add_rect(line_group_inner, (sx+1)*units_per_pixel, (sy+1)*units_per_pixel, 5*units_per_pixel, 5*units_per_pixel);
-            svg_add_rect(line_group_inner, (sx+2)*units_per_pixel, (sy+2)*units_per_pixel, 3*units_per_pixel, 3*units_per_pixel);
+            svg_add_rect(line_group_dash1, sx*units_per_pixel, sy*units_per_pixel, 7*units_per_pixel, 7*units_per_pixel);
+            svg_add_rect(line_group_dash1, (sx+1)*units_per_pixel, (sy+1)*units_per_pixel, 5*units_per_pixel, 5*units_per_pixel);
+            svg_add_rect(line_group_dash1, (sx+2)*units_per_pixel, (sy+2)*units_per_pixel, 3*units_per_pixel, 3*units_per_pixel);
         }
-        svg_add_rect(line_group_inner, 16*units_per_pixel, 16*units_per_pixel, 5*units_per_pixel, 5*units_per_pixel);
-        svg_add_rect(line_group_inner, 17*units_per_pixel, 17*units_per_pixel, 3*units_per_pixel, 3*units_per_pixel);
-        svg_add_rect(line_group_inner, 18*units_per_pixel, 18*units_per_pixel, 1*units_per_pixel, 1*units_per_pixel);
+        svg_add_rect(line_group_dash1, 16*units_per_pixel, 16*units_per_pixel, 5*units_per_pixel, 5*units_per_pixel);
+        svg_add_rect(line_group_dash1, 17*units_per_pixel, 17*units_per_pixel, 3*units_per_pixel, 3*units_per_pixel);
+        svg_add_rect(line_group_dash1, 18*units_per_pixel, 18*units_per_pixel, 1*units_per_pixel, 1*units_per_pixel);
 
         for (var x = 8; x <= 16; x+=2) {
-            svg_add_rect(line_group_inner, x*units_per_pixel, 6*units_per_pixel, 1*units_per_pixel, 1*units_per_pixel);
+            svg_add_rect(line_group_dash1, x*units_per_pixel, 6*units_per_pixel, 1*units_per_pixel, 1*units_per_pixel);
         }
         for (var y = 8; y <= 16; y+=2) {
-            svg_add_rect(line_group_inner, 6*units_per_pixel, y*units_per_pixel, 1*units_per_pixel, 1*units_per_pixel);
+            svg_add_rect(line_group_dash1, 6*units_per_pixel, y*units_per_pixel, 1*units_per_pixel, 1*units_per_pixel);
         }
+
+        const line_group_dash2 = svg_add_element(line_group_inner, "g");
+        svg_add_element(line_group_dash2, "use", {"href": "#line_group_dash1"});
+        line_group_dash2.style.stroke = "red";
+        line_group_dash2.style.strokeDasharray = "4";
 
         applyTransform(line_group_inner, this.original_corners, this.corners, null);
 
