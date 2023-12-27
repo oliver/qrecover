@@ -11,7 +11,7 @@ function init_main_canvas (canvas_element, mouse_pos_element) {
     canvas.width = code_size*pixel_size;
     canvas.height = code_size*pixel_size;
     canvas.parentElement.style.width = "" + (code_size*pixel_size) + "px";
-    canvas.style.cursor = 'url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" style="font-size: 20px; paint-order: stroke; stroke: white; stroke-width: 3px"><text y="20">🖉</text></svg>\') 0 20, auto';
+    //canvas.style.cursor = 'url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" style="font-size: 20px; paint-order: stroke; stroke: white; stroke-width: 3px"><text y="20">🖉</text></svg>\') 0 20, auto';
     ctx = canvas.getContext("2d");
     hatch_pattern = ctx.createPattern(create_hatch_pattern_canvas("red", [3, 4]), "repeat");
     hatch_pattern_black = ctx.createPattern(create_hatch_pattern_canvas("black", [3, 4]), "repeat");
