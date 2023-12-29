@@ -83,9 +83,25 @@ function update_area_details_list (decoder) {
 
                 const button = cell.querySelector("button");
                 button.addEventListener("click", function (e) {
-                    const popup_div = create_popup_dialog(document.querySelector("#area_table_div"));
+
+                    const popup_panel = jsPanel.create({
+                        contentSize: "350 80vh",
+                        headerTitle: "Possible Values",
+                        closeOnEscape: true,
+                        headerControls: {
+                            "maximize": "remove",
+                            "minimize": "remove",
+                        },
+                        position: {
+                            my: "right-center",
+                            at: "left-center",
+                            "of": button,
+                            minTop: 10,
+                        }
+                    });
+
+                    const popup_div = popup_panel.content;
                     popup_div.insertAdjacentHTML("beforeend", "<h3>Possible Values</h3>Current: " + area.value_details.desc + "<table></table>");
-                    popup_div.style.maxHeight = "80%";
 
                     var list_element = popup_div.querySelector("table");
                     for (let replacement_candidate of area.value_details.replacement_candidates) {
@@ -104,13 +120,9 @@ function update_area_details_list (decoder) {
                         button.addEventListener("click", function (e) {
                             apply_correction(replacement_candidate.replacements);
                             show_correction(null);
-                            popup_div.destroy();
+                            popup_panel.close();
                         }, false);
                     }
-
-                    const button_offset = get_offset_relative_to(button, document.querySelector("#area_table_div"));
-                    popup_div.style.top = (button_offset.top - ((popup_div.clientHeight - button.clientHeight) / 2)) + "px";
-                    popup_div.style.left = (button_offset.left - popup_div.clientWidth - 20) + "px";
                 }, false);
             } else {
                 cell.innerHTML = area.value_details.desc;
