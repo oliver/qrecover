@@ -84,20 +84,19 @@ function update_area_details_list (decoder) {
                 const button = cell.querySelector("button");
                 button.addEventListener("click", function (e) {
                     const popup_div = create_popup_dialog(document.querySelector("#area_table_div"));
-                    popup_div.insertAdjacentHTML("beforeend", "<h3>Possible Values</h3>Current: " + area.value_details.desc + "<ul></ul>");
+                    popup_div.insertAdjacentHTML("beforeend", "<h3>Possible Values</h3>Current: " + area.value_details.desc + "<table></table>");
                     popup_div.style.maxHeight = "80%";
 
-                    var list_element = popup_div.querySelector("ul");
+                    var list_element = popup_div.querySelector("table");
                     for (let replacement_candidate of area.value_details.replacement_candidates) {
-                        const new_sub_item = document.createElement("li");
-                        new_sub_item.innerHTML = "<span style='text-decoration: underline dashed;'>" + replacement_candidate.desc + " <button>Apply</button></span>";
+                        const new_sub_item = document.createElement("tr");
+                        new_sub_item.innerHTML = "<td style='text-decoration: underline dashed;'>" + replacement_candidate.desc + "</td><td><button>Apply</button></td>";
                         list_element.appendChild(new_sub_item);
 
-                        const span = new_sub_item.querySelector("span");
-                        span.addEventListener("mouseover", function (e) {
+                        new_sub_item.addEventListener("mouseover", function (e) {
                             show_correction(replacement_candidate.replacements);
                         }, false);
-                        span.addEventListener("mouseout", function (e) {
+                        new_sub_item.addEventListener("mouseout", function (e) {
                             show_correction(null);
                         }, false);
 
