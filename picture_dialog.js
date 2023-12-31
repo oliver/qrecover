@@ -7,17 +7,27 @@ var picture_dialog = null;
 function open_picture_dialog () {
     if (!picture_dialog) {
         picture_dialog = new PictureDialog();
-        picture_dialog.popup.destroy = function () {
-            picture_dialog.popup.style.display = "none";
-        }
     }
-    picture_dialog.popup.style.display = null;
+    picture_dialog.popup_panel.style.display = null;
 }
-
 class PictureDialog {
+
     constructor () {
-        this.popup = create_popup_dialog(document.body);
-        this.popup.insertAdjacentHTML("beforeend", '<h3>Load Picture</h3>\
+        this.popup_panel = jsPanel.create({
+            contentSize: "80vw 80vh",
+            headerTitle: "Load Picture",
+            closeOnEscape: true,
+            headerControls: {
+                "minimize": "remove",
+            },
+            onbeforeclose: (panel) => {
+                panel.style.display = "none";
+                return false;
+            },
+        });
+
+        this.popup = this.popup_panel.content;
+        this.popup.insertAdjacentHTML("beforeend", '\
             <input type="file" id="picture_file_input" accept="image/*" />\
             <input type="button" id="picture_load_button" value="Load Selected File">\
             <input type="button" id="zoom_in_btn" value=" + " style="width: 6ex"> \
@@ -30,12 +40,6 @@ class PictureDialog {
             </div> \
             ');
         this.canvas = this.popup.querySelector("#picture_canvas");
-
-        this.popup.style.left = "50%";
-        this.popup.style.right = "10ex";
-        this.popup.style.top = "10ex";
-        this.popup.style.bottom = "10ex";
-
         const picture_dialog = this;
         this.popup.querySelector("#picture_load_button").addEventListener("click", () => {
             const [file] = this.popup.querySelector("#picture_file_input").files;
