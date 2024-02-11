@@ -27,12 +27,15 @@ class PictureDialog {
         });
 
         this.popup = this.popup_panel.content;
+        this.popup.style.display = "flex";
+        this.popup.style.flexDirection = "column";
         this.popup.insertAdjacentHTML("beforeend", '\
-            <input type="file" id="picture_file_input" accept="image/*" />\
-            <input type="button" id="picture_load_button" value="Load Selected File">\
-            <input type="button" id="zoom_in_btn" value=" + " style="width: 6ex"> \
-            <input type="button" id="zoom_out_btn" value=" - " style="width: 6ex"> \
-            <br>\
+            <div>\
+                <input type="file" id="picture_file_input" accept="image/*" />\
+                <input type="button" id="picture_load_button" value="Load Selected File">\
+                <input type="button" id="zoom_in_btn" value=" + " style="width: 6ex"> \
+                <input type="button" id="zoom_out_btn" value=" - " style="width: 6ex"> \
+            </div> \
             <div id="svg_wrapper_div" style="width: 100%; height: 100%; border: solid 1px black; overflow: scroll"><svg id="picture_svg" width="100%" height="80%" tabindex="0"></svg></div> \
             <!-- <br> --> \
             <!--<div id="picture_transform_preview" style="background-color: silver"></div>--> \
