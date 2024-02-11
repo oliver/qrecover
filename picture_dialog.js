@@ -36,7 +36,7 @@ class PictureDialog {
                 <input type="button" id="zoom_in_btn" value=" + " style="width: 6ex"> \
                 <input type="button" id="zoom_out_btn" value=" - " style="width: 6ex"> \
             </div> \
-            <div id="svg_wrapper_div" style="width: 100%; height: 100%; border: solid 1px black; overflow: scroll"><svg id="picture_svg" width="100%" height="80%" tabindex="0"></svg></div> \
+            <div id="svg_wrapper_div" style="width: 100%; height: 100%; border: solid 1px black; overflow: scroll"><svg id="picture_svg" width="100%" height="100%" tabindex="0"></svg></div> \
             <!-- <br> --> \
             <!--<div id="picture_transform_preview" style="background-color: silver"></div>--> \
             <!--<div id="canvas_wrapper" style="background-color: silver; position: relative; width: 200px; height: 200px; overflow: hidden; outline: solid 1px black"> \
@@ -280,6 +280,8 @@ class PictureDialog {
 
         this.main_canvas_bg_img.src = img_obj.src;
         applyTransform(this.main_canvas_bg_img, this.corners, this.original_corners, null);
+
+        this.redraw_svg_after_zoom();
     }
 
 //     draw () {
