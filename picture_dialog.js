@@ -89,14 +89,29 @@ class PictureDialog {
 
         const svg_div = this.popup.querySelector("#svg_wrapper_div");
         svg_div.addEventListener("wheel", (evt) => {
-            evt.preventDefault();
             if (evt.ctrlKey) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                const svg_div_offset = get_offset_relative_to(svg_div, document.body);
+                const old_mouse_on_div_x = evt.clientX - svg_div_offset["left"];
+                const old_mouse_on_div_y = evt.clientY - svg_div_offset["top"];
+                const old_mouse_on_image_x = old_mouse_on_div_x + svg_div.scrollLeft;
+                const old_mouse_on_image_y = old_mouse_on_div_y + svg_div.scrollTop;
+
                 // my mouse wheel sometimes gives different deltaY values for scrolling up or down, which makes this behave badly:
                 //const wheel_zoom_factor = (evt.deltaY / 114) * -1;
                 // this will probably only work for "notched" mouse wheels; no idea how this behaves for wheels with "continuous scroll":
                 const wheel_zoom_factor = (evt.deltaY > 0) ? -1 : 1;
                 this.zoom_factor *= (2 ** wheel_zoom_factor);
+
+                const new_mouse_on_image_x = old_mouse_on_image_x * (2 ** wheel_zoom_factor);
+                const new_mouse_on_image_y = old_mouse_on_image_y * (2 ** wheel_zoom_factor);
+                const new_div_scroll_x = new_mouse_on_image_x - old_mouse_on_div_x;
+                const new_div_scroll_y = new_mouse_on_image_y - old_mouse_on_div_y;
+
                 this.redraw_svg_after_zoom();
+                svg_div.scrollLeft = new_div_scroll_x;
+                svg_div.scrollTop = new_div_scroll_y;
             }
         });
 
