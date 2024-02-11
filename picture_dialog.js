@@ -33,13 +33,14 @@ class PictureDialog {
             <input type="button" id="zoom_in_btn" value=" + " style="width: 6ex"> \
             <input type="button" id="zoom_out_btn" value=" - " style="width: 6ex"> \
             <br>\
-            <div id="svg_wrapper_div" style="width: 100%; height: 80%; border: solid 1px black; overflow: scroll"><svg id="picture_svg" width="100%" height="80%" tabindex="0"></svg></div><br> \
-            <div id="picture_transform_preview" style="background-color: silver"></div> \
-            <div id="canvas_wrapper" style="background-color: silver; position: relative; width: 200px; height: 200px; overflow: hidden; outline: solid 1px black"> \
+            <div id="svg_wrapper_div" style="width: 100%; height: 100%; border: solid 1px black; overflow: scroll"><svg id="picture_svg" width="100%" height="80%" tabindex="0"></svg></div> \
+            <!-- <br> --> \
+            <!--<div id="picture_transform_preview" style="background-color: silver"></div>--> \
+            <!--<div id="canvas_wrapper" style="background-color: silver; position: relative; width: 200px; height: 200px; overflow: hidden; outline: solid 1px black"> \
                 <canvas id="picture_canvas" style="width: 100%; height: 100%; background-color: antiquewhite"></canvas>\
-            </div> \
+            </div>--> \
             ');
-        this.canvas = this.popup.querySelector("#picture_canvas");
+//         this.canvas = this.popup.querySelector("#picture_canvas");
         const picture_dialog = this;
         this.popup.querySelector("#picture_load_button").addEventListener("click", () => {
             const [file] = this.popup.querySelector("#picture_file_input").files;
@@ -94,7 +95,7 @@ class PictureDialog {
         if (sessionStorage.getItem("picture_corners")) {
             this.corners = JSON.parse(sessionStorage.getItem("picture_corners"));
         }
-        applyTransform(this.canvas, this.corners, this.original_corners, null);
+//         applyTransform(this.canvas, this.corners, this.original_corners, null);
 
         this.line_group_outer = svg_add_element(this.svg, "g");
         this.line_group_outer.style.transform = "scale(" + this.zoom_factor + ")";
@@ -220,13 +221,13 @@ class PictureDialog {
             }
         });
 
-        this.draw();
+//         this.draw();
     }
 
     apply_corner_coordinates() {
         sessionStorage.setItem("picture_corners", JSON.stringify(this.corners));
         console.log("corners:", this.corners);
-        applyTransform(this.canvas, this.corners, this.original_corners, null);
+//         applyTransform(this.canvas, this.corners, this.original_corners, null);
         applyTransform(this.main_canvas_bg_img, this.corners, this.original_corners, null);
         applyTransform(this.line_group_inner, this.original_corners, this.corners, null);
     }
@@ -239,32 +240,32 @@ class PictureDialog {
         set_attributes(this.svg_image, {"width": this.loaded_image_size[0] * this.zoom_factor, "height": this.loaded_image_size[1] * this.zoom_factor, "href": img_obj.src});
         this.svg_image.style.imageRendering = "crisp-edges";
 
-        this.canvas.style.width = img_obj.width + "px";
-        this.canvas.style.height = img_obj.height + "px";
-        this.canvas.width = img_obj.width;
-        this.canvas.height = img_obj.height;
-        this.canvas.getContext("2d").drawImage(img_obj, 0, 0, img_obj.width, img_obj.height);
-        this.draw();
+//         this.canvas.style.width = img_obj.width + "px";
+//         this.canvas.style.height = img_obj.height + "px";
+//         this.canvas.width = img_obj.width;
+//         this.canvas.height = img_obj.height;
+//         this.canvas.getContext("2d").drawImage(img_obj, 0, 0, img_obj.width, img_obj.height);
+//         this.draw();
 
         this.main_canvas_bg_img.src = img_obj.src;
         applyTransform(this.main_canvas_bg_img, this.corners, this.original_corners, null);
     }
 
-    draw () {
-        const ctx = this.canvas.getContext("2d");
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([3, 3]);
-
-        var corners = [ [100,100], [200,100], [200,200], [100,200] ];
-
-        ctx.beginPath();
-        ctx.moveTo(corners[3][0], corners[3][1]);
-        for (var i = 0; i < 4; i++) {
-            ctx.lineTo(corners[i][0], corners[i][1]);
-        }
-        ctx.stroke();
-    }
+//     draw () {
+//         const ctx = this.canvas.getContext("2d");
+//         ctx.strokeStyle = "black";
+//         ctx.lineWidth = 1;
+//         ctx.setLineDash([3, 3]);
+//
+//         var corners = [ [100,100], [200,100], [200,200], [100,200] ];
+//
+//         ctx.beginPath();
+//         ctx.moveTo(corners[3][0], corners[3][1]);
+//         for (var i = 0; i < 4; i++) {
+//             ctx.lineTo(corners[i][0], corners[i][1]);
+//         }
+//         ctx.stroke();
+//     }
 
     redraw_svg_after_zoom () {
         set_attributes(this.svg, {"width": this.loaded_image_size[0] * this.zoom_factor, "height": this.loaded_image_size[1] * this.zoom_factor});
