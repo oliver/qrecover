@@ -115,6 +115,36 @@ class PictureDialog {
             }
         });
 
+
+        let dragging_image = false;
+        let image_drag_div_start = null;
+        let image_drag_pointer_start = null
+        this.svg.addEventListener("pointerdown", (evt) => {
+            if (evt.button == 0) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                evt.target.setPointerCapture(evt.pointerId);
+                dragging_image = true;
+                image_drag_div_start = [svg_div.scrollLeft, svg_div.scrollTop];
+                image_drag_pointer_start = [evt.clientX, evt.clientY]
+            }
+        });
+        this.svg.addEventListener("pointerup", (evt) => {
+            evt.target.releasePointerCapture(evt.pointerId);
+            dragging_image = false;
+            image_drag_div_start = null;
+            image_drag_pointer_start = null;
+        });
+        this.svg.addEventListener("pointermove", (evt) => {
+            if (dragging_image) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                svg_div.scrollLeft = image_drag_div_start[0] - evt.clientX + image_drag_pointer_start[0];
+                svg_div.scrollTop = image_drag_div_start[1] - evt.clientY + image_drag_pointer_start[1];
+            }
+        });
+
+
         function event_parent_coords (evt) {
             const parent_bounds = evt.target.parentElement.getBoundingClientRect();
             return [evt.clientX - parent_bounds.left, evt.clientY - parent_bounds.top];
@@ -181,6 +211,9 @@ class PictureDialog {
             circle.drag_active = false;
             circle.addEventListener("pointerdown", (evt) => {
                 if (evt.button == 0) {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+
                     evt.target.setPointerCapture(evt.pointerId);
                     evt.target.drag_active = true;
                     last_corner = evt.target;
@@ -196,6 +229,9 @@ class PictureDialog {
                 }
             });
             circle.addEventListener("pointerup", (evt) => {
+                evt.preventDefault();
+                evt.stopPropagation();
+
                 evt.target.releasePointerCapture(evt.pointerId);
                 evt.target.drag_active = false;
                 for (const c of this.corner_circles) {
