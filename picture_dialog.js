@@ -87,6 +87,16 @@ class PictureDialog {
             this.redraw_svg_after_zoom();
         });
 
+        const svg_div = this.popup.querySelector("#svg_wrapper_div");
+        svg_div.addEventListener("wheel", (evt) => {
+            evt.preventDefault();
+            if (evt.ctrlKey) {
+                const wheel_zoom_factor = (evt.deltaY / 114) * -1;
+                this.zoom_factor *= (2 ** wheel_zoom_factor);
+                this.redraw_svg_after_zoom();
+            }
+        });
+
         function event_parent_coords (evt) {
             const parent_bounds = evt.target.parentElement.getBoundingClientRect();
             return [evt.clientX - parent_bounds.left, evt.clientY - parent_bounds.top];
