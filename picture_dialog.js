@@ -87,16 +87,16 @@ class PictureDialog {
             this.redraw_svg_after_zoom();
         });
 
-        const svg_div = this.popup.querySelector("#svg_wrapper_div");
-        svg_div.addEventListener("wheel", (evt) => {
+        this.svg_div = this.popup.querySelector("#svg_wrapper_div");
+        this.svg_div.addEventListener("wheel", (evt) => {
             if (evt.ctrlKey) {
                 evt.preventDefault();
                 evt.stopPropagation();
-                const svg_div_offset = get_offset_relative_to(svg_div, document.body);
+                const svg_div_offset = get_offset_relative_to(this.svg_div, document.body);
                 const old_mouse_on_div_x = evt.clientX - svg_div_offset["left"];
                 const old_mouse_on_div_y = evt.clientY - svg_div_offset["top"];
-                const old_mouse_on_image_x = old_mouse_on_div_x + svg_div.scrollLeft;
-                const old_mouse_on_image_y = old_mouse_on_div_y + svg_div.scrollTop;
+                const old_mouse_on_image_x = old_mouse_on_div_x + this.svg_div.scrollLeft;
+                const old_mouse_on_image_y = old_mouse_on_div_y + this.svg_div.scrollTop;
 
                 // my mouse wheel sometimes gives different deltaY values for scrolling up or down, which makes this behave badly:
                 //const wheel_zoom_factor = (evt.deltaY / 114) * -1;
@@ -110,8 +110,8 @@ class PictureDialog {
                 const new_div_scroll_y = new_mouse_on_image_y - old_mouse_on_div_y;
 
                 this.redraw_svg_after_zoom();
-                svg_div.scrollLeft = new_div_scroll_x;
-                svg_div.scrollTop = new_div_scroll_y;
+                this.svg_div.scrollLeft = new_div_scroll_x;
+                this.svg_div.scrollTop = new_div_scroll_y;
             }
         });
 
@@ -125,7 +125,7 @@ class PictureDialog {
                 evt.stopPropagation();
                 evt.target.setPointerCapture(evt.pointerId);
                 dragging_image = true;
-                image_drag_div_start = [svg_div.scrollLeft, svg_div.scrollTop];
+                image_drag_div_start = [this.svg_div.scrollLeft, this.svg_div.scrollTop];
                 image_drag_pointer_start = [evt.clientX, evt.clientY]
             }
         });
@@ -139,8 +139,8 @@ class PictureDialog {
             if (dragging_image) {
                 evt.preventDefault();
                 evt.stopPropagation();
-                svg_div.scrollLeft = image_drag_div_start[0] - evt.clientX + image_drag_pointer_start[0];
-                svg_div.scrollTop = image_drag_div_start[1] - evt.clientY + image_drag_pointer_start[1];
+                this.svg_div.scrollLeft = image_drag_div_start[0] - evt.clientX + image_drag_pointer_start[0];
+                this.svg_div.scrollTop = image_drag_div_start[1] - evt.clientY + image_drag_pointer_start[1];
             }
         });
 
@@ -318,6 +318,9 @@ class PictureDialog {
         applyTransform(this.main_canvas_bg_img, this.corners, this.original_corners, null);
 
         this.redraw_svg_after_zoom();
+
+        this.svg_div.scrollLeft = this.loaded_image_size[0] * this.zoom_factor;
+        this.svg_div.scrollTop = this.loaded_image_size[1] * this.zoom_factor;
     }
 
 //     draw () {
@@ -337,8 +340,9 @@ class PictureDialog {
 //     }
 
     redraw_svg_after_zoom () {
-        set_attributes(this.svg, {"width": this.loaded_image_size[0] * this.zoom_factor, "height": this.loaded_image_size[1] * this.zoom_factor});
+        set_attributes(this.svg, {"width": this.loaded_image_size[0] * this.zoom_factor * 3, "height": this.loaded_image_size[1] * this.zoom_factor * 3});
         set_attributes(this.svg_image, {"width": this.loaded_image_size[0] * this.zoom_factor, "height": this.loaded_image_size[1] * this.zoom_factor});
+        set_attributes(this.svg, {"viewBox": `${this.loaded_image_size[0] * this.zoom_factor * -1} ${this.loaded_image_size[1] * this.zoom_factor * -1} ${this.loaded_image_size[0] * this.zoom_factor * 3} ${this.loaded_image_size[1] * this.zoom_factor * 3}`});
 
         for (const c of this.corner_circles) {
             c.setAttribute("cx", this.corners[c.corner_index][0] * this.zoom_factor);
