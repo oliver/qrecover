@@ -211,7 +211,6 @@ class PictureDialog {
             circle.drag_active = false;
             circle.addEventListener("pointerdown", (evt) => {
                 if (evt.button == 0) {
-                    evt.preventDefault();
                     evt.stopPropagation();
 
                     evt.target.setPointerCapture(evt.pointerId);
@@ -229,7 +228,6 @@ class PictureDialog {
                 }
             });
             circle.addEventListener("pointerup", (evt) => {
-                evt.preventDefault();
                 evt.stopPropagation();
 
                 evt.target.releasePointerCapture(evt.pointerId);
