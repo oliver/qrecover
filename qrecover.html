@@ -55,6 +55,7 @@
 
         init_main_canvas(document.getElementById("can"), document.getElementById("mouse_pos"));
         init_preview_image(document.getElementById("preview_canvas"), document.getElementById("preview_image"));
+        init_brightness_slider();
 
         if (!restore_state()) {
             load_from_img_object(document.getElementById('img_example_code'));
@@ -209,7 +210,8 @@
         <div style="width: 80%">
         <input accept="image/*" type="file" id="imgInp" onchange="update_load_button();" />
         <input type="button" id="btn_load_image" value="Load Selected File" onclick="load_from_file(document.getElementById('imgInp'))">
-        <input type="button" id="btn_show_image_popup" value="Load picture..." onclick="open_picture_dialog()" style="margin-left: 5ex">
+        <input type="button" id="btn_show_image_popup" value="Load background picture..." onclick="open_picture_dialog()" style="margin-left: 5ex">
+        <label><input type="range" id="range_background_brightness" min="0" max="1" value="0.7" step="any" disabled><!--Background brightness--></label>
 
         <input type="button" id="btn_toggle_mark_mode" value="Mark unknown pixels" style="float: right" onclick="toggle_mark_mode()">
         <br>

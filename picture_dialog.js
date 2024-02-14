@@ -4,6 +4,18 @@
 
 var picture_dialog = null;
 
+function init_brightness_slider() {
+    const background_brightness_slider = document.getElementById("range_background_brightness");
+    background_brightness_slider.disabled = true;
+
+    const main_canvas_bg_img = document.getElementById("main_canvas_background_img");
+    main_canvas_bg_img.style.opacity = background_brightness_slider.value;
+
+    background_brightness_slider.oninput = () => {
+        main_canvas_bg_img.style.opacity = background_brightness_slider.value;
+    };
+}
+
 function open_picture_dialog () {
     if (!picture_dialog) {
         picture_dialog = new PictureDialog();
@@ -314,6 +326,9 @@ class PictureDialog {
 
         this.main_canvas_bg_img.src = img_obj.src;
         applyTransform(this.main_canvas_bg_img, this.corners, this.original_corners, null);
+
+        const background_brightness_slider = document.getElementById("range_background_brightness");
+        background_brightness_slider.disabled = false;
 
         this.redraw_svg_after_zoom();
 
