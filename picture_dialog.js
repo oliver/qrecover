@@ -47,7 +47,14 @@ class PictureDialog {
                 <input type="button" id="picture_load_button" value="Load Selected File">
                 <input type="button" id="zoom_in_btn" value=" + " style="width: 6ex">
                 <input type="button" id="zoom_out_btn" value=" - " style="width: 6ex">
-                <input type="button" id="detect_modules_btn" value="Detect" style="float: right">
+
+                <span style="float: right">
+                    <label><input type="color" id="color_detector_dark" value="#000000"> Dark Color</label>
+                    <label><input type="color" id="color_detector_bright" value="#ffffff"> Bright Color</label>
+                    <label><input type="range" id="range_detector_strictness" min="0" max="1" step="any" value="0.3"> Strictness</label>
+                    <label><input type="checkbox" id="cb_detector_mark_unknown"> Add "Unknown" markers</label>
+                    <input type="button" id="detect_modules_btn" value="Detect">
+                </span>
             </div>
             <div id="svg_wrapper_div" style="width: 100%; height: 100%; border: solid 1px black; overflow: scroll"><svg id="picture_svg" width="100%" height="100%" tabindex="0"></svg></div>
             <!-- <br> -->
@@ -103,8 +110,14 @@ class PictureDialog {
         });
 
         this.popup.querySelector("#detect_modules_btn").addEventListener("click", () => {
+
+            const dark_color = document.getElementById("color_detector_dark").value;
+            const bright_color = document.getElementById("color_detector_bright").value;
+            const color_strictness = document.getElementById("range_detector_strictness").value;
+            const add_unknown_markers = document.getElementById("cb_detector_mark_unknown").checked;
+
             const css_matrix3d_transform_string = applyTransform(null, this.corners, this.original_corners, null);
-            detect_modules_from_picture(this.img_obj, css_matrix3d_transform_string);
+            detect_modules_from_picture(this.img_obj, css_matrix3d_transform_string, dark_color, bright_color, color_strictness, add_unknown_markers);
         });
 
         this.svg_div = this.popup.querySelector("#svg_wrapper_div");

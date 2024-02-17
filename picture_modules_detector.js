@@ -2,24 +2,45 @@
 // Detects the QR code "modules" (pixels) from a picture
 //
 
-function detect_modules_from_picture(img_obj, css_matrix3d_transform_string) {
+function detect_modules_from_picture(img_obj, css_matrix3d_transform_string, dark_color_string, bright_color_string, color_strictness, add_unknown_markers) {
+    const dark_color = color_string_to_array(dark_color_string);
+    const bright_color = color_string_to_array(bright_color_string);
+
     const canvas = document.createElement("canvas");
     // the supplied transformation matrix is sized for mapping the input image to a 500x500 pixel image:
     canvas.width = 500;
     canvas.height = 500;
 
     draw_transformed_image_to_canvas(img_obj, css_matrix3d_transform_string, canvas).then(() => {
+
+        const dark_bright_distance = color_distance(dark_color, bright_color);
+        const max_color_distance = dark_bright_distance * 0.5 * (1.0 - color_strictness);
+
         const ctx = canvas.getContext("2d");
 
         for (let y = 0; y < 25; y++) {
             for (let x = 0; x < 25; x++) {
                 const color = get_module_color(ctx, x, y);
-                if (color[0] < 64) {
+
+                const dark_distance = color_distance(color, dark_color);
+                const bright_distance = color_distance(color, bright_color);
+
+                //console.log(`color at ${x} / ${y}: ${color}; dark_distance: ${dark_distance}; bright_distance: ${bright_distance}; max_color_distance: ${max_color_distance}`);
+
+                if (dark_distance <= max_color_distance) {
                     global_decoder_obj.pixel_data.set(x, y, true);
-                } else if (color[0] >= 192) {
+                    if (add_unknown_markers) {
+                        global_decoder_obj.unknown_pixels.set(x, y, false);
+                    }
+                } else if (bright_distance <= max_color_distance) {
                     global_decoder_obj.pixel_data.set(x, y, false);
+                    if (add_unknown_markers) {
+                        global_decoder_obj.unknown_pixels.set(x, y, false);
+                    }
                 } else {
-                    global_decoder_obj.unknown_pixels.set(x, y, true);
+                    if (add_unknown_markers) {
+                        global_decoder_obj.unknown_pixels.set(x, y, true);
+                    }
                 }
             }
         }
@@ -28,7 +49,23 @@ function detect_modules_from_picture(img_obj, css_matrix3d_transform_string) {
         draw_code();
         save_state();
     });
+}
 
+function color_string_to_array(color_string) {
+    const color_int = parseInt(color_string.substr(1), 16);
+    return [
+        (color_int >> 16) & 0xff,
+        (color_int >> 8) & 0xff,
+        color_int & 0xff
+    ];
+}
+
+function color_distance(color1, color2) {
+    return Math.sqrt(
+          (color1[0] - color2[0]) ** 2
+        + (color1[1] - color2[1]) ** 2
+        + (color1[2] - color2[2]) ** 2
+    );
 }
 
 function get_module_color(ctx, module_x, module_y) {
@@ -38,14 +75,13 @@ function get_module_color(ctx, module_x, module_y) {
 
     const pixel_data = ctx.getImageData(module_x * module_size, module_y * module_size, module_size, module_size);
 
-    let rgba_sum = [0, 0, 0, 0];
+    let rgba_sum = [0, 0, 0];
     for (let y = 0; y < module_size; y++) {
         for (let x = 0; x < module_size; x++) {
             const index = (y * pixel_data.width + x) * 4;
             rgba_sum[0] += pixel_data.data[index + 0];
             rgba_sum[1] += pixel_data.data[index + 1];
             rgba_sum[2] += pixel_data.data[index + 2];
-            rgba_sum[3] += pixel_data.data[index + 3];
         }
     }
     const num_pixels = module_size**2;
@@ -53,7 +89,6 @@ function get_module_color(ctx, module_x, module_y) {
         rgba_sum[0] / num_pixels,
         rgba_sum[1] / num_pixels,
         rgba_sum[2] / num_pixels,
-        rgba_sum[3] / num_pixels,
     ];
     return rgba_average;
 }
