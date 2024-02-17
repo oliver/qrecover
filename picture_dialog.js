@@ -47,6 +47,7 @@ class PictureDialog {
                 <input type="button" id="picture_load_button" value="Load Selected File">
                 <input type="button" id="zoom_in_btn" value=" + " style="width: 6ex">
                 <input type="button" id="zoom_out_btn" value=" - " style="width: 6ex">
+                <input type="button" id="detect_modules_btn" value="Detect" style="float: right">
             </div>
             <div id="svg_wrapper_div" style="width: 100%; height: 100%; border: solid 1px black; overflow: scroll"><svg id="picture_svg" width="100%" height="100%" tabindex="0"></svg></div>
             <!-- <br> -->
@@ -90,6 +91,8 @@ class PictureDialog {
         this.loaded_image_size = [0, 0];
         this.zoom_factor = 1.0;
 
+        this.img_obj = null;
+
         this.popup.querySelector("#zoom_in_btn").addEventListener("click", () => {
             this.zoom_factor *= 2;
             this.redraw_svg_after_zoom();
@@ -97,6 +100,11 @@ class PictureDialog {
         this.popup.querySelector("#zoom_out_btn").addEventListener("click", () => {
             this.zoom_factor /= 2;
             this.redraw_svg_after_zoom();
+        });
+
+        this.popup.querySelector("#detect_modules_btn").addEventListener("click", () => {
+            const css_matrix3d_transform_string = applyTransform(null, this.corners, this.original_corners, null);
+            detect_modules_from_picture(this.img_obj, css_matrix3d_transform_string);
         });
 
         this.svg_div = this.popup.querySelector("#svg_wrapper_div");
@@ -312,6 +320,7 @@ class PictureDialog {
     load_picture(img_obj) {
         console.log("load_picture; img_obj:", img_obj);
 
+        this.img_obj = img_obj;
         this.loaded_image_size = [img_obj.width, img_obj.height];
 
         set_attributes(this.svg_image, {"width": this.loaded_image_size[0] * this.zoom_factor, "height": this.loaded_image_size[1] * this.zoom_factor, "href": img_obj.src});
@@ -470,6 +479,9 @@ applyTransform = function(element, originalPos, targetPos, callback) {
     }
     return _results;
   })()).join(',');
-  element.style.transform = "matrix3d(" + transform_matrix_string + ")";
-  element.style.transformOrigin = "0 0";
+  if (element) {
+    element.style.transform = "matrix3d(" + transform_matrix_string + ")";
+    element.style.transformOrigin = "0 0";
+  }
+  return "matrix3d(" + transform_matrix_string + ")";
 };
