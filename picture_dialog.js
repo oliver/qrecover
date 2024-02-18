@@ -201,10 +201,8 @@ class PictureDialog {
             { x: 0, y: 500 },
         ];
 
-        // Note: looks like this only works in Firefox, since apparently Chromium treats matrix3d() on SVG elements differently
-        // (according to https://stackoverflow.com/questions/74690178/css3-transform-matrix3d-gives-other-results-in-chrome-edge-safari-vs-firefox).
         const css_matrix3d_transform_string_for_outline = getTransformString(this.original_corners, this.qr_outline.get_corners());
-        applyTransform(this.qr_outline.get_transform_group(), css_matrix3d_transform_string_for_outline);
+        this.qr_outline.set_transformation_string(css_matrix3d_transform_string_for_outline);
     }
 
     apply_corner_coordinates() {
@@ -213,7 +211,7 @@ class PictureDialog {
         const css_matrix3d_transform_string_for_image = getTransformString(this.qr_outline.get_corners(), this.original_corners);
         applyTransform(this.main_canvas_bg_img, css_matrix3d_transform_string_for_image);
         const css_matrix3d_transform_string_for_outline = getTransformString(this.original_corners, this.qr_outline.get_corners());
-        applyTransform(this.qr_outline.get_transform_group(), css_matrix3d_transform_string_for_outline);
+        this.qr_outline.set_transformation_string(css_matrix3d_transform_string_for_outline);
     }
 
     load_picture(img_obj) {
@@ -320,9 +318,10 @@ class EditableQrOutline {
         this.line_group_outer.style.transform = "scale(" + this.zoom_factor + ")";
     };
 
-    // Returns the SVG group onto which the matrix3d transformation shall be set.
-    get_transform_group() {
-        return this.line_group_inner;
+    set_transformation_string(css_matrix3d_transform_string) {
+        // Note: looks like this only works in Firefox, since apparently Chromium treats matrix3d() on SVG elements differently
+        // (according to https://stackoverflow.com/questions/74690178/css3-transform-matrix3d-gives-other-results-in-chrome-edge-safari-vs-firefox).
+        applyTransform(this.line_group_inner, css_matrix3d_transform_string);
     }
 
     get_corners() {
