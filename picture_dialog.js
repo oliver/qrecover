@@ -250,7 +250,11 @@ class EditableQrOutline {
         this.loaded_image_size = [0, 0];
 
         this.svg_image = svg_add_element(this.svg, "image");
+        this.#add_outline_svg_elements();
+        this.#add_corner_circles();
+    };
 
+    #add_outline_svg_elements() {
         this.line_group_outer = svg_add_element(this.svg, "g");
         this.line_group_outer.style.transform = "scale(" + this.zoom_factor + ")";
         this.line_group_outer.style.stroke = "rgba(255,255,255,0.3)";
@@ -282,9 +286,7 @@ class EditableQrOutline {
         svg_add_element(line_group_dash2, "use", {"href": "#line_group_dash1"});
         line_group_dash2.style.stroke = "red";
         line_group_dash2.style.strokeDasharray = "4";
-
-        this.#add_corner_circles();
-    };
+    }
 
     set_image(img_obj) {
         this.loaded_image_size = [img_obj.width, img_obj.height];
