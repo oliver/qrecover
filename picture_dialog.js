@@ -152,7 +152,7 @@ class PictureDialog {
         let dragging_image = false;
         let image_drag_div_start = null;
         let image_drag_pointer_start = null
-        this.svg.addEventListener("pointerdown", (evt) => {
+        this.svg_div.addEventListener("pointerdown", (evt) => {
             if (evt.button == 0) {
                 evt.preventDefault();
                 evt.stopPropagation();
@@ -162,13 +162,13 @@ class PictureDialog {
                 image_drag_pointer_start = [evt.clientX, evt.clientY]
             }
         });
-        this.svg.addEventListener("pointerup", (evt) => {
+        this.svg_div.addEventListener("pointerup", (evt) => {
             evt.target.releasePointerCapture(evt.pointerId);
             dragging_image = false;
             image_drag_div_start = null;
             image_drag_pointer_start = null;
         });
-        this.svg.addEventListener("pointermove", (evt) => {
+        this.svg_div.addEventListener("pointermove", (evt) => {
             if (dragging_image) {
                 evt.preventDefault();
                 evt.stopPropagation();
