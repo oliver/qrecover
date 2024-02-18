@@ -11,9 +11,10 @@ function init_main_canvas (canvas_element, mouse_pos_element) {
     canvas.width = code_size*pixel_size;
     canvas.height = code_size*pixel_size;
     canvas.parentElement.style.width = "" + (code_size*pixel_size) + "px";
-    canvas.style.cursor = 'url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" style="font-size: 20px; paint-order: stroke; stroke: white; stroke-width: 3px"><text y="20">🖉</text></svg>\') 0 20, auto';
+    //canvas.style.cursor = 'url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" style="font-size: 20px; paint-order: stroke; stroke: white; stroke-width: 3px"><text y="20">🖉</text></svg>\') 0 20, auto';
     ctx = canvas.getContext("2d");
-    hatch_pattern = ctx.createPattern(create_hatch_pattern_canvas("red", [2, 4]), "repeat");
+    hatch_pattern = ctx.createPattern(create_hatch_pattern_canvas("red", [3, 4]), "repeat");
+    hatch_pattern_black = ctx.createPattern(create_hatch_pattern_canvas("black", [3, 4]), "repeat");
 
     canvas.addEventListener("click", function (e) {
         var [pix_x, pix_y] = event_to_pixel(e);
@@ -77,9 +78,10 @@ function create_hatch_pattern_canvas (color, hatch_pattern_array) {
     return pattern_canvas;
 }
 
-function event_to_pixel (e) {
-    var pix_x = Math.floor((e.pageX - canvas.offsetLeft) / pixel_size);
-    var pix_y = Math.floor((e.pageY - canvas.offsetTop) / pixel_size);
+function event_to_pixel (evt) {
+    const parent_bounds = evt.target.parentElement.getBoundingClientRect();
+    var pix_x = Math.floor((evt.clientX - parent_bounds.left) / pixel_size);
+    var pix_y = Math.floor((evt.clientY - parent_bounds.top) / pixel_size);
     return [pix_x, pix_y];
 }
 
@@ -106,8 +108,7 @@ function draw_rect (px, py, w, h, draw_function_name = "fillRect") {
 }
 
 function draw_code () {
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, code_size*pixel_size, code_size*pixel_size);
+    ctx.clearRect(0, 0, code_size*pixel_size, code_size*pixel_size);
 
     var displayed_pixel_data = global_decoder_obj.pixel_data;
     if (document.getElementById("rb_show_unmasked").checked) {
@@ -237,7 +238,9 @@ function draw_code () {
 
 function draw_pixel (px, py, set_pixel) {
     ctx.beginPath();
-    ctx.fillStyle = set_pixel ? "black" : "white";
+    //ctx.fillStyle = set_pixel ? "black" : "white";
+    //ctx.fillStyle = set_pixel ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)";
+    ctx.fillStyle = set_pixel ? hatch_pattern_black : "rgba(255,255,255,0)";
     ctx.fillRect(px*pixel_size, py*pixel_size, pixel_size, pixel_size);
     ctx.closePath();
 }
