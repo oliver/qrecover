@@ -4,7 +4,7 @@
 
 /// Helper function to recursively get the top and left offset between a start_element and the target_element (which must be in start_element's parent hierarchy).
 function get_offset_relative_to (start_element, target_element) {
-    if (start_element == target_element) {
+    if (start_element == target_element || start_element === null) {
         return {"top": 0, "left": 0}
     }
     const parent_values = get_offset_relative_to(start_element.offsetParent, target_element);
