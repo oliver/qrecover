@@ -68,25 +68,25 @@ class PictureDialog {
         this.popup.querySelector("#picture_load_button").addEventListener("click", () => {
             const [file] = this.popup.querySelector("#picture_file_input").files;
             if (file) {
-                const img_obj = new Image();
-                img_obj.src = URL.createObjectURL(file);
-                img_obj.onload = function () {
-                    picture_dialog.load_picture(img_obj);
-                }
-
                 const file_reader = new FileReader();
                 file_reader.addEventListener("load", () => {
                     sessionStorage.setItem("picture_data", file_reader.result);
+
+                    const new_img_obj = new Image();
+                    new_img_obj.src = file_reader.result;
+                    new_img_obj.onload = function () {
+                        picture_dialog.load_picture(new_img_obj);
+                    }
                 });
                 file_reader.readAsDataURL(file);
             }
         });
 
         if (sessionStorage.getItem("picture_data")) {
-            const img_obj = new Image();
-            img_obj.src = sessionStorage.getItem("picture_data");
-            img_obj.onload = function () {
-                picture_dialog.load_picture(img_obj);
+            const new_img_obj = new Image();
+            new_img_obj.src = sessionStorage.getItem("picture_data");
+            new_img_obj.onload = function () {
+                picture_dialog.load_picture(new_img_obj);
             }
         }
 
