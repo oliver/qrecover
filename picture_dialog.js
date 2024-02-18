@@ -56,7 +56,7 @@ class PictureDialog {
                     <input type="button" id="detect_modules_btn" value="Detect">
                 </span>
             </div>
-            <div id="svg_wrapper_div" style="width: 100%; height: 100%; border: solid 1px black; overflow: scroll"><svg id="picture_svg" width="100%" height="100%" tabindex="0"></svg></div>
+            <div id="svg_wrapper_div" tabindex="0" style="width: 100%; height: 100%; border: solid 1px black; overflow: scroll"><svg id="picture_svg" width="100%" height="100%"></svg></div>
             <!-- <br> -->
             <!--<div id="picture_transform_preview" style="background-color: silver"></div>-->
             <!--<div id="canvas_wrapper" style="background-color: silver; position: relative; width: 200px; height: 200px; overflow: hidden; outline: solid 1px black">
@@ -260,7 +260,7 @@ class PictureDialog {
             });
         }
 
-        this.svg.addEventListener("keydown", (evt) => {
+        this.svg_div.addEventListener("keydown", (evt) => {
             if (last_corner) {
                 const [orig_cx, orig_cy] = [parseFloat(last_corner.getAttribute("cx")), parseFloat(last_corner.getAttribute("cy"))];
                 var [cx, cy] = [orig_cx, orig_cy];
