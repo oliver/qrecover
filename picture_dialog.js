@@ -183,7 +183,9 @@ class PictureDialog {
             return [evt.clientX - parent_bounds.left, evt.clientY - parent_bounds.top];
         }
 
+        // corner coordinates of the canvas onto which the transformed picture shall be projected:
         this.original_corners = [ [0,0], [500,0], [500,500], [0,500] ];
+        // current coordinates of the draggable circles:
         this.corners = [ [100,100], [200,100], [200,200], [100,200] ];
 
         if (sessionStorage.getItem("picture_corners")) {
@@ -217,6 +219,7 @@ class PictureDialog {
             svg_add_rect(line_group_dash1, 6*units_per_pixel, y*units_per_pixel, 1*units_per_pixel, 1*units_per_pixel);
         }
 
+        // draw dashed lines again, but with different color (to get two-colored dashes):
         const line_group_dash2 = svg_add_element(this.line_group_inner, "g");
         svg_add_element(line_group_dash2, "use", {"href": "#line_group_dash1"});
         line_group_dash2.style.stroke = "red";
