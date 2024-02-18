@@ -222,6 +222,8 @@ class PictureDialog {
         line_group_dash2.style.stroke = "red";
         line_group_dash2.style.strokeDasharray = "4";
 
+        // Note: looks like this only works in Firefox, since apparently Chromium treats matrix3d() on SVG elements differently
+        // (according to https://stackoverflow.com/questions/74690178/css3-transform-matrix3d-gives-other-results-in-chrome-edge-safari-vs-firefox).
         applyTransform(this.line_group_inner, this.original_corners, this.corners, null);
 
         this.corner_circles = [];
