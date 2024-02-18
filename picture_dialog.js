@@ -93,10 +93,15 @@ class PictureDialog {
         this.svg = this.popup.querySelector("#picture_svg");
 
         let initial_corner_coordinates;
-        if (sessionStorage.getItem("picture_corners")) {
-            initial_corner_coordinates = JSON.parse(sessionStorage.getItem("picture_corners"));
+        if (sessionStorage.getItem("picture_corners_objs")) {
+            initial_corner_coordinates = JSON.parse(sessionStorage.getItem("picture_corners_objs"));
         } else {
-            initial_corner_coordinates = [ [100,100], [200,100], [200,200], [100,200] ];
+            initial_corner_coordinates = [
+                { x: 100, y: 100 },
+                { x: 200, y: 100 },
+                { x: 200, y: 200 },
+                { x: 100, y: 200 },
+            ];
         }
 
         this.qr_outline = new EditableQrOutline(this.svg, initial_corner_coordinates, () => {
@@ -189,7 +194,12 @@ class PictureDialog {
 
 
         // corner coordinates of the canvas onto which the transformed picture shall be projected:
-        this.original_corners = [ [0,0], [500,0], [500,500], [0,500] ];
+        this.original_corners = [
+            { x: 0, y: 0 },
+            { x: 500, y: 0 },
+            { x: 500, y: 500 },
+            { x: 0, y: 500 },
+        ];
 
         // Note: looks like this only works in Firefox, since apparently Chromium treats matrix3d() on SVG elements differently
         // (according to https://stackoverflow.com/questions/74690178/css3-transform-matrix3d-gives-other-results-in-chrome-edge-safari-vs-firefox).
@@ -197,7 +207,7 @@ class PictureDialog {
     }
 
     apply_corner_coordinates() {
-        sessionStorage.setItem("picture_corners", JSON.stringify(this.qr_outline.get_corners()));
+        sessionStorage.setItem("picture_corners_objs", JSON.stringify(this.qr_outline.get_corners()));
         console.log("corners:", this.qr_outline.get_corners());
         applyTransform(this.main_canvas_bg_img, this.qr_outline.get_corners(), this.original_corners, null);
         applyTransform(this.qr_outline.get_transform_group(), this.original_corners, this.qr_outline.get_corners(), null);
@@ -299,8 +309,8 @@ class EditableQrOutline {
         set_attributes(this.svg_image, {"width": this.loaded_image_size[0] * this.zoom_factor, "height": this.loaded_image_size[1] * this.zoom_factor});
 
         for (const c of this.corner_circles) {
-            c.setAttribute("cx", this.corners[c.corner_index][0] * this.zoom_factor);
-            c.setAttribute("cy", this.corners[c.corner_index][1] * this.zoom_factor);
+            c.setAttribute("cx", this.corners[c.corner_index].x * this.zoom_factor);
+            c.setAttribute("cy", this.corners[c.corner_index].y * this.zoom_factor);
         }
 
         this.line_group_outer.style.transform = "scale(" + this.zoom_factor + ")";
@@ -324,7 +334,7 @@ class EditableQrOutline {
         this.corner_circles = [];
         let last_corner = null;
         for (var i = 0; i < 4; i++) {
-            const circle = svg_add_circle(this.svg, this.corners[i][0] * this.zoom_factor, this.corners[i][1] * this.zoom_factor, 10);
+            const circle = svg_add_circle(this.svg, this.corners[i].x * this.zoom_factor, this.corners[i].y * this.zoom_factor, 10);
             this.corner_circles.push(circle);
             circle.style.fill = "rgba(0,0,0,0.5)";
             circle.style.stroke = "red";
@@ -376,7 +386,7 @@ class EditableQrOutline {
                             const center_y = y - c.drag_offset[1];
                             c.setAttribute("cx", center_x);
                             c.setAttribute("cy", center_y);
-                            this.corners[c.corner_index] = [center_x / this.zoom_factor, center_y / this.zoom_factor];
+                            this.corners[c.corner_index] = {x: center_x / this.zoom_factor, y: center_y / this.zoom_factor};
                         }
                     }
 
@@ -408,7 +418,7 @@ class EditableQrOutline {
                 if (cx != orig_cx || cy != orig_cy) {
                     last_corner.setAttribute("cx", cx);
                     last_corner.setAttribute("cy", cy);
-                    this.corners[last_corner.corner_index] = [cx / this.zoom_factor, cy / this.zoom_factor];
+                    this.corners[last_corner.corner_index] = {x: cx / this.zoom_factor, y: cy / this.zoom_factor};
                     this.on_corners_changed_callback();
 
                     evt.preventDefault();
@@ -474,32 +484,8 @@ getTransform = function(from, to) {
 
 
 applyTransform = function(element, originalPos, targetPos, callback) {
-  var H, from, i, j, p, to;
-  from = (function() {
-    var _i, _len, _results;
-    _results = [];
-    for (_i = 0, _len = originalPos.length; _i < _len; _i++) {
-      p = originalPos[_i];
-      _results.push({
-        x: p[0],
-        y: p[1]
-      });
-    }
-    return _results;
-  })();
-  to = (function() {
-    var _i, _len, _results;
-    _results = [];
-    for (_i = 0, _len = targetPos.length; _i < _len; _i++) {
-      p = targetPos[_i];
-      _results.push({
-        x: p[0],
-        y: p[1]
-      });
-    }
-    return _results;
-  })();
-  H = getTransform(from, to);
+  var H, i, j;
+  H = getTransform(originalPos, targetPos);
 
   const transform_matrix_string = ((function() {
     var _i, _results;
