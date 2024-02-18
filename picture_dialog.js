@@ -482,26 +482,16 @@ getTransform = function(from, to) {
   return H;
 };
 
+function transpose(matrix) {
+    return matrix[0].map((col, i) => matrix.map(row => row[i]));
+}
 
 applyTransform = function(element, originalPos, targetPos, callback) {
-  var H, i, j;
-  H = getTransform(originalPos, targetPos);
+    const H = getTransform(originalPos, targetPos);
+    const H_transposed = transpose(H);
+    const matrix_of_strings = H_transposed.map((arr) => arr.map((e) => e.toFixed(20)));
+    const transform_matrix_string = matrix_of_strings.join(",");
 
-  const transform_matrix_string = ((function() {
-    var _i, _results;
-    _results = [];
-    for (i = _i = 0; _i < 4; i = ++_i) {
-      _results.push((function() {
-        var _j, _results1;
-        _results1 = [];
-        for (j = _j = 0; _j < 4; j = ++_j) {
-          _results1.push(H[j][i].toFixed(20));
-        }
-        return _results1;
-      })());
-    }
-    return _results;
-  })()).join(',');
   if (element) {
     element.style.transform = "matrix3d(" + transform_matrix_string + ")";
     element.style.transformOrigin = "0 0";
