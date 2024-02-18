@@ -56,7 +56,7 @@ class PictureDialog {
                     <input type="button" id="detect_modules_btn" value="Detect">
                 </span>
             </div>
-            <div id="svg_wrapper_div" tabindex="0" style="width: 100%; height: 100%; border: solid 1px black; overflow: scroll"><svg id="picture_svg" width="100%" height="100%"></svg></div>
+            <div id="svg_wrapper_div" style="width: 100%; height: 100%; border: solid 1px black; overflow: scroll"><svg id="picture_svg" width="100%" height="100%" tabindex="0"></svg></div>
             <!-- <br> -->
             <!--<div id="picture_transform_preview" style="background-color: silver"></div>-->
             <!--<div id="canvas_wrapper" style="background-color: silver; position: relative; width: 200px; height: 200px; overflow: hidden; outline: solid 1px black">
@@ -91,7 +91,17 @@ class PictureDialog {
         }
 
         this.svg = this.popup.querySelector("#picture_svg");
-        this.qr_outline = new EditableQrOutline(this.svg);
+
+        let initial_corner_coordinates;
+        if (sessionStorage.getItem("picture_corners")) {
+            initial_corner_coordinates = JSON.parse(sessionStorage.getItem("picture_corners"));
+        } else {
+            initial_corner_coordinates = [ [100,100], [200,100], [200,200], [100,200] ];
+        }
+
+        this.qr_outline = new EditableQrOutline(this.svg, initial_corner_coordinates, () => {
+            this.apply_corner_coordinates();
+        });
 
         this.main_canvas_bg_img = document.getElementById("main_canvas_background_img");
 
@@ -116,7 +126,7 @@ class PictureDialog {
             const color_strictness = document.getElementById("range_detector_strictness").value;
             const add_unknown_markers = document.getElementById("cb_detector_mark_unknown").checked;
 
-            const css_matrix3d_transform_string = applyTransform(null, this.corners, this.original_corners, null);
+            const css_matrix3d_transform_string = applyTransform(null, this.qr_outline.get_corners(), this.original_corners, null);
             detect_modules_from_picture(this.img_obj, css_matrix3d_transform_string, dark_color, bright_color, color_strictness, add_unknown_markers);
         });
 
@@ -178,125 +188,19 @@ class PictureDialog {
         });
 
 
-        function event_parent_coords (evt) {
-            const parent_bounds = evt.target.parentElement.getBoundingClientRect();
-            return [evt.clientX - parent_bounds.left, evt.clientY - parent_bounds.top];
-        }
-
         // corner coordinates of the canvas onto which the transformed picture shall be projected:
         this.original_corners = [ [0,0], [500,0], [500,500], [0,500] ];
-        // current coordinates of the draggable circles:
-        this.corners = [ [100,100], [200,100], [200,200], [100,200] ];
-
-        if (sessionStorage.getItem("picture_corners")) {
-            this.corners = JSON.parse(sessionStorage.getItem("picture_corners"));
-        }
 
         // Note: looks like this only works in Firefox, since apparently Chromium treats matrix3d() on SVG elements differently
         // (according to https://stackoverflow.com/questions/74690178/css3-transform-matrix3d-gives-other-results-in-chrome-edge-safari-vs-firefox).
-        applyTransform(this.qr_outline.get_transform_group(), this.original_corners, this.corners, null);
-
-        this.corner_circles = [];
-        var last_corner = null;
-        for (var i = 0; i < 4; i++) {
-            const circle = svg_add_circle(this.svg, this.corners[i][0] * this.zoom_factor, this.corners[i][1] * this.zoom_factor, 10);
-            this.corner_circles.push(circle);
-            circle.style.fill = "rgba(0,0,0,0.5)";
-            circle.style.stroke = "red";
-            circle.style.strokeWidth = "2px";
-            circle.style.strokeDasharray = "3 3";
-            circle.addEventListener("pointerover", (evt) => {
-                evt.target.style.fill = "rgba(255,0,0,0.5)";
-            });
-            circle.addEventListener("pointerout", (evt) => {
-                evt.target.style.fill = "rgba(0,0,0,0.5)";
-            });
-
-            circle.corner_index = i;
-            circle.drag_active = false;
-            circle.addEventListener("pointerdown", (evt) => {
-                if (evt.button == 0) {
-                    evt.stopPropagation();
-
-                    evt.target.setPointerCapture(evt.pointerId);
-                    evt.target.drag_active = true;
-                    last_corner = evt.target;
-                    const [x, y] = event_parent_coords(evt);
-
-                    if (evt.shiftKey) {
-                        for (const c of this.corner_circles) {
-                            c.drag_offset = [x - c.getAttribute("cx"), y - c.getAttribute("cy")];
-                        }
-                    } else {
-                        evt.target.drag_offset = [x - evt.target.getAttribute("cx"), y - evt.target.getAttribute("cy")];
-                    }
-                }
-            });
-            circle.addEventListener("pointerup", (evt) => {
-                evt.stopPropagation();
-
-                evt.target.releasePointerCapture(evt.pointerId);
-                evt.target.drag_active = false;
-                for (const c of this.corner_circles) {
-                    c.drag_offset = null;
-                }
-            });
-            circle.addEventListener("pointermove", (evt) => {
-                if (evt.target.drag_active) {
-                    const [x, y] = event_parent_coords(evt);
-
-                    for (const c of this.corner_circles) {
-                        if (c.drag_offset != null) {
-                            const center_x = x - c.drag_offset[0];
-                            const center_y = y - c.drag_offset[1];
-                            c.setAttribute("cx", center_x);
-                            c.setAttribute("cy", center_y);
-                            this.corners[c.corner_index] = [center_x / this.zoom_factor, center_y / this.zoom_factor];
-                        }
-                    }
-
-                    this.apply_corner_coordinates();
-                }
-            });
-        }
-
-        this.svg_div.addEventListener("keydown", (evt) => {
-            if (last_corner) {
-                const [orig_cx, orig_cy] = [parseFloat(last_corner.getAttribute("cx")), parseFloat(last_corner.getAttribute("cy"))];
-                var [cx, cy] = [orig_cx, orig_cy];
-                const step_width = 0.1;
-                switch (evt.key) {
-                    case "ArrowLeft":
-                        cx -= step_width;
-                        break;
-                    case "ArrowRight":
-                        cx += step_width;
-                        break;
-                    case "ArrowUp":
-                        cy -= step_width;
-                        break;
-                    case "ArrowDown":
-                        cy += step_width;
-                        break;
-                }
-
-                if (cx != orig_cx || cy != orig_cy) {
-                    last_corner.setAttribute("cx", cx);
-                    last_corner.setAttribute("cy", cy);
-                    this.corners[last_corner.corner_index] = [cx / this.zoom_factor, cy / this.zoom_factor];
-                    this.apply_corner_coordinates();
-
-                    evt.preventDefault();
-                }
-            }
-        });
+        applyTransform(this.qr_outline.get_transform_group(), this.original_corners, this.qr_outline.get_corners(), null);
     }
 
     apply_corner_coordinates() {
-        sessionStorage.setItem("picture_corners", JSON.stringify(this.corners));
-        console.log("corners:", this.corners);
-        applyTransform(this.main_canvas_bg_img, this.corners, this.original_corners, null);
-        applyTransform(this.qr_outline.get_transform_group(), this.original_corners, this.corners, null);
+        sessionStorage.setItem("picture_corners", JSON.stringify(this.qr_outline.get_corners()));
+        console.log("corners:", this.qr_outline.get_corners());
+        applyTransform(this.main_canvas_bg_img, this.qr_outline.get_corners(), this.original_corners, null);
+        applyTransform(this.qr_outline.get_transform_group(), this.original_corners, this.qr_outline.get_corners(), null);
     }
 
     load_picture(img_obj) {
@@ -307,7 +211,7 @@ class PictureDialog {
         this.qr_outline.set_image(img_obj);
 
         this.main_canvas_bg_img.src = img_obj.src;
-        applyTransform(this.main_canvas_bg_img, this.corners, this.original_corners, null);
+        applyTransform(this.main_canvas_bg_img, this.qr_outline.get_corners(), this.original_corners, null);
 
         const background_brightness_slider = document.getElementById("range_background_brightness");
         background_brightness_slider.disabled = false;
@@ -321,11 +225,6 @@ class PictureDialog {
     redraw_svg_after_zoom () {
         set_attributes(this.svg, {"width": this.loaded_image_size[0] * this.zoom_factor * 3, "height": this.loaded_image_size[1] * this.zoom_factor * 3});
         set_attributes(this.svg, {"viewBox": `${this.loaded_image_size[0] * this.zoom_factor * -1} ${this.loaded_image_size[1] * this.zoom_factor * -1} ${this.loaded_image_size[0] * this.zoom_factor * 3} ${this.loaded_image_size[1] * this.zoom_factor * 3}`});
-
-        for (const c of this.corner_circles) {
-            c.setAttribute("cx", this.corners[c.corner_index][0] * this.zoom_factor);
-            c.setAttribute("cy", this.corners[c.corner_index][1] * this.zoom_factor);
-        }
 
         this.qr_outline.set_zoom_factor(this.zoom_factor);
     };
@@ -341,13 +240,18 @@ function set_attributes (element, attributes) {
 
 /// Outline of the QR code, with draggable corners
 class EditableQrOutline {
-    constructor(svg_obj) {
+    constructor(svg_obj, initial_corner_coordinates, on_corners_changed_callback) {
+        this.svg = svg_obj;
+        // current coordinates of the draggable circles:
+        this.corners = initial_corner_coordinates;
+        this.on_corners_changed_callback = on_corners_changed_callback;
+
         this.zoom_factor = 1.0;
         this.loaded_image_size = [0, 0];
 
-        this.svg_image = svg_add_element(svg_obj, "image");
+        this.svg_image = svg_add_element(this.svg, "image");
 
-        this.line_group_outer = svg_add_element(svg_obj, "g");
+        this.line_group_outer = svg_add_element(this.svg, "g");
         this.line_group_outer.style.transform = "scale(" + this.zoom_factor + ")";
         this.line_group_outer.style.stroke = "rgba(255,255,255,0.3)";
         this.line_group_outer.style.strokeWidth = 2;
@@ -378,6 +282,8 @@ class EditableQrOutline {
         svg_add_element(line_group_dash2, "use", {"href": "#line_group_dash1"});
         line_group_dash2.style.stroke = "red";
         line_group_dash2.style.strokeDasharray = "4";
+
+        this.#add_corner_circles();
     };
 
     set_image(img_obj) {
@@ -389,12 +295,124 @@ class EditableQrOutline {
     set_zoom_factor(new_zoom_factor) {
         this.zoom_factor = new_zoom_factor;
         set_attributes(this.svg_image, {"width": this.loaded_image_size[0] * this.zoom_factor, "height": this.loaded_image_size[1] * this.zoom_factor});
+
+        for (const c of this.corner_circles) {
+            c.setAttribute("cx", this.corners[c.corner_index][0] * this.zoom_factor);
+            c.setAttribute("cy", this.corners[c.corner_index][1] * this.zoom_factor);
+        }
+
         this.line_group_outer.style.transform = "scale(" + this.zoom_factor + ")";
     };
 
     // Returns the SVG group onto which the matrix3d transformation shall be set.
     get_transform_group() {
         return this.line_group_inner;
+    }
+
+    get_corners() {
+        return this.corners;
+    }
+
+    static #event_parent_coords(evt) {
+        const parent_bounds = evt.target.parentElement.getBoundingClientRect();
+        return [evt.clientX - parent_bounds.left, evt.clientY - parent_bounds.top];
+    }
+
+    #add_corner_circles() {
+        this.corner_circles = [];
+        let last_corner = null;
+        for (var i = 0; i < 4; i++) {
+            const circle = svg_add_circle(this.svg, this.corners[i][0] * this.zoom_factor, this.corners[i][1] * this.zoom_factor, 10);
+            this.corner_circles.push(circle);
+            circle.style.fill = "rgba(0,0,0,0.5)";
+            circle.style.stroke = "red";
+            circle.style.strokeWidth = "2px";
+            circle.style.strokeDasharray = "3 3";
+            circle.addEventListener("pointerover", (evt) => {
+                evt.target.style.fill = "rgba(255,0,0,0.5)";
+            });
+            circle.addEventListener("pointerout", (evt) => {
+                evt.target.style.fill = "rgba(0,0,0,0.5)";
+            });
+
+            circle.corner_index = i;
+            circle.drag_active = false;
+            circle.addEventListener("pointerdown", (evt) => {
+                if (evt.button == 0) {
+                    evt.stopPropagation();
+
+                    evt.target.setPointerCapture(evt.pointerId);
+                    evt.target.drag_active = true;
+                    last_corner = evt.target;
+                    const [x, y] = EditableQrOutline.#event_parent_coords(evt);
+
+                    if (evt.shiftKey) {
+                        for (const c of this.corner_circles) {
+                            c.drag_offset = [x - c.getAttribute("cx"), y - c.getAttribute("cy")];
+                        }
+                    } else {
+                        evt.target.drag_offset = [x - evt.target.getAttribute("cx"), y - evt.target.getAttribute("cy")];
+                    }
+                }
+            });
+            circle.addEventListener("pointerup", (evt) => {
+                evt.stopPropagation();
+
+                evt.target.releasePointerCapture(evt.pointerId);
+                evt.target.drag_active = false;
+                for (const c of this.corner_circles) {
+                    c.drag_offset = null;
+                }
+            });
+            circle.addEventListener("pointermove", (evt) => {
+                if (evt.target.drag_active) {
+                    const [x, y] = EditableQrOutline.#event_parent_coords(evt);
+
+                    for (const c of this.corner_circles) {
+                        if (c.drag_offset != null) {
+                            const center_x = x - c.drag_offset[0];
+                            const center_y = y - c.drag_offset[1];
+                            c.setAttribute("cx", center_x);
+                            c.setAttribute("cy", center_y);
+                            this.corners[c.corner_index] = [center_x / this.zoom_factor, center_y / this.zoom_factor];
+                        }
+                    }
+
+                    this.on_corners_changed_callback();
+                }
+            });
+        }
+
+        this.svg.addEventListener("keydown", (evt) => {
+            if (last_corner) {
+                const [orig_cx, orig_cy] = [parseFloat(last_corner.getAttribute("cx")), parseFloat(last_corner.getAttribute("cy"))];
+                var [cx, cy] = [orig_cx, orig_cy];
+                const step_width = 0.1;
+                switch (evt.key) {
+                    case "ArrowLeft":
+                        cx -= step_width;
+                        break;
+                    case "ArrowRight":
+                        cx += step_width;
+                        break;
+                    case "ArrowUp":
+                        cy -= step_width;
+                        break;
+                    case "ArrowDown":
+                        cy += step_width;
+                        break;
+                }
+
+                if (cx != orig_cx || cy != orig_cy) {
+                    last_corner.setAttribute("cx", cx);
+                    last_corner.setAttribute("cy", cy);
+                    this.corners[last_corner.corner_index] = [cx / this.zoom_factor, cy / this.zoom_factor];
+                    this.on_corners_changed_callback();
+
+                    evt.preventDefault();
+                }
+            }
+        });
     }
 };
 
