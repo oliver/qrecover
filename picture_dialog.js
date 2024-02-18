@@ -91,7 +91,7 @@ class PictureDialog {
         }
 
         this.svg = this.popup.querySelector("#picture_svg");
-        this.svg_image = svg_add_element(this.svg, "image");
+        this.qr_outline = new EditableQrOutline(this.svg);
 
         this.main_canvas_bg_img = document.getElementById("main_canvas_background_img");
 
@@ -191,43 +191,10 @@ class PictureDialog {
         if (sessionStorage.getItem("picture_corners")) {
             this.corners = JSON.parse(sessionStorage.getItem("picture_corners"));
         }
-//         applyTransform(this.canvas, this.corners, this.original_corners, null);
-
-        this.line_group_outer = svg_add_element(this.svg, "g");
-        this.line_group_outer.style.transform = "scale(" + this.zoom_factor + ")";
-        this.line_group_outer.style.stroke = "rgba(255,255,255,0.3)";
-        this.line_group_outer.style.strokeWidth = 2;
-        this.line_group_outer.style.fill = "none";
-
-        this.line_group_inner = svg_add_element(this.line_group_outer, "g");
-        const line_group_dash1 = svg_add_element(this.line_group_inner, "g", {"id": "line_group_dash1"});
-        const units_per_pixel = (500 / 25);
-        svg_add_rect(line_group_dash1, 0, 0, 25*units_per_pixel, 25*units_per_pixel);
-        for (const [sx,sy] of [[0,0], [18,0], [0,18]]) {
-            svg_add_rect(line_group_dash1, sx*units_per_pixel, sy*units_per_pixel, 7*units_per_pixel, 7*units_per_pixel);
-            svg_add_rect(line_group_dash1, (sx+1)*units_per_pixel, (sy+1)*units_per_pixel, 5*units_per_pixel, 5*units_per_pixel);
-            svg_add_rect(line_group_dash1, (sx+2)*units_per_pixel, (sy+2)*units_per_pixel, 3*units_per_pixel, 3*units_per_pixel);
-        }
-        svg_add_rect(line_group_dash1, 16*units_per_pixel, 16*units_per_pixel, 5*units_per_pixel, 5*units_per_pixel);
-        svg_add_rect(line_group_dash1, 17*units_per_pixel, 17*units_per_pixel, 3*units_per_pixel, 3*units_per_pixel);
-        svg_add_rect(line_group_dash1, 18*units_per_pixel, 18*units_per_pixel, 1*units_per_pixel, 1*units_per_pixel);
-
-        for (var x = 8; x <= 16; x+=2) {
-            svg_add_rect(line_group_dash1, x*units_per_pixel, 6*units_per_pixel, 1*units_per_pixel, 1*units_per_pixel);
-        }
-        for (var y = 8; y <= 16; y+=2) {
-            svg_add_rect(line_group_dash1, 6*units_per_pixel, y*units_per_pixel, 1*units_per_pixel, 1*units_per_pixel);
-        }
-
-        // draw dashed lines again, but with different color (to get two-colored dashes):
-        const line_group_dash2 = svg_add_element(this.line_group_inner, "g");
-        svg_add_element(line_group_dash2, "use", {"href": "#line_group_dash1"});
-        line_group_dash2.style.stroke = "red";
-        line_group_dash2.style.strokeDasharray = "4";
 
         // Note: looks like this only works in Firefox, since apparently Chromium treats matrix3d() on SVG elements differently
         // (according to https://stackoverflow.com/questions/74690178/css3-transform-matrix3d-gives-other-results-in-chrome-edge-safari-vs-firefox).
-        applyTransform(this.line_group_inner, this.original_corners, this.corners, null);
+        applyTransform(this.qr_outline.get_transform_group(), this.original_corners, this.corners, null);
 
         this.corner_circles = [];
         var last_corner = null;
@@ -323,16 +290,13 @@ class PictureDialog {
                 }
             }
         });
-
-//         this.draw();
     }
 
     apply_corner_coordinates() {
         sessionStorage.setItem("picture_corners", JSON.stringify(this.corners));
         console.log("corners:", this.corners);
-//         applyTransform(this.canvas, this.corners, this.original_corners, null);
         applyTransform(this.main_canvas_bg_img, this.corners, this.original_corners, null);
-        applyTransform(this.line_group_inner, this.original_corners, this.corners, null);
+        applyTransform(this.qr_outline.get_transform_group(), this.original_corners, this.corners, null);
     }
 
     load_picture(img_obj) {
@@ -340,16 +304,7 @@ class PictureDialog {
 
         this.img_obj = img_obj;
         this.loaded_image_size = [img_obj.width, img_obj.height];
-
-        set_attributes(this.svg_image, {"width": this.loaded_image_size[0] * this.zoom_factor, "height": this.loaded_image_size[1] * this.zoom_factor, "href": img_obj.src});
-        this.svg_image.style.imageRendering = "crisp-edges";
-
-//         this.canvas.style.width = img_obj.width + "px";
-//         this.canvas.style.height = img_obj.height + "px";
-//         this.canvas.width = img_obj.width;
-//         this.canvas.height = img_obj.height;
-//         this.canvas.getContext("2d").drawImage(img_obj, 0, 0, img_obj.width, img_obj.height);
-//         this.draw();
+        this.qr_outline.set_image(img_obj);
 
         this.main_canvas_bg_img.src = img_obj.src;
         applyTransform(this.main_canvas_bg_img, this.corners, this.original_corners, null);
@@ -363,25 +318,8 @@ class PictureDialog {
         this.svg_div.scrollTop = this.loaded_image_size[1] * this.zoom_factor;
     }
 
-//     draw () {
-//         const ctx = this.canvas.getContext("2d");
-//         ctx.strokeStyle = "black";
-//         ctx.lineWidth = 1;
-//         ctx.setLineDash([3, 3]);
-//
-//         var corners = [ [100,100], [200,100], [200,200], [100,200] ];
-//
-//         ctx.beginPath();
-//         ctx.moveTo(corners[3][0], corners[3][1]);
-//         for (var i = 0; i < 4; i++) {
-//             ctx.lineTo(corners[i][0], corners[i][1]);
-//         }
-//         ctx.stroke();
-//     }
-
     redraw_svg_after_zoom () {
         set_attributes(this.svg, {"width": this.loaded_image_size[0] * this.zoom_factor * 3, "height": this.loaded_image_size[1] * this.zoom_factor * 3});
-        set_attributes(this.svg_image, {"width": this.loaded_image_size[0] * this.zoom_factor, "height": this.loaded_image_size[1] * this.zoom_factor});
         set_attributes(this.svg, {"viewBox": `${this.loaded_image_size[0] * this.zoom_factor * -1} ${this.loaded_image_size[1] * this.zoom_factor * -1} ${this.loaded_image_size[0] * this.zoom_factor * 3} ${this.loaded_image_size[1] * this.zoom_factor * 3}`});
 
         for (const c of this.corner_circles) {
@@ -389,7 +327,7 @@ class PictureDialog {
             c.setAttribute("cy", this.corners[c.corner_index][1] * this.zoom_factor);
         }
 
-        this.line_group_outer.style.transform = "scale(" + this.zoom_factor + ")";
+        this.qr_outline.set_zoom_factor(this.zoom_factor);
     };
 }
 
@@ -399,6 +337,67 @@ function set_attributes (element, attributes) {
         element.setAttribute(key, value);
     }
 }
+
+
+/// Outline of the QR code, with draggable corners
+class EditableQrOutline {
+    constructor(svg_obj) {
+        this.zoom_factor = 1.0;
+        this.loaded_image_size = [0, 0];
+
+        this.svg_image = svg_add_element(svg_obj, "image");
+
+        this.line_group_outer = svg_add_element(svg_obj, "g");
+        this.line_group_outer.style.transform = "scale(" + this.zoom_factor + ")";
+        this.line_group_outer.style.stroke = "rgba(255,255,255,0.3)";
+        this.line_group_outer.style.strokeWidth = 2;
+        this.line_group_outer.style.fill = "none";
+
+        this.line_group_inner = svg_add_element(this.line_group_outer, "g");
+        const line_group_dash1 = svg_add_element(this.line_group_inner, "g", {"id": "line_group_dash1"});
+        const units_per_pixel = (500 / 25);
+        svg_add_rect(line_group_dash1, 0, 0, 25*units_per_pixel, 25*units_per_pixel);
+        for (const [sx,sy] of [[0,0], [18,0], [0,18]]) {
+            svg_add_rect(line_group_dash1, sx*units_per_pixel, sy*units_per_pixel, 7*units_per_pixel, 7*units_per_pixel);
+            svg_add_rect(line_group_dash1, (sx+1)*units_per_pixel, (sy+1)*units_per_pixel, 5*units_per_pixel, 5*units_per_pixel);
+            svg_add_rect(line_group_dash1, (sx+2)*units_per_pixel, (sy+2)*units_per_pixel, 3*units_per_pixel, 3*units_per_pixel);
+        }
+        svg_add_rect(line_group_dash1, 16*units_per_pixel, 16*units_per_pixel, 5*units_per_pixel, 5*units_per_pixel);
+        svg_add_rect(line_group_dash1, 17*units_per_pixel, 17*units_per_pixel, 3*units_per_pixel, 3*units_per_pixel);
+        svg_add_rect(line_group_dash1, 18*units_per_pixel, 18*units_per_pixel, 1*units_per_pixel, 1*units_per_pixel);
+
+        for (var x = 8; x <= 16; x+=2) {
+            svg_add_rect(line_group_dash1, x*units_per_pixel, 6*units_per_pixel, 1*units_per_pixel, 1*units_per_pixel);
+        }
+        for (var y = 8; y <= 16; y+=2) {
+            svg_add_rect(line_group_dash1, 6*units_per_pixel, y*units_per_pixel, 1*units_per_pixel, 1*units_per_pixel);
+        }
+
+        // draw dashed lines again, but with different color (to get two-colored dashes):
+        const line_group_dash2 = svg_add_element(this.line_group_inner, "g");
+        svg_add_element(line_group_dash2, "use", {"href": "#line_group_dash1"});
+        line_group_dash2.style.stroke = "red";
+        line_group_dash2.style.strokeDasharray = "4";
+    };
+
+    set_image(img_obj) {
+        this.loaded_image_size = [img_obj.width, img_obj.height];
+        set_attributes(this.svg_image, {"width": this.loaded_image_size[0] * this.zoom_factor, "height": this.loaded_image_size[1] * this.zoom_factor, "href": img_obj.src});
+        this.svg_image.style.imageRendering = "crisp-edges";
+    };
+
+    set_zoom_factor(new_zoom_factor) {
+        this.zoom_factor = new_zoom_factor;
+        set_attributes(this.svg_image, {"width": this.loaded_image_size[0] * this.zoom_factor, "height": this.loaded_image_size[1] * this.zoom_factor});
+        this.line_group_outer.style.transform = "scale(" + this.zoom_factor + ")";
+    };
+
+    // Returns the SVG group onto which the matrix3d transformation shall be set.
+    get_transform_group() {
+        return this.line_group_inner;
+    }
+};
+
 
 function svg_add_element (svg, element_name, attributes = {}) {
     const elem = document.createElementNS("http://www.w3.org/2000/svg", element_name);
