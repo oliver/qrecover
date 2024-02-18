@@ -131,8 +131,8 @@ class PictureDialog {
             const color_strictness = document.getElementById("range_detector_strictness").value;
             const add_unknown_markers = document.getElementById("cb_detector_mark_unknown").checked;
 
-            const css_matrix3d_transform_string = applyTransform(null, this.qr_outline.get_corners(), this.original_corners, null);
-            detect_modules_from_picture(this.img_obj, css_matrix3d_transform_string, dark_color, bright_color, color_strictness, add_unknown_markers);
+            const css_matrix3d_transform_string_for_image = getTransformString(this.qr_outline.get_corners(), this.original_corners);
+            detect_modules_from_picture(this.img_obj, css_matrix3d_transform_string_for_image, dark_color, bright_color, color_strictness, add_unknown_markers);
         });
 
         this.svg_div = this.popup.querySelector("#svg_wrapper_div");
@@ -203,14 +203,17 @@ class PictureDialog {
 
         // Note: looks like this only works in Firefox, since apparently Chromium treats matrix3d() on SVG elements differently
         // (according to https://stackoverflow.com/questions/74690178/css3-transform-matrix3d-gives-other-results-in-chrome-edge-safari-vs-firefox).
-        applyTransform(this.qr_outline.get_transform_group(), this.original_corners, this.qr_outline.get_corners(), null);
+        const css_matrix3d_transform_string_for_outline = getTransformString(this.original_corners, this.qr_outline.get_corners());
+        applyTransform(this.qr_outline.get_transform_group(), css_matrix3d_transform_string_for_outline);
     }
 
     apply_corner_coordinates() {
         sessionStorage.setItem("picture_corners_objs", JSON.stringify(this.qr_outline.get_corners()));
         console.log("corners:", this.qr_outline.get_corners());
-        applyTransform(this.main_canvas_bg_img, this.qr_outline.get_corners(), this.original_corners, null);
-        applyTransform(this.qr_outline.get_transform_group(), this.original_corners, this.qr_outline.get_corners(), null);
+        const css_matrix3d_transform_string_for_image = getTransformString(this.qr_outline.get_corners(), this.original_corners);
+        applyTransform(this.main_canvas_bg_img, css_matrix3d_transform_string_for_image);
+        const css_matrix3d_transform_string_for_outline = getTransformString(this.original_corners, this.qr_outline.get_corners());
+        applyTransform(this.qr_outline.get_transform_group(), css_matrix3d_transform_string_for_outline);
     }
 
     load_picture(img_obj) {
@@ -221,7 +224,8 @@ class PictureDialog {
         this.qr_outline.set_image(img_obj);
 
         this.main_canvas_bg_img.src = img_obj.src;
-        applyTransform(this.main_canvas_bg_img, this.qr_outline.get_corners(), this.original_corners, null);
+        const css_matrix3d_transform_string_for_image = getTransformString(this.qr_outline.get_corners(), this.original_corners);
+        applyTransform(this.main_canvas_bg_img, css_matrix3d_transform_string_for_image);
 
         const background_brightness_slider = document.getElementById("range_background_brightness");
         background_brightness_slider.disabled = false;
@@ -486,15 +490,14 @@ function transpose(matrix) {
     return matrix[0].map((col, i) => matrix.map(row => row[i]));
 }
 
-function applyTransform(element, originalPos, targetPos) {
+function getTransformString(originalPos, targetPos) {
     const H = getTransform(originalPos, targetPos);
     const H_transposed = transpose(H);
     const matrix_of_strings = H_transposed.map((arr) => arr.map((e) => e.toFixed(20)));
-    const transform_matrix_string = matrix_of_strings.join(",");
+    return "matrix3d(" + matrix_of_strings.join(",") + ")";
+};
 
-    if (element) {
-        element.style.transform = "matrix3d(" + transform_matrix_string + ")";
-        element.style.transformOrigin = "0 0";
-    }
-    return "matrix3d(" + transform_matrix_string + ")";
+function applyTransform(element, transform_matrix_string) {
+    element.style.transform = transform_matrix_string;
+    element.style.transformOrigin = "0 0";
 };
